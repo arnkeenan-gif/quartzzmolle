@@ -182,7 +182,7 @@ body {
   box-shadow: 0 2px 12px rgba(0,0,0,0.25);
 }
 
-/* ── VIDEO SECTIONS (smooth crossfade) ── */
+/* ── VIDEO SECTIONS ── */
 .video-section {
   position: relative;
   z-index: 2;
@@ -216,33 +216,6 @@ body {
 
 .overlay-dark   { background: rgba(0,0,0,0.55); }
 .overlay-medium { background: rgba(0,0,0,0.55); }
-
-.video-section.is-active .video-bg,
-.video-section.is-active .video-overlay {
-  opacity: 1;
-}
-
-/* Fade edges of each video section to black so adjacent sections blend together smoothly. */
-.video-section::before,
-.video-section::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 120px;
-  z-index: 2;
-  pointer-events: none;
-}
-
-.video-section::before {
-  top: 0;
-  background: linear-gradient(to bottom, #000 0%, rgba(0,0,0,0) 100%);
-}
-
-.video-section::after {
-  bottom: 0;
-  background: linear-gradient(to top, #000 0%, rgba(0,0,0,0) 100%);
-}
 
 /* ── HERO CONTENT ── */
 .hero-content {
