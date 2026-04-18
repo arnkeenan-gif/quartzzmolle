@@ -181,7 +181,14 @@ export default async function handler(req, res) {
 function parsePaymentIntent(pi) {
   const meta = pi.metadata || {};
   const shipping = pi.shipping || {};
-  const address = shipping.address || {};
+  // Prefer metadata fields (set by our backend), fall back to pi.shipping
+  const address = {
+    line1: meta.customer_address1 || shipping.address?.line1 || '',
+    line2: shipping.address?.line2 || '',
+    postal_code: meta.customer_zipcode || shipping.address?.postal_code || '',
+    city: meta.customer_city || shipping.address?.city || '',
+    country: meta.customer_country || shipping.address?.country || 'DK',
+  };
 
   const items = [];
   if (meta.items_summary) {
