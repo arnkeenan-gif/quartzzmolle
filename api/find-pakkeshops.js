@@ -14,8 +14,9 @@ export default async function handler(req, res) {
   const soapBody = `<?xml version="1.0" encoding="utf-8"?>
 <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
   <soap:Body>
-    <GetParcelShopsInZipcode xmlns="http://www.gls.dk/">
+    <GetParcelShopsInZipcode xmlns="http://gls.dk/webservices/">
       <zipcode>${zipcode}</zipcode>
+      <countryIso3166A2>${country}</countryIso3166A2>
     </GetParcelShopsInZipcode>
   </soap:Body>
 </soap:Envelope>`;
@@ -25,7 +26,7 @@ export default async function handler(req, res) {
       method: 'POST',
       headers: {
         'Content-Type': 'text/xml; charset=utf-8',
-        'SOAPAction': 'http://www.gls.dk/GetParcelShopsInZipcode',
+        'SOAPAction': '"http://gls.dk/webservices/GetParcelShopsInZipcode"',
         'User-Agent': 'Mozilla/5.0 (compatible; QuartzMolle/1.0)',
       },
       body: soapBody,
