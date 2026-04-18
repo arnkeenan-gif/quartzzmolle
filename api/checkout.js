@@ -371,7 +371,12 @@ async function maybeInitPayment() {
       });
       const paymentElContainer = document.getElementById('payment-element');
       paymentElContainer.innerHTML = '';
-      state.paymentElement = state.elements.create('payment', { layout: 'tabs' });
+      state.paymentElement = state.elements.create('payment', {
+        layout: 'tabs',
+        fields: {
+          billingDetails: 'never', // don't collect billing — we set it on PI from backend
+        },
+      });
       state.paymentElement.mount('#payment-element');
       document.getElementById('pay-btn').disabled = false;
     } else {
@@ -425,7 +430,19 @@ async function handlePay() {
       elements: state.elements,
       confirmParams: {
         return_url: `${window.location.origin}/success.html`,
-        receipt_email: state.customer.email,
+        payment_method_data: {
+          billing_details: {
+            name: `${state.customer.firstName} ${state.customer.lastName}`.trim(),
+            email: state.customer.email,
+            phone: state.customer.phone,
+            address: {
+              line1: state.customer.address,
+              postal_code: state.customer.zip,
+              city: state.customer.city,
+              country: state.customer.country || 'DK',
+            },
+          },
+        },
       },
     });
     if (error) {
