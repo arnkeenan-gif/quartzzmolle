@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <title>Checkout – Quartz Mølle</title>
+  <link rel="icon" href="images/logo-small.png" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://js.stripe.com/v3/"></script>
+
+  <style>
+    body { background: var(--cream, #f5f1e8); }
+
+    .checkout-wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 3rem 2rem 4rem;
+    }
+    .checkout-head {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+    .checkout-head h1 {
+      font-family: 'Inter', sans-serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--dark, #000);
+      letter-spacing: -0.01em;
+      margin: 0;
+    }
+    .checkout-head p {
+      color: #666;
+      margin-top: 0.5rem;
+    }
+
+    .checkout-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+    @media (max-width: 860px) {
+      .checkout-grid { grid-template-columns: 1fr; }
+      .checkout-wrap { padding: 2rem 1rem 3rem; }
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 1.75rem;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+      margin-bottom: 1.5rem;
+    }
+    .card h2 {
+      font-family: 'Inter', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 0 0 1.25rem;
+      color: var(--dark, #000);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+    .form-row.full { grid-template-columns: 1fr; }
+
+    .form-field {
+      display: flex;
+      flex-direction: column;
+    }
+    .form-field label {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #555;
+      margin-bottom: 0.3rem;
+    }
+    .form-field input,
+    .form-field select {
+      padding: 0.75rem 0.9rem;
+      border: 1px solid #d9d4c7;
+      border-radius: 8px;
+      background: #faf8f3;
+      font-size: 0.95rem;
+      font-family: inherit;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .form-field input:focus,
+    .form-field select:focus {
+      outline: none;
+      border-color: var(--dark, #000);
+      background: #fff;
+    }
+    .form-field input.error {
+      border-color: #c62828;
+    }
+
+    /* Delivery method cards */
+    .delivery-options {
+      display: grid;
+      gap: 0.6rem;
+    }
+    .delivery-card {
+      border: 1.5px solid #e0dcd0;
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .delivery-card:hover {
+      border-color: var(--dark, #000);
+    }
+    .delivery-card.selected {
+      border-color: var(--dark, #000);
+      background: #faf8f3;
+    }
+    .delivery-radio {
+      width: 18px; height: 18px;
+      border: 2px solid #b5b0a3;
+      border-radius: 50%;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .delivery-card.selected .delivery-radio {
+      border-color: var(--dark, #000);
+    }
+    .delivery-card.selected .delivery-radio::after {
+      content: '';
+      position: absolute;
+      inset: 3px;
+      background: var(--dark, #000);
+      border-radius: 50%;
+    }
+    .delivery-info {
+      flex: 1;
+    }
+    .delivery-title {
+      font-weight: 600;
+      color: var(--dark, #000);
+      font-size: 0.97rem;
+      margin-bottom: 0.15rem;
+    }
+    .delivery-desc {
+      font-size: 0.85rem;
+      color: #777;
+    }
+    .delivery-price {
+      font-weight: 600;
+      color: var(--dark, #000);
+      font-size: 0.97rem;
+    }
+
+    /* Pakkeshop picker area (hidden by default, shown when Pakkeshop selected) */
+    .pakkeshop-picker {
+      display: none;
+      margin-top: 0.75rem;
+      padding: 1rem;
+      border: 1px solid #e0dcd0;
+      border-radius: 10px;
+      background: #faf8f3;
+    }
+    .pakkeshop-picker.active { display: block; }
+    .pakkeshop-picker p {
+      font-size: 0.88rem;
+      color: #666;
+      margin: 0 0 0.5rem;
+    }
+
+    /* Order summary */
+    .summary-items {
+      border-top: 1px solid #eee;
+      padding-top: 1rem;
+      margin-top: 0.5rem;
+    }
+    .summary-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 0.55rem 0;
+      font-size: 0.93rem;
+    }
+    .summary-item-name {
+      color: var(--dark, #000);
+      flex: 1;
+      padding-right: 1rem;
+    }
+    .summary-item-sub {
+      color: #888;
+      font-size: 0.82rem;
+      display: block;
+      margin-top: 0.15rem;
+    }
+    .summary-item-price {
+      color: var(--dark, #000);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .summary-totals {
+      border-top: 1px solid #eee;
+      padding-top: 1rem;
+      margin-top: 0.5rem;
+    }
+    .summary-total-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.4rem 0;
+      font-size: 0.95rem;
+      color: #555;
+    }
+    .summary-total-row.grand {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--dark, #000);
+      border-top: 1px solid #eee;
+      margin-top: 0.5rem;
+      padding-top: 1rem;
+    }
+
+    /* Stripe Payment Element */
+    #payment-element {
+      margin: 1rem 0 1.25rem;
+    }
+
+    .btn-pay {
+      width: 100%;
+      padding: 1rem;
+      background: var(--dark, #000);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    .btn-pay:hover:not(:disabled) {
+      background: #1a1a1a;
+    }
+    .btn-pay:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .pay-error {
+      color: #c62828;
+      font-size: 0.88rem;
+      margin-top: 0.75rem;
+      min-height: 1.2rem;
+    }
+    .secure-note {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      justify-content: center;
+      margin-top: 1rem;
+      color: #888;
+      font-size: 0.82rem;
+    }
+
+    .cart-empty-msg {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav nav-light" id="nav">
+    <a href="index.html" class="nav-logo">
+      <img src="images/logopng.png" alt="Quartz Mølle" class="brand-mark" />
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Hjem</a>
+      <a href="shop.html">Shop</a>
+    </div>
+  </nav>
+
+  <div class="checkout-wrap">
+    <div class="checkout-head">
+      <h1>Kassen</h1>
+      <p>Udfyld oplysninger og vælg levering</p>
+    </div>
+
+    <div id="checkout-content"></div>
+  </div>
+
+  <script src="js/cart.js"></script>
+  <script src="js/checkout.js"></script>
+</body>
+</html>
