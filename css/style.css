@@ -41,15 +41,15 @@ body {
   line-height: 1.6;
 }
 
-/* Solid black strip at the top of the PAGE covering the iOS safe-area inset.
-   Absolute (not fixed) so it scrolls away with content — doesn't follow the screen. */
-body::before {
+/* Solid black strip above the nav covering the iOS safe-area inset.
+   Attached to .nav so it scrolls away when the nav scrolls off the page. */
+.nav::before {
   content: "";
   position: absolute;
-  top: 0; left: 0; right: 0;
+  bottom: 100%;
+  left: 0; right: 0;
   height: env(safe-area-inset-top, 0px);
   background: #000000;
-  z-index: 500;
   pointer-events: none;
 }
 
