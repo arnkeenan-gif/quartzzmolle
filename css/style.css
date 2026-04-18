@@ -198,11 +198,10 @@ body {
 
 .video-bg {
   position: fixed;
-  top: 0; left: 0; right: 0;
-  bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
+  top: 0; left: 0;
   width: 100vw;
-  height: auto;
-  min-height: 100lvh;
+  height: calc(100lvh + 200px);
+  min-height: calc(100vh + 200px);
   object-fit: cover;
   z-index: 0;
   opacity: 0;
@@ -213,11 +212,10 @@ body {
 
 .video-overlay {
   position: fixed;
-  top: 0; left: 0; right: 0;
-  bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
+  top: 0; left: 0;
   width: 100vw;
-  height: auto;
-  min-height: 100lvh;
+  height: calc(100lvh + 200px);
+  min-height: calc(100vh + 200px);
   z-index: 1;
   background: rgba(0,0,0,0.55);
   opacity: 0;
