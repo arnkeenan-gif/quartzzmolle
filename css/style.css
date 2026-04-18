@@ -20,6 +20,7 @@
   --nav-h: 72px;
 }
 
+/* html brand blue only for initial paint flash before body covers it */
 html {
   background: #000000;
   scroll-behavior: smooth;
@@ -38,6 +39,19 @@ body {
   -moz-osx-font-smoothing: grayscale;
   font-size: 16px;
   line-height: 1.6;
+}
+
+/* Fixed solid black bar at the very top of the screen covering only the iOS
+   safe-area inset. Gives the iOS status bar a constant backdrop so it doesn't
+   change as the video/tint behind it changes — stays a stable solid black. */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: env(safe-area-inset-top, 0px);
+  background: #000000;
+  z-index: 500;
+  pointer-events: none;
 }
 
 /* ── NAV ── */
