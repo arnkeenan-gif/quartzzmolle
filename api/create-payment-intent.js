@@ -42,21 +42,17 @@ export default async function handler(req, res) {
       metadata.pakkeshop_city = String(pakkeshop.city || '').slice(0, 50);
     }
 
+    // Put full customer address in metadata (not in `shipping` field — that conflicts with Link).
+    metadata.customer_address1 = String(customer.address || '').slice(0, 100);
+    metadata.customer_zipcode = String(customer.zip || '').slice(0, 20);
+    metadata.customer_city = String(customer.city || '').slice(0, 50);
+    metadata.customer_country = String(customer.country || 'DK').slice(0, 2);
+
     const intent = await stripe.paymentIntents.create({
       amount, // in øre
       currency: 'dkk',
       automatic_payment_methods: { enabled: true },
       receipt_email: customer.email,
-      shipping: {
-        name: `${customer.firstName} ${customer.lastName}`.trim(),
-        phone: customer.phone,
-        address: {
-          line1: customer.address,
-          postal_code: customer.zip,
-          city: customer.city,
-          country: customer.country || 'DK',
-        },
-      },
       metadata,
     });
 
