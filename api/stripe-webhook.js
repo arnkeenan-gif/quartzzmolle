@@ -154,6 +154,7 @@ export default async function handler(req, res) {
     const payload = {
       order_id: session.id,
       ship_to: shipTo,
+      order_lines: orderItems,
       action: 'none',
       sales_order: {
         order_id: session.id,
