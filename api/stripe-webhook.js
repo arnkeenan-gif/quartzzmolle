@@ -83,7 +83,7 @@ export default async function handler(req, res) {
     // Expand session to get line items + shipping details
     const stripe = (await import('stripe')).default(process.env.STRIPE_SECRET_KEY);
     const full = await stripe.checkout.sessions.retrieve(session.id, {
-      expand: ['line_items', 'shipping_cost.shipping_rate', 'customer_details'],
+      expand: ['line_items.data.price.product', 'shipping_cost.shipping_rate', 'customer_details'],
     });
 
     const customer = full.customer_details || {};
@@ -126,21 +126,28 @@ export default async function handler(req, res) {
       parcels.push({ weight: 3000 });
     }
 
-    const VAT_PERCENT = 25;
+    const VAT_PERCENT_FRAC = 0.25; // Shipmondo appears to expect VAT as a fraction (0.25 = 25%)
     const orderItems = [];
     for (const li of lineItems) {
       const qty = li.quantity || 1;
       const lineTotalKrInclVat = (li.amount_total || 0) / 100;
       const unitInclVat = qty > 0 ? lineTotalKrInclVat / qty : 0;
-      const unitExclVat = unitInclVat / (1 + VAT_PERCENT / 100);
-      const name = li.description || li.price?.product?.name || 'Produkt';
+      const unitExclVat = unitInclVat / (1 + VAT_PERCENT_FRAC);
+
+      // Product name = name, size label = first segment of description (we set "12,5 kg · Malet..." in checkout.js)
+      const baseName = li.description || li.price?.product?.name || 'Produkt';
+      const descField = li.price?.product?.description || '';
+      const weightMatch = descField.match(/(\d+[,.]?\d*)\s*kg/i);
+      const weightLabel = weightMatch ? weightMatch[0] : '';
+      const itemName = weightLabel ? `${baseName} – ${weightLabel}` : baseName;
+
       orderItems.push({
         line_type: 'item',
         item_no: (li.id || `item-${orderItems.length + 1}`).slice(-40),
-        item_name: name,
+        item_name: itemName,
         quantity: qty,
-        unit_price_excluding_vat: unitExclVat.toFixed(2), // string, preserves decimals
-        vat_percent: VAT_PERCENT,
+        unit_price_excluding_vat: unitExclVat.toFixed(2),
+        vat_percent: VAT_PERCENT_FRAC,
         currency_code: 'DKK',
       });
     }
@@ -185,7 +192,7 @@ export default async function handler(req, res) {
         authorized_amount: orderAmountKr,
         currency_code: 'DKK',
         vat_amount: orderVatAmount,
-        vat_percent: 25,
+        vat_percent: 0.25,
       },
       order_status: 'new',
       reference: shortId,
