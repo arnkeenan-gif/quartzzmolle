@@ -48,7 +48,7 @@ const PRODUCTS = [
       salt: '0,01 g'
     },
     weights: [
-      { label: '3 kg', price: 99, image: 'images/Dalarna-3Kg-type85-96x139mm-outlined_copy.jpg' },
+      { label: '3 kg', price: 10, image: 'images/Dalarna-3Kg-type85-96x139mm-outlined_copy.jpg' },
       { label: '12,5 kg', price: 315, image: 'images/Dalarna-12_5Kg-type85-96x139mm-outlined_copy.jpg' }
     ]
   },
