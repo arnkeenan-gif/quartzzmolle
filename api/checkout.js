@@ -42,7 +42,7 @@ export default async function handler(req, res) {
         {
           shipping_rate_data: {
             type: 'fixed_amount',
-            fixed_amount: { amount: 250, currency: 'dkk' },
+            fixed_amount: { amount: 4900, currency: 'dkk' },
             display_name: 'GLS – Pakkeshop',
             delivery_estimate: {
               minimum: { unit: 'business_day', value: 1 },
