@@ -392,9 +392,29 @@ async function maybeInitPayment() {
   }
 }
 
+async function updatePIMetadata() {
+  if (!state.paymentIntentId) return;
+  try {
+    await fetch('/api/update-payment-intent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        paymentIntentId: state.paymentIntentId,
+        delivery: state.delivery,
+        pakkeshop: state.pakkeshop,
+        customer: state.customer,
+        items: state.items,
+      }),
+    });
+  } catch (err) {
+    console.warn('Metadata update failed:', err);
+  }
+}
+
 async function refreshPaymentIntent() {
   if (!state.clientSecret || !isCustomerComplete(collectCustomer())) return;
   await maybeInitPayment();
+  await updatePIMetadata();
 }
 
 function updatePayButton() {
@@ -427,25 +447,9 @@ async function handlePay() {
   }
   state.customer = customer;
 
-  // Update the PaymentIntent metadata with the latest delivery + pakkeshop choice
-  // before we confirm payment, so the webhook sees accurate data.
-  if (state.paymentIntentId) {
-    try {
-      await fetch('/api/update-payment-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          paymentIntentId: state.paymentIntentId,
-          delivery: state.delivery,
-          pakkeshop: state.pakkeshop,
-          customer,
-          items: state.items,
-        }),
-      });
-    } catch (err) {
-      console.warn('Metadata update failed, continuing:', err);
-    }
-  }
+  // Force metadata update and wait for it to complete before confirming payment.
+  // This ensures the webhook sees the latest delivery + pakkeshop choice.
+  await updatePIMetadata();
 
   try {
     const { error } = await state.stripe.confirmPayment({
