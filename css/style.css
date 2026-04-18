@@ -199,10 +199,9 @@ body {
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  margin-bottom: calc(-1 * env(safe-area-inset-bottom, 0px) - 100px);
   width: 100vw;
+  height: calc(100lvh + env(safe-area-inset-bottom, 0px) + 100px);
+  min-height: calc(100vh + 100px);
   object-fit: cover;
   z-index: 0;
   opacity: 0;
@@ -215,10 +214,9 @@ body {
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  margin-bottom: calc(-1 * env(safe-area-inset-bottom, 0px) - 100px);
   width: 100vw;
+  height: calc(100lvh + env(safe-area-inset-bottom, 0px) + 100px);
+  min-height: calc(100vh + 100px);
   z-index: 1;
   background: rgba(0,0,0,0.55);
   opacity: 0;
