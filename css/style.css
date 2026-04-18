@@ -224,8 +224,8 @@ body {
   pointer-events: none;
 }
 
-.overlay-dark   { background: linear-gradient(135deg, rgba(26,22,17,0.78) 0%, rgba(26,22,17,0.3) 100%); }
-.overlay-medium { background: linear-gradient(225deg, rgba(26,22,17,0.78) 0%, rgba(26,22,17,0.3) 100%); }
+.overlay-dark   { background: linear-gradient(135deg, rgba(26,22,17,0.78) 0%, rgba(26,22,17,0.55) 60%, rgba(26,22,17,0.65) 100%); }
+.overlay-medium { background: linear-gradient(225deg, rgba(26,22,17,0.78) 0%, rgba(26,22,17,0.55) 60%, rgba(26,22,17,0.65) 100%); }
 
 .video-section.is-active .video-bg,
 .video-section.is-active .video-overlay {
