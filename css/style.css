@@ -39,10 +39,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
   font-size: 16px;
   line-height: 1.6;
-  /* Push page content below iOS status bar. This space is black (body bg) and
-     scrolls naturally with the page — so the status bar tints from scrolling
-     content instead of the fixed video staying pinned. */
-  padding-top: env(safe-area-inset-top, 0px);
 }
 
 /* ── NAV ── */
@@ -1243,7 +1239,7 @@ body.past-videos .video-overlay {
 
 /* ── RESPONSIVE ── */
 @media (max-width: 768px) {
-  .nav { position: absolute; } /* stays at top of page, scrolls away with content */
+  .nav { position: fixed; } /* stays pinned so status bar area stays consistent */
   .nav-links, .nav-cta { display: none; }
   .nav-burger { display: flex; }
   .nav-logo img.eco-mark { display: none; }
