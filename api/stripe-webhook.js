@@ -126,18 +126,21 @@ export default async function handler(req, res) {
       parcels.push({ weight: 3000 });
     }
 
-    // Build line items from the Stripe cart. Shipmondo expects unit_price in ØRE (integer cents).
+    // Build line items. Shipmondo's sales_orders API expects unit_price_incl_vat
+    // and a vat_percent per line. All prices are in kroner (not øre).
+    const VAT_PERCENT = 25; // Denmark standard VAT
     const orderItems = [];
     for (const li of lineItems) {
       const qty = li.quantity || 1;
-      const unitPriceOre = qty > 0 ? Math.round((li.amount_total || 0) / qty) : 0;
+      const lineTotalKr = (li.amount_total || 0) / 100;
+      const unitInclVat = qty > 0 ? (lineTotalKr / qty) : 0;
       const name = li.description || li.price?.product?.name || 'Produkt';
       orderItems.push({
-        item_no: li.id || `item-${orderItems.length + 1}`,
+        item_no: (li.id || `item-${orderItems.length + 1}`).slice(-40),
         name,
         quantity: qty,
-        unit_price: unitPriceOre / 100,
-        total_price: (li.amount_total || 0) / 100,
+        unit_price_incl_vat: Number(unitInclVat.toFixed(2)),
+        vat_percent: VAT_PERCENT,
       });
     }
 
