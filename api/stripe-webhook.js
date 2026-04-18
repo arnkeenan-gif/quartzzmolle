@@ -151,8 +151,12 @@ export default async function handler(req, res) {
       mobile: customer.phone || '',
     };
 
+    // Shipmondo's external document field is capped at 50 chars. Stripe session IDs can exceed that,
+    // so take the last 50 chars (keeps the uniquely-random tail, drops the `cs_live_` prefix).
+    const shortId = String(session.id).slice(-50);
+
     const payload = {
-      order_id: session.id,
+      order_id: shortId,
       order_date: new Date().toISOString(),
       currency_code: 'DKK',
       order_amount: (full.amount_total || 0) / 100,
@@ -160,10 +164,10 @@ export default async function handler(req, res) {
       payment_status: 'paid',
       payment_details: {
         payment_method: 'Stripe',
-        transaction_id: full.payment_intent || session.id,
+        transaction_id: (full.payment_intent || session.id || '').toString().slice(-50),
       },
       order_status: 'new',
-      reference: session.id,
+      reference: shortId,
       shipment_template_id: templateId,
       ship_to: shipTo,
       order_lines: orderItems,
