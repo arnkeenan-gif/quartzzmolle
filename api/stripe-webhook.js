@@ -126,21 +126,19 @@ export default async function handler(req, res) {
       parcels.push({ weight: 3000 });
     }
 
-    // Build line items using Shipmondo's actual schema (confirmed from their response):
-    // item_name, unit_price_excluding_vat, vat_percent, currency_code
     const VAT_PERCENT = 25;
     const orderItems = [];
     for (const li of lineItems) {
       const qty = li.quantity || 1;
       const lineTotalKrInclVat = (li.amount_total || 0) / 100;
-      const unitInclVat = qty > 0 ? (lineTotalKrInclVat / qty) : 0;
-      const unitExclVat = unitInclVat / (1 + VAT_PERCENT / 100);
+      const unitInclVat = qty > 0 ? Number((lineTotalKrInclVat / qty).toFixed(2)) : 0;
       const name = li.description || li.price?.product?.name || 'Produkt';
       orderItems.push({
+        line_type: 'item',
         item_no: (li.id || `item-${orderItems.length + 1}`).slice(-40),
         item_name: name,
         quantity: qty,
-        unit_price_excluding_vat: Number(unitExclVat.toFixed(2)),
+        unit_price: unitInclVat,
         vat_percent: VAT_PERCENT,
         currency_code: 'DKK',
       });
