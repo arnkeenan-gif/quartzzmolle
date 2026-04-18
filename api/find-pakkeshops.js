@@ -21,19 +21,23 @@ export default async function handler(req, res) {
 </soap:Envelope>`;
 
   try {
-    const glsRes = await fetch('http://www.gls.dk/webservices_v4/wsShopFinder.asmx', {
+    const glsRes = await fetch('https://www.gls.dk/webservices_v4/wsShopFinder.asmx', {
       method: 'POST',
       headers: {
         'Content-Type': 'text/xml; charset=utf-8',
         'SOAPAction': 'http://www.gls.dk/GetParcelShopsInZipcode',
+        'User-Agent': 'Mozilla/5.0 (compatible; QuartzMolle/1.0)',
       },
       body: soapBody,
     });
 
     const xml = await glsRes.text();
+    console.log('GLS response status:', glsRes.status);
+    console.log('GLS response body (first 800 chars):', xml.slice(0, 800));
+
     if (!glsRes.ok) {
       console.error('GLS SOAP error', glsRes.status, xml.slice(0, 500));
-      return res.status(502).json({ error: 'GLS service error', shops: [] });
+      return res.status(502).json({ error: 'GLS service error', status: glsRes.status, body: xml.slice(0, 500), shops: [] });
     }
 
     // Parse XML manually (avoid adding dependencies). Each shop looks like:
