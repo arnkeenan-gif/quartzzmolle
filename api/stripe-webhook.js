@@ -180,6 +180,7 @@ export default async function handler(req, res) {
 
 function parsePaymentIntent(pi) {
   const meta = pi.metadata || {};
+  console.log('Webhook received PI metadata:', JSON.stringify(meta));
   const shipping = pi.shipping || {};
   // Prefer metadata fields (set by our backend), fall back to pi.shipping
   const address = {
