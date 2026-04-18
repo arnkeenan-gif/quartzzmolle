@@ -79,9 +79,13 @@ function injectCartUI() {
       <span class="cart-count" data-cart-count>0</span>
     `;
     btn.addEventListener('click', openCart);
-    // Insert right before the burger (so it sits left of it)
+    // Insert the cart before the Shop Nu button (desktop) so cart + Shop Nu sit together.
+    // If nav-cta isn't present (or hidden), fall back to before burger.
+    const cta = nav.querySelector('.nav-cta');
     const burger = nav.querySelector('.nav-burger');
-    if (burger) {
+    if (cta) {
+      nav.insertBefore(btn, cta);
+    } else if (burger) {
       nav.insertBefore(btn, burger);
     } else {
       nav.appendChild(btn);
