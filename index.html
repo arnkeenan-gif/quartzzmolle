@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1a1611" />
+  <title>Quartz Mølle – Økologisk Mel fra Stenkværn</title>
+  <meta name="description" content="Quartz Mølle producerer økologisk mel malet på stenkværn i Danmark." />
+  <link rel="icon" href="images/logo-small.png" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <nav class="nav" id="nav">
+    <a href="index.html" class="nav-logo">
+      <img src="images/logopng.png" alt="Quartz Mølle" class="brand-mark" />
+      <img src="images/eu-organic.jpg" alt="EU Økologi" class="eco-mark" />
+      <img src="images/statskontrolleret.png" alt="Statskontrolleret Økologisk" class="eco-mark" />
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Hjem</a>
+      <a href="shop.html">Shop</a>
+      <a href="forhandlere.html">Forhandlere</a>
+      <a href="#" class="nav-btn" data-open-modal="om">Om os</a>
+      <a href="#kontakt">Kontakt</a>
+    </div>
+    <a href="shop.html" class="nav-cta">Shop Nu</a>
+    <button class="nav-burger" id="burger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="index.html">Hjem</a>
+    <a href="shop.html">Shop</a>
+    <a href="forhandlere.html">Forhandlere</a>
+    <button data-open-modal="om">Om os</button>
+    <a href="#kontakt">Kontakt</a>
+    <a href="shop.html" class="mobile-cta">Shop Nu</a>
+  </div>
+
+  <!-- VIDEO 1 - HERO -->
+  <section class="video-section is-active" id="vs1">
+    <video class="video-bg" id="vid1" autoplay muted loop playsinline preload="auto">
+      <source src="https://res.cloudinary.com/dobwmlyg2/video/upload/v1776438806/hero_pnbosf.mov" type="video/mp4" />
+    </video>
+    <div class="video-overlay"></div>
+    <div class="hero-content" id="heroContent">
+      <img src="images/logopng.png" alt="Quartz Mølle" class="hero-logo" />
+      <h1 class="hero-title">Quartz Mølle</h1>
+      <p class="hero-sub">Økologisk mel – malet på stenkværn i Danmark</p>
+      <a href="shop.html" class="btn-primary">Se vores mel</a>
+    </div>
+    <div class="scroll-hint">
+      <span>Scroll</span>
+      <div class="scroll-line"></div>
+    </div>
+  </section>
+
+  <!-- VIDEO 2 - STORY -->
+  <section class="video-section" id="vs2">
+    <video class="video-bg" autoplay muted loop playsinline preload="auto">
+      <source src="https://res.cloudinary.com/dobwmlyg2/video/upload/v1776438985/0417_ou2aab.mov" type="video/mp4" />
+    </video>
+    <div class="video-overlay overlay-dark"></div>
+    <div class="text-block text-left">
+      <span class="eyebrow">Vores historie</span>
+      <h2>Fra mark til mel</h2>
+      <p>Vi dyrker og maler vores korn på stenkværn i hjertet af Danmark. Hver pose mel bærer historien om jord, sol og omtanke.</p>
+      <button class="btn-ghost" data-open-modal="om">Læs mere</button>
+    </div>
+    <div class="scroll-hint">
+      <span>Scroll</span>
+      <div class="scroll-line"></div>
+    </div>
+  </section>
+
+  <!-- VIDEO 3 - PRODUCTS -->
+  <section class="video-section" id="vs3">
+    <video class="video-bg" autoplay muted loop playsinline preload="auto">
+      <source src="https://res.cloudinary.com/dobwmlyg2/video/upload/v1776439151/0417_2_hngw6h.mov" type="video/mp4" />
+    </video>
+    <div class="video-overlay overlay-medium"></div>
+    <div class="text-block text-right">
+      <span class="eyebrow">Vores sortiment</span>
+      <h2>9 varianter af enestående mel</h2>
+      <p class="season-note">Varianterne skifter naturligvis efter sæsonen</p>
+      <p>Fra Dalarna til Purpurhvede – hvert mel har sin egen karakter, smag og bagningsegenskaber.</p>
+      <a href="shop.html" class="btn-primary">Se alle produkter</a>
+    </div>
+  </section>
+
+  <!-- BESTSELLERS -->
+  <section class="highlights" id="om">
+    <div class="highlights-header">
+      <span class="eyebrow eyebrow-dark">Udvalgte produkter</span>
+      <h2 class="dark">Bestsellers</h2>
+    </div>
+    <div class="highlights-grid" id="highlightsGrid"></div>
+    <div class="highlights-cta">
+      <a href="shop.html" class="btn-dark">Se hele sortimentet</a>
+    </div>
+  </section>
+
+  <!-- WHY -->
+  <section class="why">
+    <div class="why-inner">
+      <div class="why-text">
+        <span class="eyebrow">Hvorfor Quartz Mølle?</span>
+        <h2>Mel med mening</h2>
+        <ul class="why-list">
+          <li><strong>Stenkværnet</strong> – Langsom formaling bevarer næringsstoffer og smag</li>
+          <li><strong>Dansk korn</strong> – Dyrket på dansk jord med respekt for naturen</li>
+          <li><strong>Certificeret økologisk</strong> – EU-Øko &amp; Statskontrolleret Økologisk</li>
+          <li><strong>Direkte fra mølle</strong> – Ingen mellemmænd, frisk mel til dig</li>
+        </ul>
+      </div>
+      <div class="why-image">
+        <img src="images/logopng.png" alt="Quartz Mølle" />
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section class="contact" id="kontakt">
+    <div class="contact-inner">
+      <div class="contact-info">
+        <span class="eyebrow eyebrow-dark">Find os</span>
+        <h2>Kontakt</h2>
+        <div class="contact-items">
+          <div class="contact-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span>Suså Landevej 101<br>4160 Herlufmagle, Danmark</span>
+          </div>
+          <div class="contact-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <a href="mailto:hello@quartzmolle.dk">hello@quartzmolle.dk</a>
+          </div>
+          <div class="contact-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.29 6.29l.95-.87a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            <a href="tel:+4531421677">+45 3142 1677</a>
+          </div>
+        </div>
+        <div class="socials">
+          <a href="https://www.facebook.com/quartzmolle" target="_blank" rel="noopener" aria-label="Facebook">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+          </a>
+          <a href="https://www.instagram.com/quartzmolle/" target="_blank" rel="noopener" aria-label="Instagram">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          </a>
+        </div>
+      </div>
+      <div class="contact-map">
+        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2267.5!2d11.871!3d55.339!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x465253!2sHerlufmagle!5e0!3m2!1sda!2sdk" width="100%" height="350" style="border:0;border-radius:12px;" allowfullscreen="" loading="lazy" title="Quartz Mølle placering"></iframe>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <img src="images/logopng.png" alt="Quartz Mølle" class="footer-logo" />
+      <p>© 2025 Quartz Mølle · Suså Landevej 101, 4160 Herlufmagle · <a href="mailto:hello@quartzmolle.dk">hello@quartzmolle.dk</a></p>
+      <div class="footer-links">
+        <a href="shop.html">Shop</a>
+        <a href="forhandlere.html">Forhandlere</a>
+        <a href="#" data-open-modal="om">Om os</a>
+        <a href="#kontakt">Kontakt</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- OM OS MODAL -->
+  <div class="modal-backdrop" id="modal-om" data-modal="om">
+    <div class="modal-content">
+      <button class="modal-close" aria-label="Luk">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <h2>Quartz Mølle – Smag, Stabilitet og Stenmalet Kvalitet</h2>
+      <p>Hos Quartz Mølle forener vi traditionelt håndværk med moderne indsigt i at fremstille noget af Danmarks mest smagfulde og stabile økologiske mel. Vi samarbejder med økologiske landmænd fra Danmark og Sverige og udvælger kun de bedste, mest næringsrige kornsorter, som vi maler nænsomt – og altid med fokus på smag, sundhed og bageevne.</p>
+      <p>Vores mølle er navngivet Quartz Mølle da vores møllesten er rige på kvarts, men også emery og flint – hårde stenarter, som sikrer en præcis, skånsom og stabil formaling. I stedet for at kværn kornet hård under høj temperatur, bevarer vi næringsstofferne ved at male langsomt: kun 115 omdrejninger i minuttet – mod de typiske 330 rpm i mange andre stenkværn.</p>
+      <p>Vi kombinerer vores skånsomme stenformaling med en dobbelt valsemølle fra 1949, som giver os en unik kontrol over struktur og konsistens. Det betyder mel med høj bagekvalitet, stor smag og en stabilitet, som professionelle bagere og passionerede hjemmebagere kan stole på – hver gang. Hos Quartz Mølle tror vi på gennemsigtighed, ærlighed og et kompromisløst fokus på kvalitet. Vi sætter en dyd i at levere det bedste, naturen og håndværket kan tilbyde.</p>
+    </div>
+  </div>
+
+  <script src="js/products.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

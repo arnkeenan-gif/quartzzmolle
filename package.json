@@ -1,0 +1,8 @@
+{
+  "name": "quartzmolle",
+  "version": "1.0.0",
+  "description": "Quartz Mølle webshop",
+  "dependencies": {
+    "stripe": "^14.0.0"
+  }
+}
