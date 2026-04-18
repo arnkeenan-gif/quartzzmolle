@@ -139,6 +139,19 @@ export default async function handler(req, res) {
       action: 'none',
     };
 
+    // If customer picked a specific pakkeshop, pass it as the service point
+    if (orderData.pakkeshop && orderData.pakkeshop.id) {
+      payload.service_point = {
+        id: orderData.pakkeshop.id,
+        name: orderData.pakkeshop.name,
+        address1: orderData.pakkeshop.address,
+        zipcode: orderData.pakkeshop.zipcode,
+        city: orderData.pakkeshop.city,
+        country_code: 'DK',
+        shipping_agent: 'gls',
+      };
+    }
+
     const auth = Buffer.from(`${process.env.SHIPMONDO_USER}:${process.env.SHIPMONDO_KEY}`).toString('base64');
     console.log('Shipmondo payload:', JSON.stringify(payload));
     const smRes = await fetch('https://app.shipmondo.com/api/public/v3/sales_orders', {
@@ -186,6 +199,17 @@ function parsePaymentIntent(pi) {
     }
   }
 
+  let pakkeshop = null;
+  if (meta.pakkeshop_id) {
+    pakkeshop = {
+      id: meta.pakkeshop_id,
+      name: meta.pakkeshop_name || '',
+      address: meta.pakkeshop_address || '',
+      zipcode: meta.pakkeshop_zipcode || '',
+      city: meta.pakkeshop_city || '',
+    };
+  }
+
   return {
     externalId: pi.id,
     transactionId: pi.id,
@@ -197,6 +221,7 @@ function parsePaymentIntent(pi) {
     deliveryKey: meta.delivery_method || 'gls_privat',
     shippingDisplayName: '',
     items,
+    pakkeshop,
   };
 }
 
