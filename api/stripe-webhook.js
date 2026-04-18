@@ -161,12 +161,17 @@ export default async function handler(req, res) {
     // so take the last 50 chars (keeps the uniquely-random tail, drops the `cs_live_` prefix).
     const shortId = String(session.id).slice(-50);
 
+    const orderAmountKr = (full.amount_total || 0) / 100;
+
     const payload = {
       order_id: shortId,
       order_date: new Date().toISOString(),
       currency_code: 'DKK',
-      order_amount: (full.amount_total || 0) / 100,
-      paid_amount: (full.amount_total || 0) / 100,
+      order_amount: orderAmountKr,
+      order_amount_incl_vat: orderAmountKr,
+      order_amount_excl_vat: Number((orderAmountKr / 1.25).toFixed(2)),
+      order_vat_amount: Number((orderAmountKr - orderAmountKr / 1.25).toFixed(2)),
+      paid_amount: orderAmountKr,
       payment_status: 'paid',
       payment_details: {
         payment_method: 'Stripe',
@@ -192,6 +197,7 @@ export default async function handler(req, res) {
     });
 
     const smText = await smRes.text();
+    console.log('Shipmondo response', smRes.status, smText);
     if (!smRes.ok) {
       console.error('Shipmondo API error', smRes.status, smText);
       // Return 200 so Stripe doesn't keep retrying — we log the failure for manual handling
