@@ -138,8 +138,9 @@ export default async function handler(req, res) {
       });
     }
 
-    // Sales order payload — Shipmondo wraps everything under `sales_order` and uses `ship_to`.
+    // Sales order payload — Shipmondo wants order_id at the top level + sales_order wrapper for the rest.
     const payload = {
+      order_id: session.id,
       sales_order: {
         order_id: session.id,
         order_date: new Date().toISOString(),
