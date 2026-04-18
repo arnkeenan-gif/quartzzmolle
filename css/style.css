@@ -69,7 +69,14 @@ body {
   opacity: 0.95;
 }
 
-.nav-links { display: flex; gap: 2rem; }
+.nav-links {
+  display: flex;
+  gap: 2rem;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
 
 .nav-links a,
 .nav-links a:visited {
