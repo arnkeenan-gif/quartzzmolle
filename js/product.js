@@ -2,7 +2,7 @@
 // QUARTZ MØLLE — PRODUCT PAGE
 // ============================================================
 
-const STRIPE_PK = 'pk_test_51L5wKqCCp2Usx7QSeEBymppS7OoolulQrvsStTFa2m9L12l6hIEpv8WILs29o38NfGIjCqerkTSzRM8GQm8YxhYP00st9IQ8k5';
+const STRIPE_PK = 'pk_live_51L5wKqCCp2Usx7QSCdRAk3JMWtoKxZcrRi0V99qHiPsRQHQC9h5q4ZZmzjSdDqliSIUVEvKD60sB54tuaKw9VZfr00HLho5fWW';
 let stripe;
 try { stripe = Stripe(STRIPE_PK); } catch(e) { console.warn('Stripe not loaded'); }
 
