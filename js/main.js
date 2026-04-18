@@ -144,20 +144,10 @@ function renderHighlights() {
   }).join('');
 }
 
-// ── TOAST NOTIFICATION ──
+// ── TOAST NOTIFICATION (disabled — silent) ──
 function showToast(msg, type = 'success') {
-  let toast = document.querySelector('.toast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.className = 'toast';
-    document.body.appendChild(toast);
-  }
-  toast.textContent = msg;
-  toast.className = `toast ${type}`;
-  requestAnimationFrame(() => {
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 3500);
-  });
+  // Toasts are disabled per request; errors go to console only.
+  if (type === 'error') console.warn('[toast suppressed]:', msg);
 }
 
 // ── ACCORDION TOGGLE ──
