@@ -1,23 +1,15 @@
 // api/stripe-webhook.js — Vercel Serverless Function
 //
-// Listens for Stripe's `checkout.session.completed` event and creates a draft
-// shipment in Shipmondo with the customer's address, items, and chosen carrier.
-//
-// Required Vercel environment variables:
-//   STRIPE_SECRET_KEY        — sk_live_...
-//   STRIPE_WEBHOOK_SECRET    — whsec_... from your Stripe webhook endpoint
-//   SHIPMONDO_USER           — your Shipmondo API user (e.g. API-123456)
-//   SHIPMONDO_KEY            — your Shipmondo API key
-//   SHIPMENT_TEMPLATES       — JSON: {"gls_pakkeshop":ID,"gls_privat":ID}
+// Handles Stripe events for BOTH:
+//   - checkout.session.completed (legacy Stripe Checkout redirect flow)
+//   - payment_intent.succeeded   (new custom Stripe Elements checkout flow)
 
-// Tell Vercel NOT to parse the body — we need the raw buffer to verify Stripe's signature.
 export const config = {
   api: {
     bodyParser: false,
   },
 };
 
-// Read the raw request body as a Buffer (needed for stripe.webhooks.constructEvent).
 async function readRawBody(req) {
   const chunks = [];
   for await (const chunk of req) {
@@ -26,29 +18,17 @@ async function readRawBody(req) {
   return Buffer.concat(chunks);
 }
 
-// Parse a weight label like "3 kg" or "12,5 kg" into grams.
-function parseWeightGrams(label) {
-  if (!label) return 3000;
-  // Accept comma or dot as decimal separator, strip the "kg"
-  const cleaned = String(label).toLowerCase().replace('kg', '').replace(',', '.').trim();
-  const kg = parseFloat(cleaned);
-  if (Number.isFinite(kg) && kg > 0) return Math.round(kg * 1000);
-  return 3000;
-}
-
-// Pick the right Shipmondo shipment template based on the Stripe shipping display name.
-function pickTemplateId(shippingName, templates) {
-  const name = (shippingName || '').toLowerCase();
-  if (name.includes('pakkeshop')) return templates.gls_pakkeshop;
-  if (name.includes('privat')) return templates.gls_privat;
-  // Fallback
-  return templates.gls_privat || templates.gls_pakkeshop;
-}
-
-// Basic country-name → ISO-2 fallback (Stripe gives ISO-2 already, but Shipmondo expects ISO-2 too)
 function normalizeCountry(c) {
   if (!c) return 'DK';
   return String(c).toUpperCase().slice(0, 2);
+}
+
+function pickTemplateId(deliveryKey, shippingName, templates) {
+  if (deliveryKey && templates[deliveryKey]) return templates[deliveryKey];
+  const name = (shippingName || '').toLowerCase();
+  if (name.includes('pakkeshop')) return templates.gls_pakkeshop;
+  if (name.includes('privat')) return templates.gls_privat;
+  return templates.gls_privat || templates.gls_pakkeshop;
 }
 
 export default async function handler(req, res) {
@@ -62,116 +42,73 @@ export default async function handler(req, res) {
   }
 
   let event;
-  let rawBody;
   try {
     const stripe = (await import('stripe')).default(process.env.STRIPE_SECRET_KEY);
-    rawBody = await readRawBody(req);
+    const rawBody = await readRawBody(req);
     event = stripe.webhooks.constructEvent(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
     console.error('Webhook signature verification failed:', err.message);
     return res.status(400).json({ error: `Webhook Error: ${err.message}` });
   }
 
-  // Only act on completed checkouts
-  if (event.type !== 'checkout.session.completed') {
-    return res.status(200).json({ received: true, skipped: event.type });
-  }
-
-  const session = event.data.object;
-
   try {
-    // Expand session to get line items + shipping details
-    const stripe = (await import('stripe')).default(process.env.STRIPE_SECRET_KEY);
-    const full = await stripe.checkout.sessions.retrieve(session.id, {
-      expand: ['line_items.data.price.product', 'shipping_cost.shipping_rate', 'customer_details'],
-    });
+    let orderData = null;
 
-    const customer = full.customer_details || {};
-    const shippingDetails = full.collected_information?.shipping_details || full.shipping_details || full.shipping || {};
-    const address = shippingDetails.address || customer.address || {};
-    const name = shippingDetails.name || customer.name || 'Kunde';
+    if (event.type === 'payment_intent.succeeded') {
+      orderData = parsePaymentIntent(event.data.object);
+    } else if (event.type === 'checkout.session.completed') {
+      orderData = await parseCheckoutSession(event.data.object);
+    } else {
+      return res.status(200).json({ received: true, skipped: event.type });
+    }
 
-    const shippingRate = full.shipping_cost?.shipping_rate;
-    const shippingDisplayName = shippingRate?.display_name || '';
+    if (!orderData) {
+      return res.status(200).json({ received: true, skipped: 'no order data' });
+    }
 
     let templates = {};
-    try { templates = JSON.parse(process.env.SHIPMENT_TEMPLATES || '{}'); }
-    catch (e) { console.warn('SHIPMENT_TEMPLATES is not valid JSON'); }
-
-    const templateId = pickTemplateId(shippingDisplayName, templates);
+    try { templates = JSON.parse(process.env.SHIPMENT_TEMPLATES || '{}'); } catch {}
+    const templateId = pickTemplateId(orderData.deliveryKey, orderData.shippingDisplayName, templates);
     if (!templateId) {
-      console.error('No template matched for shipping:', shippingDisplayName);
-      return res.status(500).json({ error: 'No shipment template matched' });
+      console.error('No template matched. deliveryKey=', orderData.deliveryKey, 'shippingName=', orderData.shippingDisplayName);
+      return res.status(200).json({ received: true, error: 'No template matched' });
     }
 
-    // Build parcel list from line items. Each Stripe line becomes one colli in Shipmondo,
-    // using the weight parsed from the product description (which contains the size label).
-    const lineItems = full.line_items?.data || [];
-    const parcels = [];
-    for (const li of lineItems) {
-      const description = li.description || li.price?.product?.description || '';
-      // Description is like "Dalarna – Fuldkornshvedemel" (built in checkout.js);
-      // size label went into the Stripe line's product description in checkout, so we also
-      // pull it from there — but checkout.js put weight in description's prefix ("12,5 kg · ...").
-      // Since we can't read product metadata here, fall back to a heuristic.
-      const weightMatch = description.match(/(\d+[,.]?\d*)\s*kg/i);
-      const weightGrams = weightMatch ? parseWeightGrams(weightMatch[1] + ' kg') : 3000;
-      const qty = li.quantity || 1;
-      for (let i = 0; i < qty; i++) {
-        parcels.push({ weight: weightGrams });
-      }
-    }
-    if (parcels.length === 0) {
-      // At least one placeholder parcel so Shipmondo accepts the draft
-      parcels.push({ weight: 3000 });
-    }
-
-    const VAT_PERCENT_FRAC = 0.25; // Shipmondo appears to expect VAT as a fraction (0.25 = 25%)
-    const orderItems = [];
-    for (const li of lineItems) {
-      const qty = li.quantity || 1;
-      const lineTotalKrInclVat = (li.amount_total || 0) / 100;
-      const unitInclVat = qty > 0 ? lineTotalKrInclVat / qty : 0;
-      const unitExclVat = unitInclVat / (1 + VAT_PERCENT_FRAC);
-
-      // Product name = name, size label = first segment of description (we set "12,5 kg · Malet..." in checkout.js)
-      const baseName = li.description || li.price?.product?.name || 'Produkt';
-      const descField = li.price?.product?.description || '';
-      const weightMatch = descField.match(/(\d+[,.]?\d*)\s*kg/i);
-      const weightLabel = weightMatch ? weightMatch[0] : '';
-      const itemName = weightLabel ? `${baseName} – ${weightLabel}` : baseName;
-
-      orderItems.push({
-        line_type: 'item',
-        item_no: (li.id || `item-${orderItems.length + 1}`).slice(-40),
-        item_name: itemName,
-        quantity: qty,
-        unit_price_excluding_vat: unitExclVat.toFixed(2),
-        vat_percent: VAT_PERCENT_FRAC,
-        currency_code: 'DKK',
-      });
-    }
-
-    // Shipmondo expects some fields at the top level (order_id, ship_to) and the rest inside sales_order.
-    const shipTo = {
-      name,
-      attention: name,
-      address1: address.line1 || '',
-      address2: address.line2 || '',
-      zipcode: address.postal_code || '',
-      city: address.city || '',
-      country_code: normalizeCountry(address.country),
-      email: customer.email || '',
-      mobile: customer.phone || '',
-    };
-
-    // Shipmondo's external document field is capped at 50 chars. Stripe session IDs can exceed that,
-    // so take the last 50 chars (keeps the uniquely-random tail, drops the `cs_live_` prefix).
-    const shortId = String(session.id).slice(-50);
-
-    const orderAmountKr = (full.amount_total || 0) / 100;
+    const VAT_FRAC = 0.25;
+    const shortId = String(orderData.externalId).slice(-50);
+    const orderAmountKr = orderData.amountKr;
     const orderAmountExclVat = Number((orderAmountKr / 1.25).toFixed(2));
     const orderVatAmount = Number((orderAmountKr - orderAmountExclVat).toFixed(2));
+
+    const orderLines = orderData.items.map((it, idx) => {
+      const qty = it.qty || 1;
+      const unitInclVat = it.price;
+      const unitExclVat = unitInclVat / (1 + VAT_FRAC);
+      const parts = [it.productName];
+      if (it.productType) parts.push(it.productType);
+      if (it.weightLabel) parts.push(it.weightLabel);
+      return {
+        line_type: 'item',
+        item_no: `item-${idx + 1}`,
+        item_name: parts.join(' – '),
+        quantity: qty,
+        unit_price_excluding_vat: unitExclVat.toFixed(2),
+        vat_percent: VAT_FRAC,
+        currency_code: 'DKK',
+      };
+    });
+
+    const shipTo = {
+      name: orderData.customerName,
+      attention: orderData.customerName,
+      address1: orderData.address.line1 || '',
+      address2: orderData.address.line2 || '',
+      zipcode: orderData.address.postal_code || '',
+      city: orderData.address.city || '',
+      country_code: normalizeCountry(orderData.address.country),
+      email: orderData.customerEmail,
+      mobile: orderData.customerPhone,
+    };
 
     const payload = {
       order_id: shortId,
@@ -185,20 +122,20 @@ export default async function handler(req, res) {
       payment_status: 'paid',
       payment_details: {
         payment_method: 'Stripe',
-        transaction_id: (full.payment_intent || session.id || '').toString().slice(-50),
+        transaction_id: String(orderData.transactionId).slice(-50),
         amount_including_vat: orderAmountKr,
         amount_excluding_vat: orderAmountExclVat,
         captured_amount: orderAmountKr,
         authorized_amount: orderAmountKr,
         currency_code: 'DKK',
         vat_amount: orderVatAmount,
-        vat_percent: 0.25,
+        vat_percent: VAT_FRAC,
       },
       order_status: 'new',
       reference: shortId,
       shipment_template_id: templateId,
       ship_to: shipTo,
-      order_lines: orderItems,
+      order_lines: orderLines,
       action: 'none',
     };
 
@@ -217,15 +154,87 @@ export default async function handler(req, res) {
     console.log('Shipmondo response', smRes.status, smText);
     if (!smRes.ok) {
       console.error('Shipmondo API error', smRes.status, smText);
-      // Return 200 so Stripe doesn't keep retrying — we log the failure for manual handling
       return res.status(200).json({ received: true, shipmondo_error: smText });
     }
 
-    console.log('Shipmondo draft created for session', session.id);
+    console.log('Shipmondo draft created for', orderData.externalId);
     return res.status(200).json({ received: true });
   } catch (err) {
     console.error('Webhook processing error:', err);
-    // Return 200 anyway to avoid Stripe retry storms; the error is in Vercel logs
     return res.status(200).json({ received: true, error: err.message });
   }
+}
+
+function parsePaymentIntent(pi) {
+  const meta = pi.metadata || {};
+  const shipping = pi.shipping || {};
+  const address = shipping.address || {};
+
+  const items = [];
+  if (meta.items_summary) {
+    for (const chunk of meta.items_summary.split(';')) {
+      const [productName, weightLabel, qty, price] = chunk.split('|');
+      if (productName && qty && price) {
+        items.push({
+          productName,
+          productType: '',
+          weightLabel: weightLabel || '',
+          qty: parseInt(qty, 10) || 1,
+          price: parseFloat(price) || 0,
+        });
+      }
+    }
+  }
+
+  return {
+    externalId: pi.id,
+    transactionId: pi.id,
+    amountKr: (pi.amount_received || pi.amount || 0) / 100,
+    customerName: meta.customer_name || shipping.name || 'Kunde',
+    customerEmail: meta.customer_email || pi.receipt_email || '',
+    customerPhone: meta.customer_phone || shipping.phone || '',
+    address,
+    deliveryKey: meta.delivery_method || 'gls_privat',
+    shippingDisplayName: '',
+    items,
+  };
+}
+
+async function parseCheckoutSession(session) {
+  const stripe = (await import('stripe')).default(process.env.STRIPE_SECRET_KEY);
+  const full = await stripe.checkout.sessions.retrieve(session.id, {
+    expand: ['line_items.data.price.product', 'shipping_cost.shipping_rate', 'customer_details'],
+  });
+  const customer = full.customer_details || {};
+  const shippingDetails = full.collected_information?.shipping_details || full.shipping_details || full.shipping || {};
+  const address = shippingDetails.address || customer.address || {};
+  const name = shippingDetails.name || customer.name || 'Kunde';
+  const shippingRate = full.shipping_cost?.shipping_rate;
+  const shippingDisplayName = shippingRate?.display_name || '';
+
+  const lineItems = full.line_items?.data || [];
+  const items = lineItems.map(li => {
+    const descField = li.price?.product?.description || '';
+    const weightMatch = descField.match(/(\d+[,.]?\d*)\s*kg/i);
+    return {
+      productName: li.description || li.price?.product?.name || 'Produkt',
+      productType: '',
+      weightLabel: weightMatch ? weightMatch[0] : '',
+      qty: li.quantity || 1,
+      price: ((li.amount_total || 0) / (li.quantity || 1)) / 100,
+    };
+  });
+
+  return {
+    externalId: full.id,
+    transactionId: full.payment_intent || full.id,
+    amountKr: (full.amount_total || 0) / 100,
+    customerName: name,
+    customerEmail: customer.email || '',
+    customerPhone: customer.phone || '',
+    address,
+    deliveryKey: null,
+    shippingDisplayName,
+    items,
+  };
 }
