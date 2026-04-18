@@ -20,14 +20,14 @@
   --nav-h: 72px;
 }
 
-/* html brand blue only for initial paint flash before body covers it */
+/* html brand blue for initial loading flash */
 html { background: var(--brand-blue); scroll-behavior: smooth; }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  background: var(--dark);
+  background: #000000;
   color: var(--text);
   overflow-x: hidden;
   overscroll-behavior: none;
@@ -198,10 +198,11 @@ body {
 
 .video-bg {
   position: fixed;
-  top: 0; left: 0;
+  top: 0; left: 0; right: 0;
+  bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
   width: 100vw;
-  height: 120lvh;
-  min-height: 900px;
+  height: auto;
+  min-height: 100lvh;
   object-fit: cover;
   z-index: 0;
   opacity: 0;
@@ -212,10 +213,11 @@ body {
 
 .video-overlay {
   position: fixed;
-  top: 0; left: 0;
+  top: 0; left: 0; right: 0;
+  bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
   width: 100vw;
-  height: 120lvh;
-  min-height: 900px;
+  height: auto;
+  min-height: 100lvh;
   z-index: 1;
   background: rgba(0,0,0,0.55);
   opacity: 0;
