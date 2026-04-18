@@ -7,7 +7,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { items, delivery, customer, amount } = req.body || {};
+  const { items, delivery, pakkeshop, customer, amount } = req.body || {};
 
   if (!Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ error: 'Cart is empty' });
@@ -27,6 +27,21 @@ export default async function handler(req, res) {
       `${it.productName}|${it.weightLabel}|${it.qty}|${it.price}`
     ).join(';').slice(0, 490);
 
+    const metadata = {
+      delivery_method: delivery || 'gls_privat',
+      customer_email: customer.email,
+      customer_name: `${customer.firstName} ${customer.lastName}`.trim(),
+      customer_phone: customer.phone,
+      items_summary: itemsSummary,
+    };
+    if (pakkeshop && pakkeshop.id) {
+      metadata.pakkeshop_id = String(pakkeshop.id).slice(0, 50);
+      metadata.pakkeshop_name = String(pakkeshop.name || '').slice(0, 100);
+      metadata.pakkeshop_address = String(pakkeshop.address || '').slice(0, 100);
+      metadata.pakkeshop_zipcode = String(pakkeshop.zipcode || '').slice(0, 20);
+      metadata.pakkeshop_city = String(pakkeshop.city || '').slice(0, 50);
+    }
+
     const intent = await stripe.paymentIntents.create({
       amount, // in øre
       currency: 'dkk',
@@ -42,13 +57,7 @@ export default async function handler(req, res) {
           country: customer.country || 'DK',
         },
       },
-      metadata: {
-        delivery_method: delivery || 'gls_privat',
-        customer_email: customer.email,
-        customer_name: `${customer.firstName} ${customer.lastName}`.trim(),
-        customer_phone: customer.phone,
-        items_summary: itemsSummary,
-      },
+      metadata,
     });
 
     return res.status(200).json({ clientSecret: intent.client_secret });
