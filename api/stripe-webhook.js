@@ -138,31 +138,31 @@ export default async function handler(req, res) {
       });
     }
 
-    // Sales order payload — Shipmondo creates a draft order that you review + book in the UI.
+    // Sales order payload — Shipmondo wraps everything under `sales_order` and uses `ship_to`.
     const payload = {
-      order_id: session.id,
-      order_date: new Date().toISOString(),
-      currency_code: 'DKK',
-      order_amount: (full.amount_total || 0) / 100,
-      paid_amount: (full.amount_total || 0) / 100,
-      payment_status: 'paid',
-      order_status: 'new',
-      reference: session.id,
-      receiver: {
-        name,
-        attention: name,
-        address1: address.line1 || '',
-        address2: address.line2 || '',
-        zipcode: address.postal_code || '',
-        city: address.city || '',
-        country_code: normalizeCountry(address.country),
-        email: customer.email || '',
-        mobile: customer.phone || '',
-      },
-      order_lines: orderItems,
-      shipment_template_id: templateId,
-      desired_delivery_location: {
-        delivery_type: 'unspecified',
+      sales_order: {
+        order_id: session.id,
+        order_date: new Date().toISOString(),
+        currency_code: 'DKK',
+        order_amount: (full.amount_total || 0) / 100,
+        paid_amount: (full.amount_total || 0) / 100,
+        payment_status: 'paid',
+        order_status: 'new',
+        reference: session.id,
+        shipment_template_id: templateId,
+        ship_to: {
+          name,
+          attention: name,
+          address1: address.line1 || '',
+          address2: address.line2 || '',
+          zipcode: address.postal_code || '',
+          city: address.city || '',
+          country_code: normalizeCountry(address.country),
+          email: customer.email || '',
+          mobile: customer.phone || '',
+        },
+        order_lines: orderItems,
+        action: 'none',
       },
     };
 
