@@ -41,12 +41,11 @@ body {
   line-height: 1.6;
 }
 
-/* Fixed solid black bar at the very top of the screen covering only the iOS
-   safe-area inset. Gives the iOS status bar a constant backdrop so it doesn't
-   change as the video/tint behind it changes — stays a stable solid black. */
+/* Solid black strip at the top of the PAGE covering the iOS safe-area inset.
+   Absolute (not fixed) so it scrolls away with content — doesn't follow the screen. */
 body::before {
   content: "";
-  position: fixed;
+  position: absolute;
   top: 0; left: 0; right: 0;
   height: env(safe-area-inset-top, 0px);
   background: #000000;
