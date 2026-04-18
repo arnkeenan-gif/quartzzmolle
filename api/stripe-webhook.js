@@ -138,9 +138,23 @@ export default async function handler(req, res) {
       });
     }
 
-    // Sales order payload — Shipmondo wants order_id at the top level + sales_order wrapper for the rest.
+    // Shipmondo expects some fields at the top level (order_id, ship_to) and the rest inside sales_order.
+    const shipTo = {
+      name,
+      attention: name,
+      address1: address.line1 || '',
+      address2: address.line2 || '',
+      zipcode: address.postal_code || '',
+      city: address.city || '',
+      country_code: normalizeCountry(address.country),
+      email: customer.email || '',
+      mobile: customer.phone || '',
+    };
+
     const payload = {
       order_id: session.id,
+      ship_to: shipTo,
+      action: 'none',
       sales_order: {
         order_id: session.id,
         order_date: new Date().toISOString(),
@@ -151,19 +165,8 @@ export default async function handler(req, res) {
         order_status: 'new',
         reference: session.id,
         shipment_template_id: templateId,
-        ship_to: {
-          name,
-          attention: name,
-          address1: address.line1 || '',
-          address2: address.line2 || '',
-          zipcode: address.postal_code || '',
-          city: address.city || '',
-          country_code: normalizeCountry(address.country),
-          email: customer.email || '',
-          mobile: customer.phone || '',
-        },
+        ship_to: shipTo,
         order_lines: orderItems,
-        action: 'none',
       },
     };
 
