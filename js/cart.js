@@ -70,7 +70,7 @@ function injectCartUI() {
     if (nav.querySelector('.cart-btn')) return; // don't inject twice
     const btn = document.createElement('button');
     btn.className = 'cart-btn';
-    btn.setAttribute('aria-label', 'Cart');
+    btn.setAttribute('aria-label', 'Kurv');
     btn.innerHTML = `
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
@@ -102,18 +102,18 @@ function injectCartUI() {
       <div class="cart-backdrop" data-cart-close></div>
       <aside class="cart-panel" role="dialog" aria-label="Cart">
         <header class="cart-head">
-          <h2>Your cart</h2>
-          <button class="cart-close" data-cart-close aria-label="Close">
+          <h2>Din kurv</h2>
+          <button class="cart-close" data-cart-close aria-label="Luk">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </header>
         <div class="cart-items" id="cart-items"></div>
         <footer class="cart-foot">
           <div class="cart-total-row">
-            <span>Total</span>
+            <span>I alt</span>
             <span id="cart-total">0,00 kr.</span>
           </div>
-          <button class="btn-buy" id="cart-checkout-btn">Checkout</button>
+          <button class="btn-buy" id="cart-checkout-btn">Til kassen</button>
         </footer>
       </aside>
     `;
@@ -140,7 +140,7 @@ function updateCartUI() {
   const list = document.getElementById('cart-items');
   if (list) {
     if (items.length === 0) {
-      list.innerHTML = `<p class="cart-empty">Your cart is empty.</p>`;
+      list.innerHTML = `<p class="cart-empty">Din kurv er tom.</p>`;
     } else {
       list.innerHTML = items.map(it => `
         <div class="cart-item" data-pid="${it.productId}" data-wl="${it.weightLabel}">
@@ -199,7 +199,7 @@ async function checkoutCart() {
   if (items.length === 0) return;
   const btn = document.getElementById('cart-checkout-btn');
   btn.disabled = true;
-  btn.textContent = 'Preparing checkout…';
+  btn.textContent = 'Forbereder…';
   try {
     const res = await fetch('/api/checkout', {
       method: 'POST',
@@ -213,12 +213,12 @@ async function checkoutCart() {
       // silent failure — no toast
       console.error('Checkout failed:', data.error);
       btn.disabled = false;
-      btn.textContent = 'Checkout';
+      btn.textContent = 'Til kassen';
     }
   } catch (err) {
     console.error(err);
     btn.disabled = false;
-    btn.textContent = 'Checkout';
+    btn.textContent = 'Til kassen';
   }
 }
 
