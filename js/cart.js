@@ -206,37 +206,8 @@ function closeCart() {
 async function checkoutCart() {
   const items = readCart();
   if (items.length === 0) return;
-  const btn = document.getElementById('cart-checkout-btn');
-  const errEl = document.getElementById('cart-error');
-  if (errEl) errEl.textContent = '';
-  btn.disabled = true;
-  btn.textContent = 'Forbereder…';
-  try {
-    const res = await fetch('/api/checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items })
-    });
-    let data = {};
-    try { data = await res.json(); } catch { /* non-JSON response */ }
-
-    if (res.ok && data.url) {
-      window.location.href = data.url;
-      return;
-    }
-
-    // Show a helpful inline error
-    const msg = data.error || `Kunne ikke åbne betaling (status ${res.status}). Prøv igen.`;
-    console.error('Checkout failed:', res.status, data);
-    if (errEl) errEl.textContent = msg;
-    btn.disabled = false;
-    btn.textContent = 'Til kassen';
-  } catch (err) {
-    console.error(err);
-    if (errEl) errEl.textContent = 'Netværksfejl — tjek forbindelse og prøv igen.';
-    btn.disabled = false;
-    btn.textContent = 'Til kassen';
-  }
+  // Navigate to our custom checkout page. Items stay in localStorage.
+  window.location.href = '/checkout.html';
 }
 
 // Expose globals for product.js
