@@ -1239,7 +1239,14 @@ body.past-videos .video-overlay {
 
 /* ── RESPONSIVE ── */
 @media (max-width: 768px) {
-  .nav { position: fixed; } /* stays pinned so status bar area stays consistent */
+  .nav {
+    position: fixed;
+    background: #000000;
+    /* Extend background up past the iOS status bar so status bar always sits
+       on solid black instead of the scrolling video behind it. */
+    padding-top: env(safe-area-inset-top, 0px);
+    height: calc(var(--nav-h) + env(safe-area-inset-top, 0px));
+  }
   .nav-links, .nav-cta { display: none; }
   .nav-burger { display: flex; }
   .nav-logo img.eco-mark { display: none; }
