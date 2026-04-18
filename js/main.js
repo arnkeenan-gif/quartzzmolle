@@ -75,6 +75,7 @@ function initVideoFade() {
     const viewportCenter = window.innerHeight / 2;
     let closest = null;
     let minDist = Infinity;
+    let anyVideoVisible = false;
 
     sections.forEach(section => {
       const rect = section.getBoundingClientRect();
@@ -84,6 +85,10 @@ function initVideoFade() {
         minDist = dist;
         closest = section;
       }
+      // Check if any part of this section is in the viewport
+      if (rect.bottom > 0 && rect.top < window.innerHeight) {
+        anyVideoVisible = true;
+      }
     });
 
     if (closest && closest !== activeSection) {
@@ -91,6 +96,9 @@ function initVideoFade() {
       closest.classList.add('is-active');
       activeSection = closest;
     }
+
+    // Toggle body class so CSS can hide the fixed videos when user is past the video sections
+    document.body.classList.toggle('past-videos', !anyVideoVisible);
   };
 
   let ticking = false;
