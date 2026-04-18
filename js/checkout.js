@@ -109,9 +109,9 @@ function renderCheckout() {
           <h2>Levering</h2>
           <div class="delivery-options" id="delivery-options"></div>
           <div class="pakkeshop-picker" id="pakkeshop-picker">
-            <p>Vælg en pakkeshop i nærheden af din adresse. Vi sender pakken dertil.</p>
-            <div id="pakkeshop-widget-container">
-              <p style="color:#999;font-size:0.85rem;">Pakkeshop-vælger bliver tilgængelig snart. Vi sender pakken til den nærmeste pakkeshop baseret på din adresse.</p>
+            <p>Vælg en pakkeshop i nærheden af din adresse:</p>
+            <div id="pakkeshop-list" class="pakkeshop-list">
+              <p class="pakkeshop-hint">Udfyld postnummer først, så finder vi de nærmeste pakkeshops.</p>
             </div>
           </div>
         </div>
@@ -178,9 +178,64 @@ function updatePakkeshopPicker() {
   if (!picker) return;
   if (state.delivery === 'gls_pakkeshop') {
     picker.classList.add('active');
+    // Load shops if zip is filled
+    const zip = document.getElementById('f-zip')?.value.trim();
+    if (zip && zip.length >= 4) {
+      loadPakkeshops(zip);
+    }
   } else {
     picker.classList.remove('active');
+    state.pakkeshop = null;
   }
+}
+
+async function loadPakkeshops(zipcode) {
+  const listEl = document.getElementById('pakkeshop-list');
+  if (!listEl) return;
+  listEl.innerHTML = '<p class="pakkeshop-hint">Henter pakkeshops...</p>';
+  try {
+    const res = await fetch(`/api/find-pakkeshops?zipcode=${encodeURIComponent(zipcode)}`);
+    const data = await res.json();
+    if (!res.ok || !Array.isArray(data.shops) || data.shops.length === 0) {
+      listEl.innerHTML = '<p class="pakkeshop-hint">Ingen pakkeshops fundet. Pakken sendes til nærmeste pakkeshop.</p>';
+      return;
+    }
+    renderPakkeshopList(data.shops);
+  } catch (err) {
+    console.error('Pakkeshop load error:', err);
+    listEl.innerHTML = '<p class="pakkeshop-hint">Kunne ikke hente pakkeshops. Pakken sendes til nærmeste pakkeshop.</p>';
+  }
+}
+
+function renderPakkeshopList(shops) {
+  const listEl = document.getElementById('pakkeshop-list');
+  // Show first 8 shops
+  const limited = shops.slice(0, 8);
+  listEl.innerHTML = limited.map(s => `
+    <div class="pakkeshop-item ${state.pakkeshop?.id === s.id ? 'selected' : ''}" data-id="${s.id}">
+      <div class="pakkeshop-radio"></div>
+      <div class="pakkeshop-info">
+        <div class="pakkeshop-name">${escapeHtml(s.name)}</div>
+        <div class="pakkeshop-addr">${escapeHtml(s.address)}, ${escapeHtml(s.zipcode)} ${escapeHtml(s.city)}</div>
+      </div>
+    </div>
+  `).join('');
+  // Store shops for later lookup
+  state._shopCache = {};
+  limited.forEach(s => { state._shopCache[s.id] = s; });
+
+  listEl.querySelectorAll('.pakkeshop-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const id = item.dataset.id;
+      state.pakkeshop = state._shopCache[id] || null;
+      renderPakkeshopList(limited);
+      refreshPaymentIntent();
+    });
+  });
+}
+
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
 // ─── Order summary ───
@@ -222,6 +277,15 @@ function wireFormListeners() {
     const el = document.getElementById(id);
     if (el) el.addEventListener('blur', maybeInitPayment);
   });
+  // Reload pakkeshops when zip changes
+  const zipEl = document.getElementById('f-zip');
+  if (zipEl) {
+    zipEl.addEventListener('blur', () => {
+      if (state.delivery === 'gls_pakkeshop') {
+        loadPakkeshops(zipEl.value.trim());
+      }
+    });
+  }
   document.getElementById('pay-btn').addEventListener('click', handlePay);
 }
 
@@ -260,6 +324,7 @@ async function maybeInitPayment() {
       body: JSON.stringify({
         items: state.items,
         delivery: state.delivery,
+        pakkeshop: state.pakkeshop,
         customer,
         amount: calculateTotalOre(),
       }),
@@ -322,12 +387,62 @@ async function handlePay() {
   btn.disabled = true;
   btn.textContent = 'Behandler…';
 
+  // Re-collect customer in case they edited fields after PI was created
+  const customer = collectCustomer();
+  if (!isCustomerComplete(customer)) {
+    errEl.textContent = 'Udfyld venligst alle felter først.';
+    btn.disabled = false;
+    updatePayButton();
+    return;
+  }
+  if (state.delivery === 'gls_pakkeshop' && !state.pakkeshop) {
+    errEl.textContent = 'Vælg venligst en pakkeshop.';
+    btn.disabled = false;
+    updatePayButton();
+    return;
+  }
+  state.customer = customer;
+
+  // Tell Stripe to refresh the PaymentIntent with latest address before confirming.
+  // We re-call our backend so the PI has the up-to-date shipping info attached server-side.
+  try {
+    const res = await fetch('/api/create-payment-intent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items: state.items,
+        delivery: state.delivery,
+        pakkeshop: state.pakkeshop,
+        customer,
+        amount: calculateTotalOre(),
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Kunne ikke opdatere betaling.');
+  } catch (err) {
+    console.error(err);
+    errEl.textContent = 'Fejl ved klargøring. Prøv igen.';
+    btn.disabled = false;
+    updatePayButton();
+    return;
+  }
+
   try {
     const { error } = await state.stripe.confirmPayment({
       elements: state.elements,
       confirmParams: {
         return_url: `${window.location.origin}/success.html`,
         receipt_email: state.customer.email,
+        shipping: {
+          name: `${state.customer.firstName} ${state.customer.lastName}`.trim(),
+          phone: state.customer.phone,
+          address: {
+            line1: state.customer.address,
+            postal_code: state.customer.zip,
+            city: state.customer.city,
+            country: state.customer.country || 'DK',
+          },
+        },
       },
     });
     if (error) {
