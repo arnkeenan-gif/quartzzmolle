@@ -20,8 +20,7 @@
   --nav-h: 72px;
 }
 
-/* html brand blue for initial loading flash */
-html { background: var(--brand-blue); scroll-behavior: smooth; }
+html { background: #000000; scroll-behavior: smooth; }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -198,10 +197,10 @@ body {
 
 .video-bg {
   position: fixed;
-  top: 0; left: 0;
+  top: -200px; left: 0;
   width: 100vw;
-  height: calc(100lvh + 200px);
-  min-height: calc(100vh + 200px);
+  height: calc(100lvh + 400px);
+  min-height: calc(100vh + 400px);
   object-fit: cover;
   z-index: 0;
   opacity: 0;
@@ -212,10 +211,10 @@ body {
 
 .video-overlay {
   position: fixed;
-  top: 0; left: 0;
+  top: -200px; left: 0;
   width: 100vw;
-  height: calc(100lvh + 200px);
-  min-height: calc(100vh + 200px);
+  height: calc(100lvh + 400px);
+  min-height: calc(100vh + 400px);
   z-index: 1;
   background: rgba(0,0,0,0.55);
   opacity: 0;
