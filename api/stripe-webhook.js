@@ -153,22 +153,21 @@ export default async function handler(req, res) {
 
     const payload = {
       order_id: session.id,
+      order_date: new Date().toISOString(),
+      currency_code: 'DKK',
+      order_amount: (full.amount_total || 0) / 100,
+      paid_amount: (full.amount_total || 0) / 100,
+      payment_status: 'paid',
+      payment_details: {
+        payment_method: 'Stripe',
+        transaction_id: full.payment_intent || session.id,
+      },
+      order_status: 'new',
+      reference: session.id,
+      shipment_template_id: templateId,
       ship_to: shipTo,
       order_lines: orderItems,
       action: 'none',
-      sales_order: {
-        order_id: session.id,
-        order_date: new Date().toISOString(),
-        currency_code: 'DKK',
-        order_amount: (full.amount_total || 0) / 100,
-        paid_amount: (full.amount_total || 0) / 100,
-        payment_status: 'paid',
-        order_status: 'new',
-        reference: session.id,
-        shipment_template_id: templateId,
-        ship_to: shipTo,
-        order_lines: orderItems,
-      },
     };
 
     const auth = Buffer.from(`${process.env.SHIPMONDO_USER}:${process.env.SHIPMONDO_KEY}`).toString('base64');
