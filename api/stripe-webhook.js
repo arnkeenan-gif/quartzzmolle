@@ -126,21 +126,23 @@ export default async function handler(req, res) {
       parcels.push({ weight: 3000 });
     }
 
-    // Build line items. Shipmondo's sales_orders API expects unit_price_incl_vat
-    // and a vat_percent per line. All prices are in kroner (not øre).
-    const VAT_PERCENT = 25; // Denmark standard VAT
+    // Build line items using Shipmondo's actual schema (confirmed from their response):
+    // item_name, unit_price_excluding_vat, vat_percent, currency_code
+    const VAT_PERCENT = 25;
     const orderItems = [];
     for (const li of lineItems) {
       const qty = li.quantity || 1;
-      const lineTotalKr = (li.amount_total || 0) / 100;
-      const unitInclVat = qty > 0 ? (lineTotalKr / qty) : 0;
+      const lineTotalKrInclVat = (li.amount_total || 0) / 100;
+      const unitInclVat = qty > 0 ? (lineTotalKrInclVat / qty) : 0;
+      const unitExclVat = unitInclVat / (1 + VAT_PERCENT / 100);
       const name = li.description || li.price?.product?.name || 'Produkt';
       orderItems.push({
         item_no: (li.id || `item-${orderItems.length + 1}`).slice(-40),
-        name,
+        item_name: name,
         quantity: qty,
-        unit_price_incl_vat: Number(unitInclVat.toFixed(2)),
+        unit_price_excluding_vat: Number(unitExclVat.toFixed(2)),
         vat_percent: VAT_PERCENT,
+        currency_code: 'DKK',
       });
     }
 
@@ -162,6 +164,8 @@ export default async function handler(req, res) {
     const shortId = String(session.id).slice(-50);
 
     const orderAmountKr = (full.amount_total || 0) / 100;
+    const orderAmountExclVat = Number((orderAmountKr / 1.25).toFixed(2));
+    const orderVatAmount = Number((orderAmountKr - orderAmountExclVat).toFixed(2));
 
     const payload = {
       order_id: shortId,
@@ -169,13 +173,20 @@ export default async function handler(req, res) {
       currency_code: 'DKK',
       order_amount: orderAmountKr,
       order_amount_incl_vat: orderAmountKr,
-      order_amount_excl_vat: Number((orderAmountKr / 1.25).toFixed(2)),
-      order_vat_amount: Number((orderAmountKr - orderAmountKr / 1.25).toFixed(2)),
+      order_amount_excl_vat: orderAmountExclVat,
+      order_vat_amount: orderVatAmount,
       paid_amount: orderAmountKr,
       payment_status: 'paid',
       payment_details: {
         payment_method: 'Stripe',
         transaction_id: (full.payment_intent || session.id || '').toString().slice(-50),
+        amount_including_vat: orderAmountKr,
+        amount_excluding_vat: orderAmountExclVat,
+        captured_amount: orderAmountKr,
+        authorized_amount: orderAmountKr,
+        currency_code: 'DKK',
+        vat_amount: orderVatAmount,
+        vat_percent: 25,
       },
       order_status: 'new',
       reference: shortId,
