@@ -1308,16 +1308,8 @@ body.past-videos .video-overlay {
   align-items: center;
   justify-content: center;
   color: #fff;
-  margin-right: 0.5rem;
-}
-
-/* On mobile, the nav-links and nav-cta are hidden, so space-between would
-   leave the cart floating in the middle. Push it to the right next to burger. */
-@media (max-width: 768px) {
-  .cart-btn {
-    margin-left: auto;
-    margin-right: 0.75rem;
-  }
+  margin-left: auto;   /* push cart + anything after it (Shop Nu / burger) to the right as a group */
+  margin-right: 0.75rem;
 }
 
 .cart-btn:hover { opacity: 0.85; }
@@ -1542,6 +1534,27 @@ body.past-videos .video-overlay {
 .cart-foot .btn-buy {
   width: 100%;
 }
+
+.cart-error {
+  color: #c62828;
+  font-size: 0.85rem;
+  text-align: center;
+  margin-bottom: 0.75rem;
+  min-height: 1em;
+  line-height: 1.4;
+}
+
+.cart-secure-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+  color: #777;
+  font-size: 0.78rem;
+}
+
+.cart-secure-note svg { color: #888; }
 
 /* ── Size-selector attention flash (replaces the old toast) ── */
 .weight-selector.needs-attention h3 {
