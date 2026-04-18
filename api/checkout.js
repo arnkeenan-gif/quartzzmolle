@@ -420,30 +420,6 @@ async function handlePay() {
   }
   state.customer = customer;
 
-  // Tell Stripe to refresh the PaymentIntent with latest address before confirming.
-  // We re-call our backend so the PI has the up-to-date shipping info attached server-side.
-  try {
-    const res = await fetch('/api/create-payment-intent', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        items: state.items,
-        delivery: state.delivery,
-        pakkeshop: state.pakkeshop,
-        customer,
-        amount: calculateTotalOre(),
-      }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Kunne ikke opdatere betaling.');
-  } catch (err) {
-    console.error(err);
-    errEl.textContent = 'Fejl ved klargøring. Prøv igen.';
-    btn.disabled = false;
-    updatePayButton();
-    return;
-  }
-
   try {
     const { error } = await state.stripe.confirmPayment({
       elements: state.elements,
