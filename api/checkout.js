@@ -283,15 +283,24 @@ function wireFormListeners() {
     if (el) el.addEventListener('blur', maybeInitPayment);
   });
   // Reload pakkeshops when zip or address changes
+  let reloadTimer;
+  function triggerPakkeshopReload() {
+    if (state.delivery !== 'gls_pakkeshop') return;
+    clearTimeout(reloadTimer);
+    const listEl = document.getElementById('pakkeshop-list');
+    if (listEl) listEl.innerHTML = '<p class="pakkeshop-hint">Henter pakkeshops...</p>';
+    // Clear current selection since address changed
+    state.pakkeshop = null;
+    reloadTimer = setTimeout(() => {
+      const zip = document.getElementById('f-zip').value.trim();
+      if (zip.length >= 4) loadPakkeshops(zip);
+    }, 400);
+  }
   ['f-zip', 'f-address'].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
-      el.addEventListener('blur', () => {
-        if (state.delivery === 'gls_pakkeshop') {
-          const zip = document.getElementById('f-zip').value.trim();
-          if (zip.length >= 4) loadPakkeshops(zip);
-        }
-      });
+      el.addEventListener('input', triggerPakkeshopReload);
+      el.addEventListener('blur', triggerPakkeshopReload);
     }
   });
   document.getElementById('pay-btn').addEventListener('click', handlePay);
@@ -441,16 +450,6 @@ async function handlePay() {
       confirmParams: {
         return_url: `${window.location.origin}/success.html`,
         receipt_email: state.customer.email,
-        shipping: {
-          name: `${state.customer.firstName} ${state.customer.lastName}`.trim(),
-          phone: state.customer.phone,
-          address: {
-            line1: state.customer.address,
-            postal_code: state.customer.zip,
-            city: state.customer.city,
-            country: state.customer.country || 'DK',
-          },
-        },
       },
     });
     if (error) {
