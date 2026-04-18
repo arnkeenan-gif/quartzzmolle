@@ -126,10 +126,28 @@ export default async function handler(req, res) {
       parcels.push({ weight: 3000 });
     }
 
-    // Build the Shipmondo payload using a shipment template.
+    // Build line items from the Stripe cart
+    const orderItems = [];
+    for (const li of lineItems) {
+      const qty = li.quantity || 1;
+      orderItems.push({
+        item_no: li.id || `item-${orderItems.length + 1}`,
+        name: li.description || 'Produkt',
+        quantity: qty,
+        unit_price: (li.amount_total && qty) ? Math.round(li.amount_total / qty) / 100 : 0,
+      });
+    }
+
+    // Sales order payload — Shipmondo creates a draft order that you review + book in the UI.
     const payload = {
-      template_id: templateId,
-      reference: session.id, // lets you match Stripe session → Shipmondo shipment
+      order_id: session.id,
+      order_date: new Date().toISOString(),
+      currency_code: 'DKK',
+      order_amount: (full.amount_total || 0) / 100,
+      paid_amount: (full.amount_total || 0) / 100,
+      payment_status: 'paid',
+      order_status: 'new',
+      reference: session.id,
       receiver: {
         name,
         attention: name,
@@ -141,13 +159,15 @@ export default async function handler(req, res) {
         email: customer.email || '',
         mobile: customer.phone || '',
       },
-      parcels,
-      // Do NOT book automatically — stays as draft for you to review & click Book
-      book_shipment: false,
+      order_lines: orderItems,
+      shipment_template_id: templateId,
+      desired_delivery_location: {
+        delivery_type: 'unspecified',
+      },
     };
 
     const auth = Buffer.from(`${process.env.SHIPMONDO_USER}:${process.env.SHIPMONDO_KEY}`).toString('base64');
-    const smRes = await fetch('https://app.shipmondo.com/api/public/v3/shipments', {
+    const smRes = await fetch('https://app.shipmondo.com/api/public/v3/sales_orders', {
       method: 'POST',
       headers: {
         'Authorization': `Basic ${auth}`,
