@@ -131,14 +131,15 @@ export default async function handler(req, res) {
     for (const li of lineItems) {
       const qty = li.quantity || 1;
       const lineTotalKrInclVat = (li.amount_total || 0) / 100;
-      const unitInclVat = qty > 0 ? Number((lineTotalKrInclVat / qty).toFixed(2)) : 0;
+      const unitInclVat = qty > 0 ? lineTotalKrInclVat / qty : 0;
+      const unitExclVat = unitInclVat / (1 + VAT_PERCENT / 100);
       const name = li.description || li.price?.product?.name || 'Produkt';
       orderItems.push({
         line_type: 'item',
         item_no: (li.id || `item-${orderItems.length + 1}`).slice(-40),
         item_name: name,
         quantity: qty,
-        unit_price: unitInclVat,
+        unit_price_excluding_vat: unitExclVat.toFixed(2), // string, preserves decimals
         vat_percent: VAT_PERCENT,
         currency_code: 'DKK',
       });
