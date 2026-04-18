@@ -182,71 +182,53 @@ body {
   box-shadow: 0 2px 12px rgba(0,0,0,0.25);
 }
 
-/* ── VIDEO SCROLL STAGE ──
-   All videos live in one sticky layer that stays pinned while you scroll
-   through the text sections stacked above it. Cross-fade happens via opacity
-   on the pinned videos (they're all in the same spot) so it's seamless. */
-
-.video-stage {
-  position: relative;
-  z-index: 2;
-}
-
-.video-stack {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  width: 100%;
-  margin-bottom: -100vh;   /* pull sections up to overlap the sticky stack */
-  z-index: 0;
-  overflow: hidden;
-}
-
-.video-stack .video-bg {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  object-fit: cover;
-  opacity: 0;
-  will-change: opacity;
-  transition: opacity 800ms cubic-bezier(0.4, 0.0, 0.2, 1);
-  pointer-events: none;
-}
-
-.video-stack .video-bg[data-section="vs1"] { opacity: 1; }
-
-/* JS toggles is-active on sections; this CSS mirrors that to the matching video */
-.video-stage.active-vs1 .video-bg[data-section="vs1"],
-.video-stage.active-vs2 .video-bg[data-section="vs2"],
-.video-stage.active-vs3 .video-bg[data-section="vs3"] {
-  opacity: 1;
-}
-
-.video-stage.active-vs1 .video-bg:not([data-section="vs1"]),
-.video-stage.active-vs2 .video-bg:not([data-section="vs2"]),
-.video-stage.active-vs3 .video-bg:not([data-section="vs3"]) {
-  opacity: 0;
-}
-
-.video-overlay {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  z-index: 1;
-  background: rgba(0,0,0,0.55);
-  pointer-events: none;
-}
-
-/* Sections above the pinned video — they're relative + 100vh so scrolling through
-   them drives the active-* class changes via the existing scroll logic */
+/* ── VIDEO SECTIONS (crossfade) ── */
 .video-section {
   position: relative;
   z-index: 2;
   width: 100%;
   height: 100vh;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.video-bg {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  /* Extra height past the viewport so the iOS Safari toolbar doesn't reveal a strip underneath */
+  height: calc(100vh + env(safe-area-inset-bottom, 0px) + 120px);
+  object-fit: cover;
+  z-index: 0;
+  opacity: 0;
+  will-change: opacity;
+  transition: opacity 900ms cubic-bezier(0.4, 0.0, 0.2, 1);
+  pointer-events: none;
+}
+
+.video-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: calc(100vh + env(safe-area-inset-bottom, 0px) + 120px);
+  z-index: 1;
+  background: rgba(0,0,0,0.55);
+  opacity: 0;
+  will-change: opacity;
+  transition: opacity 900ms cubic-bezier(0.4, 0.0, 0.2, 1);
+  pointer-events: none;
+}
+
+.overlay-dark   { background: rgba(0,0,0,0.55); }
+.overlay-medium { background: rgba(0,0,0,0.55); }
+
+.video-section.is-active .video-bg,
+.video-section.is-active .video-overlay {
+  opacity: 1;
 }
 
 /* ── HERO CONTENT ── */
