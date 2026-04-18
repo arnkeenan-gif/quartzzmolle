@@ -20,6 +20,7 @@ const state = {
   elements: null,
   paymentElement: null,
   clientSecret: null,
+  paymentIntentId: null,
 };
 
 // ─── Bootstrap ───
@@ -353,6 +354,7 @@ async function maybeInitPayment() {
       return;
     }
     state.clientSecret = data.clientSecret;
+    state.paymentIntentId = data.paymentIntentId;
 
     // First time: mount Stripe Elements
     if (!state.elements) {
@@ -424,6 +426,26 @@ async function handlePay() {
     return;
   }
   state.customer = customer;
+
+  // Update the PaymentIntent metadata with the latest delivery + pakkeshop choice
+  // before we confirm payment, so the webhook sees accurate data.
+  if (state.paymentIntentId) {
+    try {
+      await fetch('/api/update-payment-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paymentIntentId: state.paymentIntentId,
+          delivery: state.delivery,
+          pakkeshop: state.pakkeshop,
+          customer,
+          items: state.items,
+        }),
+      });
+    } catch (err) {
+      console.warn('Metadata update failed, continuing:', err);
+    }
+  }
 
   try {
     const { error } = await state.stripe.confirmPayment({
