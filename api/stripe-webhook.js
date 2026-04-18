@@ -126,15 +126,18 @@ export default async function handler(req, res) {
       parcels.push({ weight: 3000 });
     }
 
-    // Build line items from the Stripe cart
+    // Build line items from the Stripe cart. Shipmondo expects unit_price in ØRE (integer cents).
     const orderItems = [];
     for (const li of lineItems) {
       const qty = li.quantity || 1;
+      const unitPriceOre = qty > 0 ? Math.round((li.amount_total || 0) / qty) : 0;
+      const name = li.description || li.price?.product?.name || 'Produkt';
       orderItems.push({
         item_no: li.id || `item-${orderItems.length + 1}`,
-        name: li.description || 'Produkt',
+        name,
         quantity: qty,
-        unit_price: (li.amount_total && qty) ? Math.round(li.amount_total / qty) / 100 : 0,
+        unit_price: unitPriceOre / 100,
+        total_price: (li.amount_total || 0) / 100,
       });
     }
 
@@ -175,6 +178,7 @@ export default async function handler(req, res) {
     };
 
     const auth = Buffer.from(`${process.env.SHIPMONDO_USER}:${process.env.SHIPMONDO_KEY}`).toString('base64');
+    console.log('Shipmondo payload:', JSON.stringify(payload));
     const smRes = await fetch('https://app.shipmondo.com/api/public/v3/sales_orders', {
       method: 'POST',
       headers: {
