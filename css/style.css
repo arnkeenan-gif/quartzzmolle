@@ -1311,6 +1311,15 @@ body.past-videos .video-overlay {
   margin-right: 0.5rem;
 }
 
+/* On mobile, the nav-links and nav-cta are hidden, so space-between would
+   leave the cart floating in the middle. Push it to the right next to burger. */
+@media (max-width: 768px) {
+  .cart-btn {
+    margin-left: auto;
+    margin-right: 0.75rem;
+  }
+}
+
 .cart-btn:hover { opacity: 0.85; }
 
 .nav.nav-light .cart-btn { color: var(--dark); }
