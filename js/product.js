@@ -2,7 +2,7 @@
 // QUARTZ MØLLE — PRODUCT PAGE
 // ============================================================
 
-const STRIPE_PK = 'pk_test_51TNBeEDEjiYcRspTfToJp5KoMo5n2FCVWW5oxezIxZirAzCJJvdBeyewtVWk24rx2VeNpjzIx2bfFydzMWkgPxeW000oPQVwco';
+const STRIPE_PK = 'pk_test_51L5wKqCCp2Usx7QSeEBymppS7OoolulQrvsStTFa2m9L12l6hIEpv8WILs29o38NfGIjCqerkTSzRM8GQm8YxhYP00st9IQ8k5';
 let stripe;
 try { stripe = Stripe(STRIPE_PK); } catch(e) { console.warn('Stripe not loaded'); }
 
@@ -90,7 +90,7 @@ function renderProduct(product) {
           <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
           <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
         </svg>
-        Køb nu
+        Add to cart
       </button>
 
       <div class="certifications">${certsHTML}</div>
@@ -158,46 +158,28 @@ function selectWeight(index) {
 async function handleBuy() {
   if (!currentProduct) return;
 
-  // Require size selection first
   if (selectedWeightIndex < 0) {
-    showToast('Vælg venligst en størrelse først', 'error');
+    // Gently flash the size selector instead of a toast
+    const sel = document.querySelector('.weight-selector');
+    if (sel) {
+      sel.classList.add('needs-attention');
+      setTimeout(() => sel.classList.remove('needs-attention'), 1200);
+    }
     return;
   }
 
   const w = currentProduct.weights[selectedWeightIndex];
-  const btn = document.getElementById('buyBtn');
 
-  btn.disabled = true;
-  btn.textContent = 'Forbereder checkout…';
-
-  try {
-    const res = await fetch('/api/checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        productId: currentProduct.id,
-        productName: currentProduct.name,
-        productType: currentProduct.type,
-        weightLabel: w.label,
-        price: w.price,
-      })
+  if (window.QuartzCart) {
+    window.QuartzCart.add({
+      productId: currentProduct.id,
+      productName: currentProduct.name,
+      productType: currentProduct.type,
+      weightLabel: w.label,
+      price: w.price,
+      image: w.image,
     });
-
-    const data = await res.json();
-
-    if (data.url) window.location.href = data.url;
-    else throw new Error(data.error || 'Checkout fejlede');
-  } catch (err) {
-    console.error(err);
-    showToast('Noget gik galt. Prøv igen eller kontakt os.', 'error');
-    btn.disabled = false;
-    btn.innerHTML = `
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-      </svg>
-      Køb nu
-    `;
+    window.QuartzCart.open();
   }
 }
 
