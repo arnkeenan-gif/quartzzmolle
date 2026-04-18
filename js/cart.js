@@ -117,7 +117,12 @@ function injectCartUI() {
             <span>I alt</span>
             <span id="cart-total">0,00 kr.</span>
           </div>
+          <p id="cart-error" class="cart-error"></p>
           <button class="btn-buy" id="cart-checkout-btn">Til kassen</button>
+          <p class="cart-secure-note">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Sikker betaling med Stripe
+          </p>
         </footer>
       </aside>
     `;
@@ -202,6 +207,8 @@ async function checkoutCart() {
   const items = readCart();
   if (items.length === 0) return;
   const btn = document.getElementById('cart-checkout-btn');
+  const errEl = document.getElementById('cart-error');
+  if (errEl) errEl.textContent = '';
   btn.disabled = true;
   btn.textContent = 'Forbereder…';
   try {
@@ -210,17 +217,23 @@ async function checkoutCart() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ items })
     });
-    const data = await res.json();
-    if (data.url) {
+    let data = {};
+    try { data = await res.json(); } catch { /* non-JSON response */ }
+
+    if (res.ok && data.url) {
       window.location.href = data.url;
-    } else {
-      // silent failure — no toast
-      console.error('Checkout failed:', data.error);
-      btn.disabled = false;
-      btn.textContent = 'Til kassen';
+      return;
     }
+
+    // Show a helpful inline error
+    const msg = data.error || `Kunne ikke åbne betaling (status ${res.status}). Prøv igen.`;
+    console.error('Checkout failed:', res.status, data);
+    if (errEl) errEl.textContent = msg;
+    btn.disabled = false;
+    btn.textContent = 'Til kassen';
   } catch (err) {
     console.error(err);
+    if (errEl) errEl.textContent = 'Netværksfejl — tjek forbindelse og prøv igen.';
     btn.disabled = false;
     btn.textContent = 'Til kassen';
   }
