@@ -39,18 +39,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
   font-size: 16px;
   line-height: 1.6;
-}
-
-/* Solid black strip above the nav covering the iOS safe-area inset.
-   Attached to .nav so it scrolls away when the nav scrolls off the page. */
-.nav::before {
-  content: "";
-  position: absolute;
-  bottom: 100%;
-  left: 0; right: 0;
-  height: env(safe-area-inset-top, 0px);
-  background: #000000;
-  pointer-events: none;
+  /* Push page content below iOS status bar. This space is black (body bg) and
+     scrolls naturally with the page — so the status bar tints from scrolling
+     content instead of the fixed video staying pinned. */
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 /* ── NAV ── */
