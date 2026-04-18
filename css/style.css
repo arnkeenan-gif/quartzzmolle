@@ -222,6 +222,28 @@ body {
   opacity: 1;
 }
 
+/* Fade edges of each video section to black so adjacent sections blend together smoothly. */
+.video-section::before,
+.video-section::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 120px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.video-section::before {
+  top: 0;
+  background: linear-gradient(to bottom, #000 0%, rgba(0,0,0,0) 100%);
+}
+
+.video-section::after {
+  bottom: 0;
+  background: linear-gradient(to top, #000 0%, rgba(0,0,0,0) 100%);
+}
+
 /* ── HERO CONTENT ── */
 .hero-content {
   position: relative;
