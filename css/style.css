@@ -235,6 +235,14 @@ body {
   opacity: 1;
 }
 
+/* When user has scrolled past all video sections, hide the fixed videos entirely
+   so iOS overscroll bounce past the footer doesn't reveal them underneath. */
+body.past-videos .video-bg,
+body.past-videos .video-overlay {
+  opacity: 0 !important;
+  visibility: hidden;
+}
+
 /* ── HERO CONTENT ── */
 .hero-content {
   position: relative;
@@ -668,20 +676,6 @@ body {
   background: var(--dark);
   padding: 2rem 2rem;
   border-top: 1px solid rgba(255,255,255,0.08);
-}
-
-/* Solid dark block extending below the footer to cover overscroll bounce on iOS,
-   so the fixed video doesn't show through when the user pulls up past the page end. */
-.footer::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 100%;
-  height: 600px;
-  background: var(--dark);
-  z-index: 3;
-  pointer-events: none;
 }
 
 .footer-inner {
