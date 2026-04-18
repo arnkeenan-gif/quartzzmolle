@@ -214,18 +214,18 @@ body {
   position: fixed;
   top: 0; left: 0;
   width: 100vw;
-  height: 120lvh; /* oversized so iOS Safari never clips short of the bottom */
+  height: 120lvh;
   min-height: 900px;
   z-index: 1;
-  background: linear-gradient(to bottom, rgba(26,22,17,0.35) 0%, rgba(26,22,17,0.55) 100%);
+  background: rgba(26,22,17,0.55);
   opacity: 0;
   will-change: opacity;
   transition: opacity 900ms cubic-bezier(0.4, 0.0, 0.2, 1);
   pointer-events: none;
 }
 
-.overlay-dark   { background: linear-gradient(135deg, rgba(26,22,17,0.78) 0%, rgba(26,22,17,0.55) 60%, rgba(26,22,17,0.65) 100%); }
-.overlay-medium { background: linear-gradient(225deg, rgba(26,22,17,0.78) 0%, rgba(26,22,17,0.55) 60%, rgba(26,22,17,0.65) 100%); }
+.overlay-dark   { background: rgba(26,22,17,0.55); }
+.overlay-medium { background: rgba(26,22,17,0.55); }
 
 .video-section.is-active .video-bg,
 .video-section.is-active .video-overlay {
