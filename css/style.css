@@ -1238,7 +1238,7 @@ body.past-videos .video-overlay {
 
 /* ── RESPONSIVE ── */
 @media (max-width: 768px) {
-  .nav { position: fixed; } /* mobile: keep burger reachable */
+  .nav { position: absolute; } /* stays at top of page, scrolls away with content */
   .nav-links, .nav-cta { display: none; }
   .nav-burger { display: flex; }
   .nav-logo img.eco-mark { display: none; }
