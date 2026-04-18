@@ -14,10 +14,18 @@
   <style>
     body { background: var(--cream, #f5f1e8); }
 
-    /* White nav on checkout page */
+    /* Blue nav on checkout page — !important overrides style.css */
     .nav.nav-light {
-      background: #fff;
-      box-shadow: 0 1px 0 rgba(0,0,0,0.06);
+      background: #273071 !important;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.1);
+    }
+    .nav.nav-light a,
+    .nav.nav-light .nav-links a,
+    .nav.nav-light .nav-logo {
+      color: #fff !important;
+    }
+    .nav.nav-light .brand-mark {
+      filter: brightness(0) invert(1);
     }
 
     .checkout-wrap {
