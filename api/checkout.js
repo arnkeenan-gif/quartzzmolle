@@ -37,6 +37,7 @@ export default async function handler(req, res) {
       shipping_address_collection: {
         allowed_countries: ['DK', 'SE', 'NO', 'DE', 'NL', 'GB'],
       },
+      phone_number_collection: { enabled: true },
       shipping_options: [
         {
           shipping_rate_data: {
@@ -57,17 +58,6 @@ export default async function handler(req, res) {
             delivery_estimate: {
               minimum: { unit: 'business_day', value: 1 },
               maximum: { unit: 'business_day', value: 3 },
-            },
-          },
-        },
-        {
-          shipping_rate_data: {
-            type: 'fixed_amount',
-            fixed_amount: { amount: 14900, currency: 'dkk' },
-            display_name: 'Danske Fragtmand – Privatlevering',
-            delivery_estimate: {
-              minimum: { unit: 'business_day', value: 2 },
-              maximum: { unit: 'business_day', value: 5 },
             },
           },
         },
