@@ -179,11 +179,14 @@ function updatePakkeshopPicker() {
   if (!picker) return;
   if (state.delivery === 'gls_pakkeshop') {
     picker.classList.add('active');
-    // Load shops if zip is filled
-    const zip = document.getElementById('f-zip')?.value.trim();
-    if (zip && zip.length >= 4) {
-      loadPakkeshops(zip);
+    const zip = (document.getElementById('f-zip')?.value || '').trim();
+    const street = (document.getElementById('f-address')?.value || '').trim();
+    const listEl = document.getElementById('pakkeshop-list');
+    if (!street || !zip || zip.length < 4) {
+      if (listEl) listEl.innerHTML = '<p class="pakkeshop-hint">Udfyld adresse og postnummer først for at se nærmeste pakkeshops.</p>';
+      return;
     }
+    loadPakkeshops(zip);
   } else {
     picker.classList.remove('active');
     state.pakkeshop = null;
@@ -195,15 +198,20 @@ async function loadPakkeshops(zipcode) {
   if (!listEl) return;
   listEl.innerHTML = '<p class="pakkeshop-hint">Henter pakkeshops...</p>';
   try {
-    const street = document.getElementById('f-address')?.value.trim() || '';
-    const params = new URLSearchParams({ zipcode });
+    // Always read street fresh from the form at request time
+    const street = (document.getElementById('f-address')?.value || '').trim();
+    const params = new URLSearchParams();
+    params.set('zipcode', zipcode);
     if (street) params.set('street', street);
+    console.log('[pakkeshop] fetching with', params.toString());
     const res = await fetch(`/api/find-pakkeshops?${params.toString()}`);
     const data = await res.json();
     if (!res.ok || !Array.isArray(data.shops) || data.shops.length === 0) {
       listEl.innerHTML = '<p class="pakkeshop-hint">Ingen pakkeshops fundet. Pakken sendes til nærmeste pakkeshop.</p>';
       return;
     }
+    // Sort client-side too as a safety net (in case backend didn't sort)
+    data.shops.sort((a, b) => (a.distanceM ?? 999999) - (b.distanceM ?? 999999));
     renderPakkeshopList(data.shops);
   } catch (err) {
     console.error('Pakkeshop load error:', err);
@@ -288,14 +296,10 @@ function wireFormListeners() {
   function triggerPakkeshopReload() {
     if (state.delivery !== 'gls_pakkeshop') return;
     clearTimeout(reloadTimer);
-    const listEl = document.getElementById('pakkeshop-list');
-    if (listEl) listEl.innerHTML = '<p class="pakkeshop-hint">Henter pakkeshops...</p>';
-    // Clear current selection since address changed
     state.pakkeshop = null;
     reloadTimer = setTimeout(() => {
-      const zip = document.getElementById('f-zip').value.trim();
-      if (zip.length >= 4) loadPakkeshops(zip);
-    }, 400);
+      updatePakkeshopPicker();
+    }, 300);
   }
   ['f-zip', 'f-address'].forEach(id => {
     const el = document.getElementById(id);
