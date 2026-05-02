@@ -16,12 +16,15 @@ export default async function handler(req, res) {
   const useDistance = street && street.length > 0;
   const methodName = useDistance ? 'GetParcelShopDropPoint' : 'GetParcelShopsInZipcode';
 
+  // GLS sometimes mis-parses street + house number; just use the street name
+  const streetClean = street.replace(/\s*\d+\w?$/, '').trim() || street;
+
   const soapBody = useDistance
     ? `<?xml version="1.0" encoding="utf-8"?>
 <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
   <soap:Body>
     <GetParcelShopDropPoint xmlns="http://gls.dk/webservices/">
-      <street>${escapeXml(street)}</street>
+      <street>${escapeXml(streetClean)}</street>
       <zipcode>${escapeXml(zipcode)}</zipcode>
       <countryIso3166A2>${escapeXml(country)}</countryIso3166A2>
       <Amount>${amount}</Amount>
