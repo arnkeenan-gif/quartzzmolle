@@ -55,7 +55,12 @@ export default async function handler(req, res) {
     let orderData = null;
 
     if (event.type === 'payment_intent.succeeded') {
-      orderData = parsePaymentIntent(event.data.object);
+      // CRITICAL: re-fetch the PaymentIntent fresh from Stripe so we get the LATEST
+      // metadata (including pakkeshop info that may have been updated between
+      // payment attempt and webhook firing).
+      const stripe = (await import('stripe')).default(process.env.STRIPE_SECRET_KEY);
+      const freshPI = await stripe.paymentIntents.retrieve(event.data.object.id);
+      orderData = parsePaymentIntent(freshPI);
     } else if (event.type === 'checkout.session.completed') {
       orderData = await parseCheckoutSession(event.data.object);
     } else {
@@ -136,7 +141,7 @@ export default async function handler(req, res) {
       shipment_template_id: templateId,
       ship_to: shipTo,
       order_lines: orderLines,
-      action: 'none',
+      action: 'ship',
     };
 
     // If customer picked a specific pakkeshop, pass it as the service point
