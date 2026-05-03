@@ -3,19 +3,37 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#273071" id="theme-color-meta" />
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      var m = document.getElementById('theme-color-meta');
-      if (m) m.setAttribute('content', '#000000');
-    });
-  </script>
+  <meta name="theme-color" content="#000000" />
   <title>Tak for din ordre! – Quartz Mølle</title>
   <link rel="icon" href="images/logo-small.png" type="image/png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
+    /* Blue nav on success page */
+    .nav.nav-light {
+      background: #273071 !important;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.1);
+    }
+    .nav.nav-light a,
+    .nav.nav-light .nav-links a,
+    .nav.nav-light .nav-logo {
+      color: #fff !important;
+    }
+    .nav.nav-light .cart-btn,
+    .nav.nav-light .cart-btn svg {
+      color: #fff !important;
+      stroke: #fff !important;
+    }
+    .nav.nav-light .cart-count {
+      color: #fff;
+      background: rgba(255,255,255,0.2);
+    }
+    .nav.nav-light .cart-count.has-items {
+      background: #fff;
+      color: #273071;
+    }
+
     .success-page {
       min-height: 100vh;
       background: var(--cream);
