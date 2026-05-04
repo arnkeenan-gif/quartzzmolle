@@ -195,7 +195,13 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Re-fire scroll on pageshow so when user returns to this page (e.g. via back button
-// from /om.html) the video-fade state and bottom-mask refresh correctly.
-window.addEventListener('pageshow', () => {
+// from /om.html) the video-fade state and bottom-mask refresh correctly. If page is
+// restored from bfcache (event.persisted is true), force a full reload to avoid
+// stale layout/scroll state that causes the bottom mask to fail.
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted) {
+    window.location.reload();
+    return;
+  }
   window.dispatchEvent(new Event('scroll'));
 });
