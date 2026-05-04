@@ -193,3 +193,9 @@ document.addEventListener('DOMContentLoaded', () => {
   initVideoSectionVisibility();
   renderHighlights();
 });
+
+// Re-fire scroll on pageshow so when user returns to this page (e.g. via back button
+// from /om.html) the video-fade state and bottom-mask refresh correctly.
+window.addEventListener('pageshow', () => {
+  window.dispatchEvent(new Event('scroll'));
+});
