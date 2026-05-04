@@ -15,6 +15,11 @@
     html { background: #000; }
     body { background: var(--dark, #0f0f0f); }
 
+    /* Fixed nav so it stays at top while scrolling */
+    .nav { position: fixed !important; }
+    /* Push content below the fixed nav */
+    .om-hero { padding-top: calc(var(--nav-h) + 1.75rem) !important; }
+
     /* Desktop: cream around the content section so it doesn't look pasted onto dark */
     @media (min-width: 769px) {
       .om-wrap { background: var(--cream, #f5f1e8); }
