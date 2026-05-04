@@ -192,10 +192,6 @@ function openCart() {
   if (drawer) {
     drawer.classList.add('open');
     document.body.style.overflow = 'hidden';
-    // Hide the bottom mask while cart is open to avoid iOS Safari
-    // putting it into a broken render state
-    const mask = document.querySelector('.bottom-mask');
-    if (mask) mask.style.visibility = 'hidden';
   }
 }
 
@@ -204,19 +200,14 @@ function closeCart() {
   if (drawer) {
     drawer.classList.remove('open');
     document.body.style.overflow = '';
-    // After cart slide-out animation completes, REMOVE the old mask DOM element
-    // entirely and create a brand new one. This forces iOS to paint it fresh
-    // since it can't carry over a render state from an element that no longer exists.
+    // Bulletproof iOS Safari fix: scroll by 1 pixel after cart closes.
+    // This forces iOS to fully recompute paint layers including .bottom-mask,
+    // which gets stuck in a broken render state from the drawer overlay.
     setTimeout(() => {
-      const old = document.querySelector('.bottom-mask');
-      if (old && old.parentNode) old.parentNode.removeChild(old);
-      // Insert a brand new mask
-      const fresh = document.createElement('div');
-      fresh.className = 'bottom-mask';
-      fresh.setAttribute('aria-hidden', 'true');
-      document.body.insertBefore(fresh, document.body.firstChild);
-      window.dispatchEvent(new Event('scroll'));
-    }, 380);
+      const y = window.scrollY;
+      window.scrollTo(0, y + 1);
+      requestAnimationFrame(() => window.scrollTo(0, y));
+    }, 400);
   }
 }
 
