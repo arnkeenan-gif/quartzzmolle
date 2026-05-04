@@ -7,8 +7,16 @@ const burger = document.getElementById('burger');
 const mobileMenu = document.getElementById('mobileMenu');
 if (burger && mobileMenu) {
   burger.addEventListener('click', () => {
-    mobileMenu.classList.toggle('open');
+    // If menu is currently open and user is closing it, reload the page
+    // (bulletproof fix for iOS Safari render artifacts after fullscreen overlay).
+    if (mobileMenu.classList.contains('open')) {
+      window.location.reload();
+      return;
+    }
+    mobileMenu.classList.add('open');
   });
+  // When user clicks a link/button inside the menu, the page navigates anyway,
+  // so no reload needed there.
   mobileMenu.querySelectorAll('a, button').forEach(el => {
     el.addEventListener('click', () => mobileMenu.classList.remove('open'));
   });
