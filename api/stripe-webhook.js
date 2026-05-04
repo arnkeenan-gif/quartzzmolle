@@ -251,8 +251,22 @@ async function sendOrderConfirmationEmail(orderData) {
 
   const html = `<!DOCTYPE html>
 <html lang="da">
-<head><meta charset="utf-8" /><title>Tak for din ordre</title></head>
-<body style="margin:0;padding:0;background:#f5f1e8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#222;">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light only" />
+  <meta name="supported-color-schemes" content="light" />
+  <title>Tak for din ordre</title>
+  <style>
+    :root { color-scheme: light only; supported-color-schemes: light; }
+    /* Prevent iOS Mail/Gmail dark mode from re-coloring our brand colors */
+    [data-ogsc] body, [data-ogsc] table {
+      background-color: #f5f1e8 !important;
+      color: #222 !important;
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background:#f5f1e8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#222;color-scheme:light;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f1e8;">
     <tr><td align="center" style="padding:32px 16px;">
 
@@ -261,7 +275,7 @@ async function sendOrderConfirmationEmail(orderData) {
         <img src="${logoUrl}" alt="Quartz Mølle" width="64" height="64" style="display:block;width:64px;height:64px;border-radius:50%;" />
       </a>
 
-      <table role="presentation" width="100%" style="max-width:560px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 6px 28px rgba(0,0,0,0.08);" cellpadding="0" cellspacing="0">
+      <table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 6px 28px rgba(0,0,0,0.08);" cellpadding="0" cellspacing="0" bgcolor="#ffffff">
 
         <!-- Blue banner with eyebrow + heading -->
         <tr><td style="background:#273071;color:#fff;padding:44px 32px 36px;text-align:center;">
