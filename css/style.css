@@ -37,12 +37,15 @@ html {
   justify-content: center;
   z-index: 99999;
   opacity: 1;
-  transition: opacity 350ms ease;
+  visibility: visible;
+  transition: opacity 350ms ease, visibility 0s linear 0s;
   pointer-events: auto;
 }
 .page-loader.is-hidden {
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
+  transition: opacity 350ms ease, visibility 0s linear 350ms;
 }
 .page-loader img {
   width: 80px;
