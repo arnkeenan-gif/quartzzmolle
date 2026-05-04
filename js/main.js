@@ -2,47 +2,6 @@
 // QUARTZ MØLLE — MAIN JS
 // ============================================================
 
-// ── PAGE LOADER ──
-// Inject a blue loader overlay with spinning logo, hide it when DOM is ready,
-// and re-show it when the user navigates to another page on the same site.
-(function initPageLoader() {
-  function ensureLoader() {
-    if (document.querySelector('.page-loader')) return;
-    const div = document.createElement('div');
-    div.className = 'page-loader';
-    div.innerHTML = '<img src="images/logopng.png" alt="" />';
-    if (document.body) {
-      document.body.insertBefore(div, document.body.firstChild);
-    }
-  }
-  if (document.body) {
-    ensureLoader();
-  } else {
-    document.addEventListener('DOMContentLoaded', ensureLoader, { once: true });
-  }
-
-  window.addEventListener('load', () => {
-    const loader = document.querySelector('.page-loader');
-    if (loader) loader.classList.add('is-hidden');
-  });
-
-  document.addEventListener('click', (e) => {
-    const a = e.target.closest('a');
-    if (!a) return;
-    const href = a.getAttribute('href');
-    if (!href) return;
-    if (href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
-    if (a.target === '_blank') return;
-    if (e.metaKey || e.ctrlKey || e.shiftKey) return;
-    try {
-      const url = new URL(a.href, window.location.href);
-      if (url.origin !== window.location.origin) return;
-    } catch { return; }
-    const loader = document.querySelector('.page-loader');
-    if (loader) loader.classList.remove('is-hidden');
-  });
-})();
-
 // ── MOBILE MENU ──
 const burger = document.getElementById('burger');
 const mobileMenu = document.getElementById('mobileMenu');
