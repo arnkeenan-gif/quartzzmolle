@@ -192,6 +192,10 @@ function openCart() {
   if (drawer) {
     drawer.classList.add('open');
     document.body.style.overflow = 'hidden';
+    // Hide the bottom mask while cart is open to avoid iOS Safari
+    // putting it into a broken render state
+    const mask = document.querySelector('.bottom-mask');
+    if (mask) mask.style.visibility = 'hidden';
   }
 }
 
@@ -200,19 +204,19 @@ function closeCart() {
   if (drawer) {
     drawer.classList.remove('open');
     document.body.style.overflow = '';
-    // Completely remove and re-create the bottom-mask so iOS Safari
-    // can't keep it in a broken render state.
-    const oldMask = document.querySelector('.bottom-mask');
-    if (oldMask) {
-      const parent = oldMask.parentNode;
-      const newMask = oldMask.cloneNode(true);
-      parent.removeChild(oldMask);
-      // Force a brief delay so iOS commits the removal before re-adding
-      requestAnimationFrame(() => {
-        parent.insertBefore(newMask, parent.firstChild);
-      });
-    }
-    window.dispatchEvent(new Event('scroll'));
+    // After cart slide-out animation completes, REMOVE the old mask DOM element
+    // entirely and create a brand new one. This forces iOS to paint it fresh
+    // since it can't carry over a render state from an element that no longer exists.
+    setTimeout(() => {
+      const old = document.querySelector('.bottom-mask');
+      if (old && old.parentNode) old.parentNode.removeChild(old);
+      // Insert a brand new mask
+      const fresh = document.createElement('div');
+      fresh.className = 'bottom-mask';
+      fresh.setAttribute('aria-hidden', 'true');
+      document.body.insertBefore(fresh, document.body.firstChild);
+      window.dispatchEvent(new Event('scroll'));
+    }, 380);
   }
 }
 
