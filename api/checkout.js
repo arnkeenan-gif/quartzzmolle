@@ -65,7 +65,7 @@ export default async function handler(req, res) {
 
     if (totalWeightKg > PRIVAT_LIMIT) {
       return res.status(400).json({
-        error: `Din ordre vejer ${totalWeightKg.toFixed(1)} kg. GLS kan kun sende op til ${PRIVAT_LIMIT} kg. Del venligst din ordre op i flere bestillinger eller kontakt os på hello@quartzmolle.dk.`,
+        error: `Din ordre vejer ${totalWeightKg.toFixed(1)} kg. GLS kan kun sende op til 25 kg. Del venligst din ordre op i flere bestillinger eller kontakt os på hello@quartzmolle.dk.`,
       });
     }
 
