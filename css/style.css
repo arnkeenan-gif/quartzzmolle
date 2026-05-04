@@ -919,7 +919,6 @@ body.past-videos .video-overlay {
   width: 36px;
   height: 36px;
   border: none;
-  border-radius: 50%;
   background: transparent;
   font-size: 1.1rem;
   font-weight: 400;
@@ -929,11 +928,11 @@ body.past-videos .video-overlay {
   align-items: center;
   justify-content: center;
   user-select: none;
-  transition: background 0.15s;
+  transition: opacity 0.15s;
   line-height: 1;
 }
-.qty-btn:hover { background: #f5f1e8; }
-.qty-btn:active { background: #ece7d6; }
+.qty-btn:hover { opacity: 0.6; }
+.qty-btn:active { opacity: 0.4; }
 .qty-input {
   width: 36px;
   height: 36px;
