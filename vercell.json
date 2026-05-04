@@ -1,5 +1,13 @@
 {
   "version": 2,
   "cleanUrls": true,
-  "trailingSlash": false
+  "trailingSlash": false,
+  "rewrites": [
+    { "source": "/shop", "destination": "/shop.html" },
+    { "source": "/om", "destination": "/om.html" },
+    { "source": "/forhandlere", "destination": "/forhandlere.html" },
+    { "source": "/product", "destination": "/product.html" },
+    { "source": "/checkout", "destination": "/checkout.html" },
+    { "source": "/success", "destination": "/success.html" }
+  ]
 }
