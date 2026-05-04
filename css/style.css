@@ -892,6 +892,67 @@ body.past-videos .video-overlay {
   letter-spacing: -0.01em;
 }
 
+/* Quantity stepper on product page */
+.qty-selector {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 0 0 1rem;
+}
+.qty-label {
+  font-size: 0.85rem;
+  color: #555;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.qty-stepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #d8d4c8;
+  border-radius: 999px;
+  background: #fff;
+  overflow: hidden;
+}
+.qty-btn {
+  width: 38px;
+  height: 38px;
+  border: none;
+  background: transparent;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #273071;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  transition: background 0.15s;
+}
+.qty-btn:hover { background: #f5f1e8; }
+.qty-btn:active { background: #ece7d6; }
+.qty-input {
+  width: 44px;
+  height: 38px;
+  border: none;
+  border-left: 1px solid #ece7d6;
+  border-right: 1px solid #ece7d6;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  background: transparent;
+  color: #222;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.qty-input:focus { outline: none; }
+
 .btn-buy {
   display: flex;
   align-items: center;
