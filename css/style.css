@@ -1250,23 +1250,6 @@ body.past-videos .video-overlay {
     align-items: center;
   }
 
-  /* Solid black bar fixed at bottom of mobile viewport. Sits ON TOP of all scrolling
-     content so text/sections crossing the bottom edge are masked instead of bleeding through. */
-  body::after {
-    content: '';
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 56px;
-    background: #000;
-    pointer-events: none;
-    z-index: 9999;
-  }
-
-  /* Revert the in-view fade — go back to standard text visibility */
-  .video-section .text-block { opacity: 1; }
-
   .why-inner { grid-template-columns: 1fr; gap: 3rem; }
   .why-image { text-align: center; }
   .why-image img { max-width: 260px; }
