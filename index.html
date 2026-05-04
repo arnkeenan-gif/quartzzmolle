@@ -12,8 +12,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
-    /* Mobile-only: solid black bar at bottom of viewport, fixed size so it stays
-       consistent whether the iOS URL bar is showing or hidden. */
+    /* Mobile-only: solid black bar at bottom of viewport, always visible.
+       Prevents text bleed-through during scroll on the index page. */
     @media (max-width: 768px) {
       .bottom-mask {
         position: fixed;
@@ -24,10 +24,6 @@
         background: #000;
         pointer-events: none;
         z-index: 9999;
-        transition: opacity 350ms ease;
-      }
-      body.past-videos .bottom-mask {
-        opacity: 0;
       }
     }
     @media (min-width: 769px) {
