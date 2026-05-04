@@ -1,15 +1,19 @@
 // ============================================================
 // QUARTZ MØLLE — SHOP PAGE
 // ============================================================
+
 const SUPABASE_URL = 'https://eqmxgfuhbtsouoprtgix.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxbXhnZnVoYnRzb3VvcHJ0Z2l4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0MjE2MTcsImV4cCI6MjA5MTk5NzYxN30.ZdAsVKYLhDVgSbcd4otO6PP2CT7Wd4ob0yBu-JHTxaU';
+
 function renderShopGrid(products) {
   const grid = document.getElementById('shopGrid');
   if (!grid) return;
+
   if (!products || products.length === 0) {
     grid.innerHTML = '<div class="shop-loading">Ingen produkter fundet.</div>';
     return;
   }
+
   grid.innerHTML = products.map(p => {
     // Use branded preview image for cards — avoids the 3kg vs 12,5kg confusion
     const img = p.previewImage || p.weights[0].image;
@@ -17,8 +21,9 @@ function renderShopGrid(products) {
     const badgeHTML = p.badge === 'bestseller'
       ? `<span class="product-card-badge badge-bestseller">Bestseller</span>`
       : '';
+
     return `
-      <a href="/product?id=${p.id}" class="product-card">
+      <a href="product.html?id=${p.id}" class="product-card">
         <img src="${img}" alt="${p.name} ${p.type}" class="product-card-img" loading="lazy" />
         <div class="product-card-body">
           ${badgeHTML}
@@ -30,8 +35,10 @@ function renderShopGrid(products) {
     `;
   }).join('');
 }
+
 async function loadShopProducts() {
   renderShopGrid(PRODUCTS);
+
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/products?select=*&order=created_at.asc`, {
       headers: {
@@ -40,6 +47,7 @@ async function loadShopProducts() {
         'Content-Type': 'application/json'
       }
     });
+
     if (res.ok) {
       const dbProducts = await res.json();
       if (dbProducts && dbProducts.length > 0) {
@@ -56,4 +64,5 @@ async function loadShopProducts() {
     console.log('Using local product data');
   }
 }
+
 document.addEventListener('DOMContentLoaded', loadShopProducts);
