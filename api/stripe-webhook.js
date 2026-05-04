@@ -104,6 +104,19 @@ export default async function handler(req, res) {
       };
     });
 
+    // Skip Shipmondo if no order lines (prevents 422 errors from duplicate events)
+    if (orderLines.length === 0) {
+      console.log('Skipping Shipmondo: no order lines for', orderData.externalId);
+      return res.status(200).json({ received: true, skipped: 'no order lines' });
+    }
+
+    // Skip Shipmondo if no order lines (e.g. duplicate event from payment_intent.succeeded
+    // when checkout.session.completed already created the order with full data)
+    if (orderLines.length === 0) {
+      console.log('Skipping Shipmondo: no order lines for', orderData.externalId);
+      return res.status(200).json({ received: true, skipped: 'no order lines' });
+    }
+
     const shipTo = {
       name: orderData.customerName,
       attention: orderData.customerName,
@@ -142,7 +155,9 @@ export default async function handler(req, res) {
       shipment_template_id: templateId,
       ship_to: shipTo,
       order_lines: orderLines,
-      action: 'ship',
+      // Default to 'ship' (auto-book label). Set SHIPMONDO_ACTION=none in Vercel env vars
+      // for free testing — order goes into Shipmondo as draft, no GLS label is purchased.
+      action: process.env.SHIPMONDO_ACTION || 'ship',
     };
 
     // If customer picked a specific pakkeshop, pass it as the service point
