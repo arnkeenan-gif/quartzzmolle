@@ -200,7 +200,15 @@ function closeCart() {
   if (drawer) {
     drawer.classList.remove('open');
     document.body.style.overflow = '';
-    // Re-fire scroll so video-fade and bottom-mask state stay correct
+    // Force iOS Safari to repaint fixed elements that may have been dropped
+    // while the cart was open
+    const mask = document.querySelector('.bottom-mask');
+    if (mask) {
+      mask.style.display = 'none';
+      // eslint-disable-next-line no-unused-expressions
+      mask.offsetHeight; // trigger reflow
+      mask.style.display = '';
+    }
     window.dispatchEvent(new Event('scroll'));
   }
 }
