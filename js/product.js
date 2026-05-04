@@ -85,6 +85,15 @@ function renderProduct(product) {
         Fra ${defaultPrice},00 kr.
       </div>
 
+      <div class="qty-selector">
+        <span class="qty-label">Antal</span>
+        <div class="qty-stepper">
+          <button class="qty-btn" id="qtyMinus" type="button" aria-label="Mindre">−</button>
+          <input class="qty-input" id="qtyInput" type="number" min="1" max="99" value="1" inputmode="numeric" />
+          <button class="qty-btn" id="qtyPlus" type="button" aria-label="Mere">+</button>
+        </div>
+      </div>
+
       <button class="btn-buy" id="buyBtn">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
@@ -128,6 +137,25 @@ function renderProduct(product) {
     btn.addEventListener('click', () => selectWeight(parseInt(btn.dataset.weightIndex, 10)));
   });
   document.getElementById('buyBtn').addEventListener('click', handleBuy);
+
+  // Wire up quantity stepper
+  const qtyInput = document.getElementById('qtyInput');
+  const qtyMinus = document.getElementById('qtyMinus');
+  const qtyPlus = document.getElementById('qtyPlus');
+  function clampQty() {
+    let n = parseInt(qtyInput.value, 10);
+    if (isNaN(n) || n < 1) n = 1;
+    if (n > 99) n = 99;
+    qtyInput.value = n;
+  }
+  qtyMinus.addEventListener('click', () => {
+    qtyInput.value = Math.max(1, (parseInt(qtyInput.value, 10) || 1) - 1);
+  });
+  qtyPlus.addEventListener('click', () => {
+    qtyInput.value = Math.min(99, (parseInt(qtyInput.value, 10) || 1) + 1);
+  });
+  qtyInput.addEventListener('change', clampQty);
+  qtyInput.addEventListener('blur', clampQty);
 }
 
 function selectWeight(index) {
@@ -169,6 +197,8 @@ async function handleBuy() {
   }
 
   const w = currentProduct.weights[selectedWeightIndex];
+  const qtyEl = document.getElementById('qtyInput');
+  const qty = Math.max(1, Math.min(99, parseInt(qtyEl?.value, 10) || 1));
 
   if (window.QuartzCart) {
     window.QuartzCart.add({
@@ -178,6 +208,7 @@ async function handleBuy() {
       weightLabel: w.label,
       price: w.price,
       image: w.image,
+      qty: qty,
     });
     window.QuartzCart.open();
   }
