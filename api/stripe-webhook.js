@@ -199,13 +199,14 @@ async function sendOrderConfirmationEmail(orderData) {
     console.warn('RESEND_API_KEY not set — skipping order confirmation email');
     return;
   }
-  const email = orderData.email;
+  const email = orderData.customerEmail || orderData.email;
   if (!email) {
     console.warn('No customer email — skipping order confirmation email');
     return;
   }
 
-  const customerName = orderData.firstName || orderData.name || '';
+  const fullName = orderData.customerName || orderData.name || '';
+  const customerName = fullName.split(' ')[0]; // first name only
   const orderRef = String(orderData.externalId).slice(-12).toUpperCase();
   const deliveryLabel = orderData.deliveryKey === 'gls_pakkeshop' ? 'GLS Pakkeshop' : 'GLS Privatadresse';
   const totalKr = Number(orderData.amountKr).toFixed(2).replace('.', ',');
