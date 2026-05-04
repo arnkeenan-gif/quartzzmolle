@@ -283,6 +283,11 @@ async function sendOrderConfirmationEmail(orderData) {
           <div style="font-size:13px;color:#777;margin-top:6px;">1–3 hverdage efter afsendelse</div>
         </td></tr>
 
+        <!-- View order button -->
+        <tr><td style="padding:32px 36px 8px;text-align:center;">
+          <a href="${siteUrl}/success.html?session_id=${encodeURIComponent(orderData.externalId)}" style="display:inline-block;background:#273071;color:#fff;text-decoration:none;padding:14px 32px;border-radius:999px;font-size:14px;font-weight:600;letter-spacing:0.02em;">Se din ordre</a>
+        </td></tr>
+
         <!-- Contact -->
         <tr><td style="padding:32px 36px 36px;border-top:1px solid #eee;margin-top:24px;">
           <p style="margin:0;font-size:13px;color:#666;line-height:1.7;text-align:center;">
