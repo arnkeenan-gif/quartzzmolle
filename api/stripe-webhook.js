@@ -177,11 +177,134 @@ export default async function handler(req, res) {
     }
 
     console.log('Shipmondo draft created for', orderData.externalId);
+
+    // Send branded order confirmation email (best-effort, don't fail webhook if email fails)
+    try {
+      await sendOrderConfirmationEmail(orderData);
+    } catch (emailErr) {
+      console.error('Order confirmation email failed:', emailErr);
+    }
+
     return res.status(200).json({ received: true });
   } catch (err) {
     console.error('Webhook processing error:', err);
     return res.status(200).json({ received: true, error: err.message });
   }
+}
+
+// ── ORDER CONFIRMATION EMAIL ──
+async function sendOrderConfirmationEmail(orderData) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.warn('RESEND_API_KEY not set — skipping order confirmation email');
+    return;
+  }
+  const email = orderData.email;
+  if (!email) {
+    console.warn('No customer email — skipping order confirmation email');
+    return;
+  }
+
+  const customerName = orderData.firstName || orderData.name || '';
+  const orderRef = String(orderData.externalId).slice(-12).toUpperCase();
+  const deliveryLabel = orderData.deliveryKey === 'gls_pakkeshop' ? 'GLS Pakkeshop' : 'GLS Privatadresse';
+  const totalKr = Number(orderData.amountKr).toFixed(2).replace('.', ',');
+
+  const itemsHtml = (orderData.items || []).map(it => {
+    const name = it.productName + (it.weightLabel ? ` – ${it.weightLabel}` : '');
+    const lineTotal = (Number(it.price) * Number(it.qty)).toFixed(2).replace('.', ',');
+    const imgCell = it.image
+      ? `<td style="padding:12px 14px 12px 0;border-bottom:1px solid #eee;width:64px;vertical-align:middle;">
+           <img src="${escapeHtmlEmail(it.image)}" alt="" width="56" height="56" style="display:block;width:56px;height:56px;border-radius:8px;object-fit:cover;background:#f5f1e8;" />
+         </td>`
+      : '';
+    return `
+      <tr>
+        ${imgCell}
+        <td style="padding:12px 0;border-bottom:1px solid #eee;color:#333;vertical-align:middle;">
+          ${escapeHtmlEmail(name)} <span style="color:#888;">× ${it.qty}</span>
+        </td>
+        <td style="padding:12px 0;border-bottom:1px solid #eee;color:#333;text-align:right;font-variant-numeric:tabular-nums;vertical-align:middle;">
+          ${lineTotal} kr.
+        </td>
+      </tr>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html>
+<html lang="da">
+<head><meta charset="utf-8" /><title>Tak for din ordre</title></head>
+<body style="margin:0;padding:0;background:#f5f1e8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#222;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f1e8;">
+    <tr><td align="center" style="padding:24px 16px;">
+      <table role="presentation" width="100%" style="max-width:560px;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.06);" cellpadding="0" cellspacing="0">
+        <tr><td style="background:#273071;color:#fff;padding:36px 32px 28px;text-align:center;">
+          <div style="font-size:13px;letter-spacing:0.18em;text-transform:uppercase;opacity:0.7;margin-bottom:6px;">Quartz Mølle</div>
+          <div style="font-size:24px;font-weight:700;letter-spacing:-0.01em;">Tak for din ordre${customerName ? ', ' + escapeHtmlEmail(customerName) : ''}!</div>
+        </td></tr>
+        <tr><td style="padding:32px 32px 8px;">
+          <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#444;">
+            Vi har modtaget din ordre og pakker den hurtigst muligt. Du får en ny e-mail med tracking når pakken er afsendt.
+          </p>
+          <p style="margin:0 0 24px;font-size:14px;color:#666;">
+            <strong style="color:#222;">Ordrenummer:</strong> ${escapeHtmlEmail(orderRef)}
+          </p>
+        </td></tr>
+        <tr><td style="padding:0 32px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr><td colspan="2" style="font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#888;padding-bottom:8px;">Din ordre</td></tr>
+            ${itemsHtml}
+            <tr><td style="padding:16px 0 0;font-weight:600;color:#222;">I alt</td>
+                <td style="padding:16px 0 0;text-align:right;font-size:18px;font-weight:700;color:#273071;font-variant-numeric:tabular-nums;">${totalKr} kr.</td></tr>
+          </table>
+        </td></tr>
+        <tr><td style="padding:24px 32px 8px;">
+          <div style="font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#888;margin-bottom:8px;">Levering</div>
+          <div style="font-size:15px;color:#333;">${escapeHtmlEmail(deliveryLabel)}</div>
+          <div style="font-size:13px;color:#777;margin-top:4px;">1–3 hverdage efter afsendelse</div>
+        </td></tr>
+        <tr><td style="padding:24px 32px 36px;">
+          <p style="margin:0;font-size:13px;color:#777;line-height:1.6;">
+            Har du spørgsmål? Skriv til <a href="mailto:hello@quartzmolle.dk" style="color:#273071;text-decoration:none;">hello@quartzmolle.dk</a>
+          </p>
+        </td></tr>
+        <tr><td style="background:#f5f1e8;padding:20px 32px;text-align:center;font-size:12px;color:#888;">
+          Quartz Mølle · Suså Landevej 101, 4160 Herlufmagle · Danmark
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  const resendRes = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: 'Quartz Mølle <ordre@quartzmolle.dk>',
+      to: [email],
+      subject: `Tak for din ordre #${orderRef} – Quartz Mølle`,
+      html,
+    }),
+  });
+
+  if (!resendRes.ok) {
+    const errTxt = await resendRes.text();
+    console.error('Resend API error', resendRes.status, errTxt);
+    throw new Error('Resend send failed');
+  }
+  console.log('Order confirmation email sent to', email);
+}
+
+function escapeHtmlEmail(s) {
+  return String(s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 function parsePaymentIntent(pi) {
@@ -255,12 +378,14 @@ async function parseCheckoutSession(session) {
   const items = lineItems.map(li => {
     const descField = li.price?.product?.description || '';
     const weightMatch = descField.match(/(\d+[,.]?\d*)\s*kg/i);
+    const productImages = li.price?.product?.images || [];
     return {
       productName: li.description || li.price?.product?.name || 'Produkt',
       productType: '',
       weightLabel: weightMatch ? weightMatch[0] : '',
       qty: li.quantity || 1,
       price: ((li.amount_total || 0) / (li.quantity || 1)) / 100,
+      image: productImages[0] || null,
     };
   });
 
