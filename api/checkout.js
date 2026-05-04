@@ -47,6 +47,55 @@ export default async function handler(req, res) {
       };
     });
 
+    // Calculate total cart weight (kg) by parsing each item's weightLabel
+    function parseWeightKg(label) {
+      if (!label) return 0;
+      const m = String(label).match(/(\d+(?:[.,]\d+)?)\s*kg/i);
+      if (!m) return 0;
+      return parseFloat(m[1].replace(',', '.')) || 0;
+    }
+    const totalWeightKg = items.reduce((sum, it) => {
+      return sum + (parseWeightKg(it.weightLabel) * (it.qty || 1));
+    }, 0);
+    console.log('Total cart weight:', totalWeightKg, 'kg');
+
+    // GLS shipping limits (with 0.1 kg buffer because 12.5 kg bags are slightly heavier)
+    const PAKKESHOP_LIMIT = 19.9;
+    const PRIVAT_LIMIT = 24.9;
+
+    if (totalWeightKg > PRIVAT_LIMIT) {
+      return res.status(400).json({
+        error: `Din ordre vejer ${totalWeightKg.toFixed(1)} kg. GLS kan kun sende op til ${PRIVAT_LIMIT} kg. Del venligst din ordre op i flere bestillinger eller kontakt os på hello@quartzmolle.dk.`,
+      });
+    }
+
+    // Build shipping options based on weight
+    const shippingOptions = [];
+    if (totalWeightKg <= PAKKESHOP_LIMIT) {
+      shippingOptions.push({
+        shipping_rate_data: {
+          type: 'fixed_amount',
+          fixed_amount: { amount: 4900, currency: 'dkk' },
+          display_name: 'GLS – Pakkeshop',
+          delivery_estimate: {
+            minimum: { unit: 'business_day', value: 1 },
+            maximum: { unit: 'business_day', value: 3 },
+          },
+        },
+      });
+    }
+    shippingOptions.push({
+      shipping_rate_data: {
+        type: 'fixed_amount',
+        fixed_amount: { amount: 6900, currency: 'dkk' },
+        display_name: 'GLS – Privatadresse',
+        delivery_estimate: {
+          minimum: { unit: 'business_day', value: 1 },
+          maximum: { unit: 'business_day', value: 3 },
+        },
+      },
+    });
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card', 'mobilepay'],
       line_items,
@@ -57,30 +106,7 @@ export default async function handler(req, res) {
         allowed_countries: ['DK', 'SE', 'NO', 'DE', 'NL', 'GB'],
       },
       phone_number_collection: { enabled: true },
-      shipping_options: [
-        {
-          shipping_rate_data: {
-            type: 'fixed_amount',
-            fixed_amount: { amount: 300, currency: 'dkk' },
-            display_name: 'GLS – Pakkeshop',
-            delivery_estimate: {
-              minimum: { unit: 'business_day', value: 1 },
-              maximum: { unit: 'business_day', value: 3 },
-            },
-          },
-        },
-        {
-          shipping_rate_data: {
-            type: 'fixed_amount',
-            fixed_amount: { amount: 6900, currency: 'dkk' },
-            display_name: 'GLS – Privatadresse',
-            delivery_estimate: {
-              minimum: { unit: 'business_day', value: 1 },
-              maximum: { unit: 'business_day', value: 3 },
-            },
-          },
-        },
-      ],
+      shipping_options: shippingOptions,
       locale: 'da',
     });
 
