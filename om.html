@@ -15,54 +15,51 @@
     html { background: #000; }
     body { background: var(--dark, #0f0f0f); }
 
-    /* Fixed nav so it stays pinned at top while page scrolls underneath */
-    body .nav,
-    body .nav.nav-light {
+    /* Fixed transparent nav that floats over content */
+    body .nav {
       position: fixed !important;
       top: 0 !important;
       left: 0 !important;
       right: 0 !important;
+      background: transparent !important;
     }
     /* Push hero down below the fixed nav */
     .om-hero { padding-top: calc(var(--nav-h) + 1.75rem) !important; }
 
-    /* Desktop: cream around the content section so it doesn't look pasted onto dark */
+    /* Desktop: cream around the content section */
     @media (min-width: 769px) {
       .om-wrap { background: var(--cream, #f5f1e8); }
     }
 
-    /* Make nav elements white on the blue nav */
-    .nav.nav-light a,
-    .nav.nav-light .nav-links a,
-    .nav.nav-light .nav-links a:visited,
-    .nav.nav-light .nav-logo {
+    /* White nav text on the blue hero behind */
+    .nav a,
+    .nav .nav-links a,
+    .nav .nav-links a:visited,
+    .nav .nav-logo {
       color: #fff !important;
     }
-    .nav.nav-light .nav-cta {
+    .nav .nav-cta {
       color: #273071 !important;
       background: #fff !important;
     }
-    .nav.nav-light .nav-cta:hover {
+    .nav .nav-cta:hover {
       background: rgba(255,255,255,0.9) !important;
     }
-    .nav.nav-light .cart-btn,
-    .nav.nav-light .cart-btn svg {
+    .nav .cart-btn,
+    .nav .cart-btn svg {
       color: #fff !important;
       stroke: #fff !important;
     }
-    .nav.nav-light .cart-count {
+    .nav .cart-count {
       color: #fff;
       background: rgba(255,255,255,0.2);
     }
-    .nav.nav-light .cart-count.has-items {
+    .nav .cart-count.has-items {
       background: #fff;
       color: #273071;
     }
-    .nav.nav-light .nav-burger span {
+    .nav .nav-burger span {
       background: #fff !important;
-    }
-    .nav.nav-light {
-      background: var(--brand-blue, #273071);
     }
 
     .om-hero {
@@ -115,7 +112,7 @@
 </head>
 <body>
 
-  <nav class="nav nav-light" id="nav">
+  <nav class="nav" id="nav">
     <a href="index.html" class="nav-logo">
       <img src="images/logopng.png" alt="Quartz Mølle" class="brand-mark" />
       <img src="images/eu-organic.jpg" alt="EU Økologi" class="eco-mark" />
