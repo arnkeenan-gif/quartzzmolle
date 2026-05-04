@@ -14,8 +14,8 @@ export default async function handler(req, res) {
   try {
     const stripe = (await import('stripe')).default(process.env.STRIPE_SECRET_KEY);
 
-    // Determine site origin so we can pass absolute image URLs to Stripe
-    const origin = req.headers.origin || `https://${req.headers.host}`;
+    // Use known production URL since req.headers.origin may be missing on POST from cross-origin
+    const origin = 'https://quartzzmolle-dusky.vercel.app';
 
     const line_items = items.map(it => {
       const product_data = {
@@ -32,7 +32,10 @@ export default async function handler(req, res) {
           const path = it.image.replace(/^\//, '').split('/').map(encodeURIComponent).join('/');
           imgUrl = `${origin}/${path}`;
         }
+        console.log('Stripe product image URL:', imgUrl);
         product_data.images = [imgUrl];
+      } else {
+        console.log('No image for item:', it.productName);
       }
       return {
         price_data: {
@@ -58,7 +61,7 @@ export default async function handler(req, res) {
         {
           shipping_rate_data: {
             type: 'fixed_amount',
-            fixed_amount: { amount: 300, currency: 'dkk' },
+            fixed_amount: { amount: 4900, currency: 'dkk' },
             display_name: 'GLS – Pakkeshop',
             delivery_estimate: {
               minimum: { unit: 'business_day', value: 1 },
