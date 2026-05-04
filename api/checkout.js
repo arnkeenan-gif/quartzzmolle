@@ -24,7 +24,14 @@ export default async function handler(req, res) {
       };
       // Only include image if it's set and we can build a valid absolute URL
       if (it.image) {
-        const imgUrl = it.image.startsWith('http') ? it.image : `${origin}/${it.image.replace(/^\//, '')}`;
+        let imgUrl;
+        if (it.image.startsWith('http')) {
+          imgUrl = it.image;
+        } else {
+          // URL-encode each path segment to handle special characters in filenames
+          const path = it.image.replace(/^\//, '').split('/').map(encodeURIComponent).join('/');
+          imgUrl = `${origin}/${path}`;
+        }
         product_data.images = [imgUrl];
       }
       return {
@@ -51,7 +58,7 @@ export default async function handler(req, res) {
         {
           shipping_rate_data: {
             type: 'fixed_amount',
-            fixed_amount: { amount: 300, currency: 'dkk' },
+            fixed_amount: { amount: 4900, currency: 'dkk' },
             display_name: 'GLS – Pakkeshop',
             delivery_estimate: {
               minimum: { unit: 'business_day', value: 1 },
