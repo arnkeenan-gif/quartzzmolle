@@ -231,47 +231,78 @@ async function sendOrderConfirmationEmail(orderData) {
       </tr>`;
   }).join('');
 
+  const siteUrl = 'https://quartzzmolle-dusky.vercel.app';
+  const logoUrl = `${siteUrl}/images/logopng.png`;
+
   const html = `<!DOCTYPE html>
 <html lang="da">
 <head><meta charset="utf-8" /><title>Tak for din ordre</title></head>
 <body style="margin:0;padding:0;background:#f5f1e8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#222;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f1e8;">
-    <tr><td align="center" style="padding:24px 16px;">
-      <table role="presentation" width="100%" style="max-width:560px;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.06);" cellpadding="0" cellspacing="0">
-        <tr><td style="background:#273071;color:#fff;padding:36px 32px 28px;text-align:center;">
-          <div style="font-size:13px;letter-spacing:0.18em;text-transform:uppercase;opacity:0.7;margin-bottom:6px;">Quartz Mølle</div>
-          <div style="font-size:24px;font-weight:700;letter-spacing:-0.01em;">Tak for din ordre${customerName ? ', ' + escapeHtmlEmail(customerName) : ''}!</div>
+    <tr><td align="center" style="padding:32px 16px;">
+
+      <!-- Centered logo above the card -->
+      <a href="${siteUrl}/index.html" style="text-decoration:none;display:inline-block;margin-bottom:24px;">
+        <img src="${logoUrl}" alt="Quartz Mølle" width="64" height="64" style="display:block;width:64px;height:64px;border-radius:50%;" />
+      </a>
+
+      <table role="presentation" width="100%" style="max-width:560px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 6px 28px rgba(0,0,0,0.08);" cellpadding="0" cellspacing="0">
+
+        <!-- Blue banner with eyebrow + heading -->
+        <tr><td style="background:#273071;color:#fff;padding:44px 32px 36px;text-align:center;">
+          <div style="font-size:12px;letter-spacing:0.22em;text-transform:uppercase;opacity:0.75;margin-bottom:10px;font-weight:500;">Ordrebekræftelse</div>
+          <div style="font-size:26px;font-weight:700;letter-spacing:-0.01em;line-height:1.25;">Tak for din ordre${customerName ? ',<br/>' + escapeHtmlEmail(customerName) : ''}</div>
         </td></tr>
-        <tr><td style="padding:32px 32px 8px;">
-          <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#444;">
+
+        <!-- Greeting paragraph -->
+        <tr><td style="padding:36px 36px 12px;">
+          <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#444;">
             Vi har modtaget din ordre og pakker den hurtigst muligt. Du får en ny e-mail med tracking når pakken er afsendt.
           </p>
-          <p style="margin:0 0 24px;font-size:14px;color:#666;">
-            <strong style="color:#222;">Ordrenummer:</strong> ${escapeHtmlEmail(orderRef)}
+          <p style="margin:0 0 28px;font-size:14px;color:#666;">
+            <span style="color:#888;">Ordrenummer:</span> <strong style="color:#222;letter-spacing:0.04em;">${escapeHtmlEmail(orderRef)}</strong>
           </p>
         </td></tr>
-        <tr><td style="padding:0 32px;">
+
+        <!-- Order items -->
+        <tr><td style="padding:0 36px 8px;">
+          <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#888;padding-bottom:14px;border-bottom:2px solid #273071;margin-bottom:8px;">Din ordre</div>
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-            <tr><td colspan="2" style="font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#888;padding-bottom:8px;">Din ordre</td></tr>
             ${itemsHtml}
-            <tr><td style="padding:16px 0 0;font-weight:600;color:#222;">I alt</td>
-                <td style="padding:16px 0 0;text-align:right;font-size:18px;font-weight:700;color:#273071;font-variant-numeric:tabular-nums;">${totalKr} kr.</td></tr>
+            <tr>
+              <td colspan="2" style="padding:18px 0 0;font-weight:600;color:#222;font-size:15px;">I alt</td>
+              <td style="padding:18px 0 0;text-align:right;font-size:20px;font-weight:700;color:#273071;font-variant-numeric:tabular-nums;">${totalKr} kr.</td>
+            </tr>
           </table>
         </td></tr>
-        <tr><td style="padding:24px 32px 8px;">
-          <div style="font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#888;margin-bottom:8px;">Levering</div>
-          <div style="font-size:15px;color:#333;">${escapeHtmlEmail(deliveryLabel)}</div>
-          <div style="font-size:13px;color:#777;margin-top:4px;">1–3 hverdage efter afsendelse</div>
+
+        <!-- Delivery -->
+        <tr><td style="padding:32px 36px 8px;">
+          <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#888;margin-bottom:10px;">Levering</div>
+          <div style="font-size:15px;color:#222;font-weight:500;">${escapeHtmlEmail(deliveryLabel)}</div>
+          <div style="font-size:13px;color:#777;margin-top:6px;">1–3 hverdage efter afsendelse</div>
         </td></tr>
-        <tr><td style="padding:24px 32px 36px;">
-          <p style="margin:0;font-size:13px;color:#777;line-height:1.6;">
-            Har du spørgsmål? Skriv til <a href="mailto:hello@quartzmolle.dk" style="color:#273071;text-decoration:none;">hello@quartzmolle.dk</a>
+
+        <!-- Contact -->
+        <tr><td style="padding:32px 36px 36px;border-top:1px solid #eee;margin-top:24px;">
+          <p style="margin:0;font-size:13px;color:#666;line-height:1.7;text-align:center;">
+            Har du spørgsmål? Skriv til <a href="mailto:hello@quartzmolle.dk" style="color:#273071;text-decoration:none;font-weight:500;">hello@quartzmolle.dk</a>
           </p>
         </td></tr>
-        <tr><td style="background:#f5f1e8;padding:20px 32px;text-align:center;font-size:12px;color:#888;">
-          Quartz Mølle · Suså Landevej 101, 4160 Herlufmagle · Danmark
+
+      </table>
+
+      <!-- Footer below the card -->
+      <table role="presentation" width="100%" style="max-width:560px;margin-top:20px;" cellpadding="0" cellspacing="0">
+        <tr><td style="text-align:center;padding:8px 16px;font-size:12px;color:#999;line-height:1.7;">
+          Quartz Mølle · Suså Landevej 101, 4160 Herlufmagle · Danmark<br/>
+          <a href="${siteUrl}/index.html" style="color:#999;text-decoration:none;margin:0 6px;">Hjem</a> ·
+          <a href="${siteUrl}/shop.html" style="color:#999;text-decoration:none;margin:0 6px;">Shop</a> ·
+          <a href="${siteUrl}/forhandlere.html" style="color:#999;text-decoration:none;margin:0 6px;">Forhandlere</a> ·
+          <a href="${siteUrl}/om.html" style="color:#999;text-decoration:none;margin:0 6px;">Om os</a>
         </td></tr>
       </table>
+
     </td></tr>
   </table>
 </body>
