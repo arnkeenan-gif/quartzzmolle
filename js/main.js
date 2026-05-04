@@ -36,6 +36,9 @@ function initModals() {
       if (modal) {
         modal.classList.remove('open');
         document.body.style.overflow = '';
+        // Force a scroll event so video-fade logic refreshes (otherwise the
+        // bottom mask state can get stuck after closing the modal)
+        window.dispatchEvent(new Event('scroll'));
       }
       return;
     }
@@ -43,6 +46,7 @@ function initModals() {
     if (e.target.classList.contains('modal-backdrop')) {
       e.target.classList.remove('open');
       document.body.style.overflow = '';
+      window.dispatchEvent(new Event('scroll'));
     }
   });
   document.addEventListener('keydown', (e) => {
@@ -51,6 +55,7 @@ function initModals() {
         m.classList.remove('open');
       });
       document.body.style.overflow = '';
+      window.dispatchEvent(new Event('scroll'));
     }
   });
 }
@@ -99,15 +104,6 @@ function initVideoFade() {
 
     // Toggle body class so CSS can hide the fixed videos when user is past the video sections
     document.body.classList.toggle('past-videos', !anyVideoVisible);
-
-    // Hide the bottom mask once the last video section has fully scrolled past
-    const lastSection = sections[sections.length - 1];
-    if (lastSection) {
-      const lastRect = lastSection.getBoundingClientRect();
-      // True once the bottom of the last video section is above the viewport top edge
-      const pastVideosArea = lastRect.bottom <= 0;
-      document.body.classList.toggle('past-video-area', pastVideosArea);
-    }
   };
 
   let ticking = false;
