@@ -212,8 +212,7 @@ body {
   top: 0; left: 0;
   width: 100vw;
   height: 100vh;
-  /* Extra height past the viewport so the iOS Safari toolbar doesn't reveal a strip underneath */
-  height: calc(100vh + env(safe-area-inset-bottom, 0px) + 120px);
+  height: 100lvh; /* largest viewport height - fills under iOS bottom bar entirely */
   object-fit: cover;
   z-index: 0;
   opacity: 0;
@@ -227,7 +226,7 @@ body {
   top: 0; left: 0;
   width: 100vw;
   height: 100vh;
-  height: calc(100vh + env(safe-area-inset-bottom, 0px) + 120px);
+  height: 100lvh;
   z-index: 1;
   background: rgba(0,0,0,0.55);
   opacity: 0;
@@ -248,8 +247,7 @@ body {
    so iOS overscroll bounce past the footer doesn't reveal them underneath. */
 body.past-videos .video-bg,
 body.past-videos .video-overlay {
-  opacity: 0 !important;
-  visibility: hidden;
+  /* Keep videos visible always - rely on z-index stacking instead of fade-out */
 }
 
 /* ── HERO CONTENT ── */
