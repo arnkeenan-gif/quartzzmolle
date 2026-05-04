@@ -909,9 +909,11 @@ body.past-videos .video-overlay {
 .qty-stepper {
   display: inline-flex;
   align-items: center;
-  background: #f5f1e8;
+  background: #fff;
+  border: 1px solid #e5e0d2;
   border-radius: 999px;
-  padding: 4px;
+  height: 44px;
+  padding: 0 4px;
 }
 .qty-btn {
   width: 36px;
@@ -919,26 +921,26 @@ body.past-videos .video-overlay {
   border: none;
   border-radius: 50%;
   background: transparent;
-  font-size: 1.15rem;
-  font-weight: 500;
+  font-size: 1.1rem;
+  font-weight: 400;
   color: #273071;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   user-select: none;
-  transition: background 0.15s, transform 0.1s;
+  transition: background 0.15s;
   line-height: 1;
 }
-.qty-btn:hover { background: #fff; }
-.qty-btn:active { transform: scale(0.92); }
+.qty-btn:hover { background: #f5f1e8; }
+.qty-btn:active { background: #ece7d6; }
 .qty-input {
-  width: 40px;
+  width: 36px;
   height: 36px;
   border: none;
   background: transparent;
   text-align: center;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: #222;
