@@ -918,10 +918,13 @@ body.past-videos .video-overlay {
 .qty-btn {
   width: 36px;
   height: 36px;
-  border: none;
-  outline: none;
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
   -webkit-tap-highlight-color: transparent;
-  background: transparent;
+  background: transparent !important;
   font-size: 1.1rem;
   font-weight: 400;
   color: #273071;
@@ -932,6 +935,8 @@ body.past-videos .video-overlay {
   user-select: none;
   transition: opacity 0.15s;
   line-height: 1;
+  padding: 0;
+  margin: 0;
 }
 .qty-btn:focus,
 .qty-btn:focus-visible { outline: none; box-shadow: none; }
