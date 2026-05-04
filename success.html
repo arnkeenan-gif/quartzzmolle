@@ -80,32 +80,93 @@
     .success-box {
       background: #fff;
       border-radius: 20px;
-      padding: 4rem 3rem;
-      max-width: 560px;
+      padding: 3.5rem 3rem 3rem;
+      max-width: 520px;
+      width: 100%;
       text-align: center;
-      box-shadow: 0 8px 40px rgba(0,0,0,0.1);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.08);
     }
-    .success-icon {
-      width: 72px; height: 72px;
-      background: #e8f5e9;
+
+    /* Animated blue checkmark circle */
+    .success-check-wrap {
+      width: 88px;
+      height: 88px;
+      margin: 0 auto 1.75rem;
+      position: relative;
+    }
+    .success-check-circle {
+      width: 88px;
+      height: 88px;
       border-radius: 50%;
+      background: #273071;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto 2rem;
+      animation: check-pop 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28) 0.15s both;
     }
+    .success-check-svg {
+      width: 44px;
+      height: 44px;
+    }
+    .success-check-svg path {
+      stroke: #fff;
+      stroke-width: 3;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 60;
+      stroke-dashoffset: 60;
+      animation: check-draw 0.5s cubic-bezier(0.65, 0, 0.45, 1) 0.55s forwards;
+    }
+    @keyframes check-pop {
+      0%   { transform: scale(0); }
+      60%  { transform: scale(1.12); }
+      100% { transform: scale(1); }
+    }
+    @keyframes check-draw {
+      to { stroke-dashoffset: 0; }
+    }
+
     .success-box h1 {
       font-family: 'Inter', sans-serif;
-      font-size: 2rem;
+      font-size: 1.85rem;
       font-weight: 700;
       color: var(--dark);
-      margin-bottom: 1rem;
+      margin-bottom: 0.85rem;
       letter-spacing: -0.01em;
+      animation: fade-up 0.5s ease 0.7s both;
     }
     .success-box p {
       color: #666;
       line-height: 1.7;
-      margin-bottom: 2rem;
+      margin-bottom: 1.5rem;
+      animation: fade-up 0.5s ease 0.85s both;
+    }
+    .success-order-num {
+      display: inline-block;
+      background: #f5f1e8;
+      color: #273071;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      padding: 0.55rem 1.1rem;
+      border-radius: 999px;
+      font-size: 0.92rem;
+      margin: 0 0 1.75rem;
+      font-variant-numeric: tabular-nums;
+      animation: fade-up 0.5s ease 1s both;
+    }
+    .success-order-num span {
+      color: #888;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      margin-right: 0.4rem;
+    }
+    .success-actions {
+      animation: fade-up 0.5s ease 1.15s both;
+    }
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
@@ -153,16 +214,40 @@
 
   <div class="success-page">
     <div class="success-box">
-      <div class="success-icon">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#2e7d32" stroke-width="2.5">
-          <polyline points="20 6 9 17 4 12"/>
-        </svg>
+      <div class="success-check-wrap">
+        <div class="success-check-circle">
+          <svg class="success-check-svg" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 12 L10 17 L19 7" />
+          </svg>
+        </div>
       </div>
       <h1>Tak for din ordre!</h1>
-      <p>Vi har modtaget din bestilling og sender dig en bekræftelse på email. Dit mel er snart på vej fra Quartz Mølle.</p>
-      <a href="shop.html" class="btn-dark">Fortsæt shopping</a>
+      <p>Vi har modtaget din bestilling og pakker den hurtigst muligt. Du modtager en bekræftelse på email om kort tid.</p>
+      <div class="success-order-num" id="success-order-num" style="display:none;"><span>Ordrenummer</span><strong id="order-num-value"></strong></div>
+      <div class="success-actions">
+        <a href="shop.html" class="btn-dark">Fortsæt shopping</a>
+      </div>
     </div>
   </div>
+
+  <script>
+    // Read session_id from URL and show last 12 chars uppercased as the order number
+    (function showOrderNumber() {
+      try {
+        var params = new URLSearchParams(window.location.search);
+        var sid = params.get('session_id') || '';
+        if (sid) {
+          var ref = sid.slice(-12).toUpperCase();
+          var box = document.getElementById('success-order-num');
+          var val = document.getElementById('order-num-value');
+          if (box && val) {
+            val.textContent = ref;
+            box.style.display = 'inline-block';
+          }
+        }
+      } catch (e) { /* ignore */ }
+    })();
+  </script>
 
   <script src="js/cart.js"></script>
   <script src="js/main.js"></script>
