@@ -30,12 +30,13 @@ function cartTotal() {
 // Add or increment (same productId + weightLabel merges into one line)
 function addToCart(item) {
   const items = readCart();
+  const qtyToAdd = Math.max(1, parseInt(item.qty, 10) || 1);
   const key = `${item.productId}|${item.weightLabel}`;
   const existing = items.find(it => `${it.productId}|${it.weightLabel}` === key);
   if (existing) {
-    existing.qty += 1;
+    existing.qty += qtyToAdd;
   } else {
-    items.push({ ...item, qty: 1 });
+    items.push({ ...item, qty: qtyToAdd });
   }
   writeCart(items);
 }
