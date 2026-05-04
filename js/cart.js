@@ -200,6 +200,8 @@ function closeCart() {
   if (drawer) {
     drawer.classList.remove('open');
     document.body.style.overflow = '';
+    // Re-fire scroll so video-fade and bottom-mask state stay correct
+    window.dispatchEvent(new Event('scroll'));
   }
 }
 
