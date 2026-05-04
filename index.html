@@ -3,15 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#273071" id="theme-color-meta" />
-  <script>
-    // After the page has loaded, switch Safari's top bar color to black.
-    // The initial blue is only for the loading flash before CSS/videos paint.
-    document.addEventListener('DOMContentLoaded', function () {
-      var m = document.getElementById('theme-color-meta');
-      if (m) m.setAttribute('content', '#000000');
-    });
-  </script>
+  <meta name="theme-color" content="#000000" />
   <title>Quartz Mølle – Økologisk Mel fra Stenkværn</title>
   <meta name="description" content="Quartz Mølle producerer økologisk mel malet på stenkværn i Danmark." />
   <link rel="icon" href="images/logo-small.png" type="image/png" />
@@ -19,6 +11,21 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
+  <style>
+    @media (max-width: 768px) {
+      body::after {
+        content: '';
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 24px;
+        background: #000;
+        pointer-events: none;
+        z-index: 9999;
+      }
+    }
+  </style>
 </head>
 <body>
 
@@ -94,7 +101,7 @@
     <div class="video-overlay overlay-medium"></div>
     <div class="text-block text-right">
       <span class="eyebrow">Vores sortiment</span>
-      <h2>8 varianter af enestående mel</h2>
+      <h2>9 varianter af enestående mel</h2>
       <p class="season-note">Varianterne skifter naturligvis efter sæsonen</p>
       <p>Fra Dalarna til Purpurhvede – hvert mel har sin egen karakter, smag og bagningsegenskaber.</p>
       <a href="shop.html" class="btn-primary">Se alle produkter</a>
@@ -121,7 +128,7 @@
         <h2>Mel med mening</h2>
         <ul class="why-list">
           <li><strong>Stenkværnet</strong> – Langsom formaling bevarer næringsstoffer og smag</li>
-          <li><strong>Nordisk korn</strong> – Dyrket på nordisk jord med respekt for naturen</li>
+          <li><strong>Dansk korn</strong> – Dyrket på dansk jord med respekt for naturen</li>
           <li><strong>Certificeret økologisk</strong> – EU-Øko &amp; Statskontrolleret Økologisk</li>
           <li><strong>Direkte fra mølle</strong> – Ingen mellemmænd, frisk mel til dig</li>
         </ul>
