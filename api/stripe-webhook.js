@@ -80,8 +80,8 @@ export default async function handler(req, res) {
     }
 
     const VAT_FRAC = 0.25;
-    const shortId = String(orderData.externalId).slice(-50);
-    const refId = String(orderData.externalId).slice(-40);
+    const shortId = String(orderData.externalId).slice(-38);
+    const refId = String(orderData.externalId).slice(-38);
     const orderAmountKr = orderData.amountKr;
     const orderAmountExclVat = Number((orderAmountKr / 1.25).toFixed(2));
     const orderVatAmount = Number((orderAmountKr - orderAmountExclVat).toFixed(2));
