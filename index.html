@@ -11,8 +11,28 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* Mobile-only: solid black layer covering the area below the video viewport,
+       on top of all scrolling content so text crossing this zone is masked. */
+    @media (max-width: 768px) {
+      .bottom-mask {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: calc(100lvh - 100dvh + env(safe-area-inset-bottom, 0px));
+        background: #000;
+        pointer-events: none;
+        z-index: 9999;
+      }
+    }
+    @media (min-width: 769px) {
+      .bottom-mask { display: none; }
+    }
+  </style>
 </head>
 <body>
+<div class="bottom-mask" aria-hidden="true"></div>
 
   <nav class="nav" id="nav">
     <a href="index.html" class="nav-logo">
