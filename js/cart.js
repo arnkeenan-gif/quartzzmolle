@@ -200,14 +200,17 @@ function closeCart() {
   if (drawer) {
     drawer.classList.remove('open');
     document.body.style.overflow = '';
-    // Force iOS Safari to repaint fixed elements that may have been dropped
-    // while the cart was open
-    const mask = document.querySelector('.bottom-mask');
-    if (mask) {
-      mask.style.display = 'none';
-      // eslint-disable-next-line no-unused-expressions
-      mask.offsetHeight; // trigger reflow
-      mask.style.display = '';
+    // Completely remove and re-create the bottom-mask so iOS Safari
+    // can't keep it in a broken render state.
+    const oldMask = document.querySelector('.bottom-mask');
+    if (oldMask) {
+      const parent = oldMask.parentNode;
+      const newMask = oldMask.cloneNode(true);
+      parent.removeChild(oldMask);
+      // Force a brief delay so iOS commits the removal before re-adding
+      requestAnimationFrame(() => {
+        parent.insertBefore(newMask, parent.firstChild);
+      });
     }
     window.dispatchEvent(new Event('scroll'));
   }
