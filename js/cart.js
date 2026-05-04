@@ -196,19 +196,9 @@ function openCart() {
 }
 
 function closeCart() {
-  const drawer = document.getElementById('cart-drawer');
-  if (drawer) {
-    drawer.classList.remove('open');
-    document.body.style.overflow = '';
-    // Bulletproof iOS Safari fix: scroll by 1 pixel after cart closes.
-    // This forces iOS to fully recompute paint layers including .bottom-mask,
-    // which gets stuck in a broken render state from the drawer overlay.
-    setTimeout(() => {
-      const y = window.scrollY;
-      window.scrollTo(0, y + 1);
-      requestAnimationFrame(() => window.scrollTo(0, y));
-    }, 400);
-  }
+  // Reload the page when cart is closed. Bulletproof against iOS Safari
+  // render artifacts (e.g. text bleeding through the bottom-mask).
+  window.location.reload();
 }
 
 async function checkoutCart() {
