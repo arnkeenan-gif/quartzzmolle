@@ -99,6 +99,15 @@ function initVideoFade() {
 
     // Toggle body class so CSS can hide the fixed videos when user is past the video sections
     document.body.classList.toggle('past-videos', !anyVideoVisible);
+
+    // Hide the bottom mask once the last video section has fully scrolled past
+    const lastSection = sections[sections.length - 1];
+    if (lastSection) {
+      const lastRect = lastSection.getBoundingClientRect();
+      // True once the bottom of the last video section is above the viewport top edge
+      const pastVideosArea = lastRect.bottom <= 0;
+      document.body.classList.toggle('past-video-area', pastVideosArea);
+    }
   };
 
   let ticking = false;
@@ -159,9 +168,32 @@ document.addEventListener('click', (e) => {
   if (item) item.classList.toggle('open');
 });
 
+// ── VIDEO SECTION VISIBILITY ──
+// Adds .in-view to a video section when it's at least ~35% on screen, so
+// the text-block fades in only once the section is properly visible (avoids
+// text peeking at the bottom of the screen on mobile while scrolling).
+function initVideoSectionVisibility() {
+  const sections = document.querySelectorAll('.video-section');
+  if (!sections.length || typeof IntersectionObserver === 'undefined') {
+    sections.forEach(s => s.classList.add('in-view'));
+    return;
+  }
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.intersectionRatio >= 0.35) {
+        entry.target.classList.add('in-view');
+      } else if (entry.intersectionRatio < 0.05) {
+        entry.target.classList.remove('in-view');
+      }
+    });
+  }, { threshold: [0, 0.05, 0.35, 0.6, 1] });
+  sections.forEach(s => io.observe(s));
+}
+
 // ── INIT ──
 document.addEventListener('DOMContentLoaded', () => {
   initModals();
   initVideoFade();
+  initVideoSectionVisibility();
   renderHighlights();
 });
