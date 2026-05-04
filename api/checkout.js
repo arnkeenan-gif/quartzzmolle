@@ -14,17 +14,28 @@ export default async function handler(req, res) {
   try {
     const stripe = (await import('stripe')).default(process.env.STRIPE_SECRET_KEY);
 
-    const line_items = items.map(it => ({
-      price_data: {
-        currency: 'dkk',
-        product_data: {
-          name: it.productName,
-          description: `${it.weightLabel} · Malet på stenkværn i Danmark · Certificeret Økologisk`,
+    // Determine site origin so we can pass absolute image URLs to Stripe
+    const origin = req.headers.origin || `https://${req.headers.host}`;
+
+    const line_items = items.map(it => {
+      const product_data = {
+        name: it.productName,
+        description: `${it.weightLabel} · Malet på stenkværn i Danmark · Certificeret Økologisk`,
+      };
+      // Only include image if it's set and we can build a valid absolute URL
+      if (it.image) {
+        const imgUrl = it.image.startsWith('http') ? it.image : `${origin}/${it.image.replace(/^\//, '')}`;
+        product_data.images = [imgUrl];
+      }
+      return {
+        price_data: {
+          currency: 'dkk',
+          product_data,
+          unit_amount: Math.round(it.price * 100),
         },
-        unit_amount: Math.round(it.price * 100),
-      },
-      quantity: it.qty,
-    }));
+        quantity: it.qty,
+      };
+    });
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card', 'mobilepay'],
@@ -40,7 +51,7 @@ export default async function handler(req, res) {
         {
           shipping_rate_data: {
             type: 'fixed_amount',
-            fixed_amount: { amount: 300, currency: 'dkk' },
+            fixed_amount: { amount: 4900, currency: 'dkk' },
             display_name: 'GLS – Pakkeshop',
             delivery_estimate: {
               minimum: { unit: 'business_day', value: 1 },
