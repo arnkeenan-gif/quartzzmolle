@@ -13,7 +13,12 @@
   <link rel="stylesheet" href="css/style.css" />
   <style>
     html { background: #000; }
-    body { background: var(--cream, #f5f1e8); }
+    body { background: var(--dark, #0f0f0f); }
+
+    /* Desktop: cream around the content section so it doesn't look pasted onto dark */
+    @media (min-width: 769px) {
+      .om-wrap { background: var(--cream, #f5f1e8); }
+    }
 
     /* Make nav elements white on the blue nav */
     .nav.nav-light a,
@@ -127,6 +132,7 @@
     <a href="shop.html" class="mobile-cta">Shop Nu</a>
   </div>
 
+  <div class="om-wrap">
   <section class="om-hero">
     <div class="eyebrow">Om os</div>
     <h1>Quartz Mølle – Smag, Stabilitet og Stenmalet Kvalitet</h1>
@@ -141,11 +147,12 @@
 
     <img src="images/kvern.jpg" alt="Quartz Mølle stenkværn" class="om-image" />
   </section>
+  </div>
 
   <footer class="footer">
     <div class="footer-inner">
       <img src="images/logopng.png" alt="Quartz Mølle" class="footer-logo" />
-      <p>© Quartz Mølle 2026 · <a href="mailto:fintankeenan@gmail.com">fintankeenan@gmail.com</a></p>
+      <p>© 2025 Quartz Mølle · Suså Landevej 101, 4160 Herlufmagle · <a href="mailto:hello@quartzmolle.dk">hello@quartzmolle.dk</a></p>
       <div class="footer-links">
         <a href="shop.html">Shop</a>
         <a href="forhandlere.html">Forhandlere</a>
