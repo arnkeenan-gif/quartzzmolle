@@ -12,7 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
-    body { background: var(--cream, #f5f1e8); }
+    body { background: #000; }
 
     .om-hero {
       background: var(--brand-blue, #273071);
@@ -45,10 +45,20 @@
     }
     .om-content p:last-child { margin-bottom: 0; }
 
+    .om-image {
+      display: block;
+      width: 100%;
+      max-width: 760px;
+      margin: 2.5rem auto 0;
+      border-radius: 14px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+    }
+
     @media (max-width: 768px) {
       .om-hero { padding: calc(var(--nav-h) + 1rem) 1.25rem 1.5rem; }
       .om-content { padding: 2rem 1.25rem 3rem; }
       .om-content p { font-size: 1rem; line-height: 1.75; }
+      .om-image { margin: 2rem auto 0; border-radius: 10px; }
     }
   </style>
 </head>
@@ -93,6 +103,8 @@
     <p>Vores mølle er navngivet Quartz Mølle da vores møllesten er rige på kvarts, men også emery og flint – hårde stenarter, som sikrer en præcis, skånsom og stabil formaling. I stedet for at kværn kornet hård under høj temperatur, bevarer vi næringsstofferne ved at male langsomt: kun 115 omdrejninger i minuttet – mod de typiske 330 rpm i mange andre stenkværn.</p>
 
     <p>Vi kombinerer vores skånsomme stenformaling med en dobbelt valsemølle fra 1949, som giver os en unik kontrol over struktur og konsistens. Det betyder mel med høj bagekvalitet, stor smag og en stabilitet, som professionelle bagere og passionerede hjemmebagere kan stole på – hver gang. Hos Quartz Mølle tror vi på gennemsigtighed, ærlighed og et kompromisløst fokus på kvalitet. Vi sætter en dyd i at levere det bedste, naturen og håndværket kan tilbyde.</p>
+
+    <img src="images/kvern.jpg" alt="Quartz Mølle stenkværn" class="om-image" />
   </section>
 
   <footer class="footer">
