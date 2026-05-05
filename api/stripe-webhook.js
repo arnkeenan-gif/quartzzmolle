@@ -200,6 +200,13 @@ export default async function handler(req, res) {
       console.error('Order confirmation email failed:', emailErr);
     }
 
+    // Send admin notification email (best-effort)
+    try {
+      await sendAdminNotificationEmail(orderData);
+    } catch (adminEmailErr) {
+      console.error('Admin notification email failed:', adminEmailErr);
+    }
+
     return res.status(200).json({ received: true });
   } catch (err) {
     console.error('Webhook processing error:', err);
@@ -362,6 +369,144 @@ async function sendOrderConfirmationEmail(orderData) {
     throw new Error('Resend send failed');
   }
   console.log('Order confirmation email sent to', email);
+}
+
+// ── ADMIN ORDER NOTIFICATION EMAIL ──
+async function sendAdminNotificationEmail(orderData) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.warn('RESEND_API_KEY not set — skipping admin notification email');
+    return;
+  }
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (!adminEmail) {
+    console.warn('ADMIN_EMAIL not set — skipping admin notification email');
+    return;
+  }
+
+  const orderRef = String(orderData.externalId).slice(-12).toUpperCase();
+  const totalKr = Number(orderData.amountKr).toFixed(2).replace('.', ',');
+  const deliveryLabel = orderData.deliveryKey === 'gls_pakkeshop' ? 'GLS Pakkeshop' : 'GLS Privatadresse';
+
+  const itemsHtml = (orderData.items || []).map(it => {
+    const name = it.productName + (it.productType ? ` – ${it.productType}` : '') + (it.weightLabel ? ` – ${it.weightLabel}` : '');
+    const lineTotal = (Number(it.price) * Number(it.qty || 1)).toFixed(2).replace('.', ',');
+    return `
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #eee;color:#222;">${escapeHtmlEmail(name)}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #eee;color:#555;text-align:center;">${it.qty || 1}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #eee;color:#222;text-align:right;font-variant-numeric:tabular-nums;">${lineTotal} kr.</td>
+      </tr>`;
+  }).join('');
+
+  const addr = orderData.address || {};
+  const addressLines = [
+    escapeHtmlEmail(addr.line1 || ''),
+    escapeHtmlEmail(addr.line2 || ''),
+    [escapeHtmlEmail(addr.postal_code || ''), escapeHtmlEmail(addr.city || '')].filter(Boolean).join(' '),
+    escapeHtmlEmail(addr.country || ''),
+  ].filter(Boolean).join('<br/>');
+
+  const pakkeshopInfo = orderData.pakkeshop
+    ? `<tr><td colspan="2" style="padding:6px 0;font-size:13px;color:#555;">
+        <strong>Pakkeshop:</strong> ${escapeHtmlEmail(orderData.pakkeshop.name || '')} – ${escapeHtmlEmail(orderData.pakkeshop.address || '')}, ${escapeHtmlEmail(orderData.pakkeshop.zipcode || '')} ${escapeHtmlEmail(orderData.pakkeshop.city || '')}
+       </td></tr>`
+    : '';
+
+  const html = `<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="utf-8" />
+  <title>Ny ordre modtaget</title>
+</head>
+<body style="margin:0;padding:0;background:#f5f1e8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#222;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f1e8;">
+    <tr><td align="center" style="padding:32px 16px;">
+      <table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 6px 28px rgba(0,0,0,0.08);" cellpadding="0" cellspacing="0">
+
+        <!-- Header -->
+        <tr><td style="background:#273071;color:#fff;padding:32px;text-align:center;">
+          <div style="font-size:12px;letter-spacing:0.2em;text-transform:uppercase;opacity:0.7;margin-bottom:8px;">Quartz Mølle</div>
+          <div style="font-size:22px;font-weight:700;">🛒 Ny ordre modtaget</div>
+          <div style="font-size:14px;opacity:0.8;margin-top:8px;">Ordre #${escapeHtmlEmail(orderRef)}</div>
+        </td></tr>
+
+        <!-- Customer info -->
+        <tr><td style="padding:28px 32px 8px;">
+          <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#888;border-bottom:2px solid #273071;padding-bottom:10px;margin-bottom:16px;">Kundeoplysninger</div>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;">
+            <tr>
+              <td style="padding:4px 0;color:#666;width:120px;">Navn</td>
+              <td style="padding:4px 0;color:#222;font-weight:500;">${escapeHtmlEmail(orderData.customerName || '')}</td>
+            </tr>
+            <tr>
+              <td style="padding:4px 0;color:#666;">Email</td>
+              <td style="padding:4px 0;color:#222;">${escapeHtmlEmail(orderData.customerEmail || '')}</td>
+            </tr>
+            <tr>
+              <td style="padding:4px 0;color:#666;">Telefon</td>
+              <td style="padding:4px 0;color:#222;">${escapeHtmlEmail(orderData.customerPhone || '–')}</td>
+            </tr>
+            <tr>
+              <td style="padding:4px 0;color:#666;vertical-align:top;">Adresse</td>
+              <td style="padding:4px 0;color:#222;">${addressLines || '–'}</td>
+            </tr>
+            <tr>
+              <td style="padding:4px 0;color:#666;">Levering</td>
+              <td style="padding:4px 0;color:#222;">${escapeHtmlEmail(deliveryLabel)}</td>
+            </tr>
+            ${pakkeshopInfo}
+          </table>
+        </td></tr>
+
+        <!-- Order items -->
+        <tr><td style="padding:24px 32px 8px;">
+          <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#888;border-bottom:2px solid #273071;padding-bottom:10px;margin-bottom:8px;">Ordrelinjer</div>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;">
+            <tr>
+              <th style="text-align:left;padding:0 0 8px;color:#888;font-weight:500;">Produkt</th>
+              <th style="text-align:center;padding:0 0 8px;color:#888;font-weight:500;">Antal</th>
+              <th style="text-align:right;padding:0 0 8px;color:#888;font-weight:500;">Beløb</th>
+            </tr>
+            ${itemsHtml}
+            <tr>
+              <td colspan="2" style="padding:16px 0 0;font-weight:700;font-size:15px;">Total</td>
+              <td style="padding:16px 0 0;text-align:right;font-weight:700;font-size:18px;color:#273071;">${totalKr} kr.</td>
+            </tr>
+          </table>
+        </td></tr>
+
+        <!-- Footer -->
+        <tr><td style="padding:24px 32px;border-top:1px solid #eee;margin-top:16px;text-align:center;">
+          <p style="margin:0;font-size:12px;color:#999;">Stripe ID: ${escapeHtmlEmail(String(orderData.externalId))}</p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  const resendRes = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: 'Quartz Mølle <ordre@quartzmolle.dk>',
+      to: [adminEmail],
+      subject: `🛒 Ny ordre #${orderRef} – ${totalKr} kr. (${escapeHtmlEmail(orderData.customerName || 'Ukendt')})`,
+      html,
+    }),
+  });
+
+  if (!resendRes.ok) {
+    const errTxt = await resendRes.text();
+    console.error('Resend admin notification error', resendRes.status, errTxt);
+    throw new Error('Resend admin send failed');
+  }
+  console.log('Admin notification email sent to', adminEmail);
 }
 
 function escapeHtmlEmail(s) {
