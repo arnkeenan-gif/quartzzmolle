@@ -1315,6 +1315,9 @@ body.past-videos .video-overlay {
 /* ── RESPONSIVE ── */
 @media (max-width: 768px) {
   .nav { position: fixed; } /* stays pinned so status bar area stays consistent */
+  /* On shop and forhandlere pages, let the nav scroll away with the page on mobile */
+  body:has(.shop-hero) .nav,
+  body:has(.forhandlere-hero) .nav { position: absolute; }
   .nav-links, .nav-cta { display: none; }
   .nav-burger { display: flex; }
   .nav-logo img.eco-mark { display: none; }
@@ -1377,6 +1380,13 @@ body.past-videos .video-overlay {
   }
   .forhandlere-hero p {
     font-size: 0.9rem;
+  }
+
+  /* On the product page, give the fixed mobile nav a solid blue background
+     so the logo, cart icon, and burger sit on top of the blue band as one
+     unit instead of floating individually while the blue scrolls under them. */
+  body:has(.product-hero-band) .nav {
+    background: var(--brand-blue);
   }
 }
 
