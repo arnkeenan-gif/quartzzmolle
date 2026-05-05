@@ -450,24 +450,60 @@ async function parseCheckoutSession(session) {
   const shippingDisplayName = shippingRate?.display_name || '';
 
   const lineItems = full.line_items?.data || [];
-  const items = lineItems.map(li => {
-    const descField = li.price?.product?.description || '';
-    const weightMatch = descField.match(/(\d+[,.]?\d*)\s*kg/i);
-    const productImages = li.price?.product?.images || [];
-    // Product name is stored as "Name – Type" (e.g. "Rød hvede – Type 70")
-    const fullName = li.price?.product?.name || li.description || 'Produkt';
-    const dashIdx = fullName.indexOf(' – ');
-    const productName = dashIdx >= 0 ? fullName.slice(0, dashIdx) : fullName;
-    const productType = dashIdx >= 0 ? fullName.slice(dashIdx + 3) : '';
-    return {
-      productName,
-      productType,
-      weightLabel: weightMatch ? weightMatch[0] : '',
-      qty: li.quantity || 1,
-      price: ((li.amount_total || 0) / (li.quantity || 1)) / 100,
-      image: productImages[0] || null,
-    };
-  });
+
+  // PRIMARY: use metadata items_summary (most reliable — set at session creation)
+  // Format: name|type|weight|qty|price (5 fields)
+  const metaItems = [];
+  if (full.metadata?.items_summary) {
+    console.log('parseCheckoutSession: using metadata items_summary:', full.metadata.items_summary);
+    for (const chunk of full.metadata.items_summary.split(';')) {
+      const parts = chunk.split('|');
+      let productName, productType, weightLabel, qty, price;
+      if (parts.length >= 5) {
+        [productName, productType, weightLabel, qty, price] = parts;
+      } else {
+        [productName, weightLabel, qty, price] = parts;
+        productType = '';
+      }
+      if (productName && productName.trim()) {
+        metaItems.push({
+          productName: productName.trim(),
+          productType: (productType || '').trim(),
+          weightLabel: (weightLabel || '').trim(),
+          qty: parseInt(qty, 10) || 1,
+          price: parseFloat(price) || 0,
+          image: null,
+        });
+      }
+    }
+  }
+
+  // Enrich with images from Stripe line items, or fall back to parsing Stripe data
+  const items = metaItems.length > 0
+    ? metaItems.map((mi, idx) => {
+        const li = lineItems[idx];
+        const productImages = li?.price?.product?.images || [];
+        return { ...mi, image: productImages[0] || null };
+      })
+    : lineItems.map(li => {
+        // FALLBACK: parse product name "Name – Type" format (old orders without metadata)
+        const descField = li.price?.product?.description || '';
+        const weightMatch = descField.match(/(\d+[,.]?\d*)\s*kg/i);
+        const productImages = li.price?.product?.images || [];
+        const fullName = li.price?.product?.name || li.description || 'Produkt';
+        const dashIdx = fullName.indexOf(' – ');
+        const productName = dashIdx >= 0 ? fullName.slice(0, dashIdx) : fullName;
+        const productType = dashIdx >= 0 ? fullName.slice(dashIdx + 3) : '';
+        console.log('parseCheckoutSession fallback: fullName=', fullName, 'productType=', productType);
+        return {
+          productName,
+          productType,
+          weightLabel: weightMatch ? weightMatch[0] : '',
+          qty: li.quantity || 1,
+          price: ((li.amount_total || 0) / (li.quantity || 1)) / 100,
+          image: productImages[0] || null,
+        };
+      });
 
   return {
     externalId: full.id,
