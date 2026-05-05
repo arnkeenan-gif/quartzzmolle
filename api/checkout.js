@@ -22,13 +22,11 @@ export default async function handler(req, res) {
         name: it.productName,
         description: `${it.weightLabel} · Malet på stenkværn i Danmark · Certificeret Økologisk`,
       };
-      // Only include image if it's set and we can build a valid absolute URL
       if (it.image) {
         let imgUrl;
         if (it.image.startsWith('http')) {
           imgUrl = it.image;
         } else {
-          // URL-encode each path segment to handle special characters in filenames
           const path = it.image.replace(/^\//, '').split('/').map(encodeURIComponent).join('/');
           imgUrl = `${origin}/${path}`;
         }
@@ -59,7 +57,7 @@ export default async function handler(req, res) {
     }, 0);
     console.log('Total cart weight:', totalWeightKg, 'kg');
 
-    // GLS shipping limits (with 0.1 kg buffer because 12.5 kg bags are slightly heavier)
+    // GLS shipping limits
     const PAKKESHOP_LIMIT = 19.9;
     const PRIVAT_LIMIT = 24.9;
 
@@ -69,13 +67,30 @@ export default async function handler(req, res) {
       });
     }
 
+    // GLS ShopDelivery prices by weight (øre)
+    function getPakkeshopPrice(kg) {
+      if (kg <= 5)  return 4600;
+      if (kg <= 10) return 5500;
+      if (kg <= 15) return 6600;
+      return 8100; // 15-20 kg
+    }
+
+    // GLS PrivateDelivery prices by weight (øre)
+    function getPrivatPrice(kg) {
+      if (kg <= 5)  return 6300;
+      if (kg <= 10) return 7500;
+      if (kg <= 15) return 9000;
+      if (kg <= 20) return 10500;
+      return 13900; // 20-25 kg
+    }
+
     // Build shipping options based on weight
     const shippingOptions = [];
     if (totalWeightKg <= PAKKESHOP_LIMIT) {
       shippingOptions.push({
         shipping_rate_data: {
           type: 'fixed_amount',
-          fixed_amount: { amount: 4900, currency: 'dkk' },
+          fixed_amount: { amount: getPakkeshopPrice(totalWeightKg), currency: 'dkk' },
           display_name: 'GLS Pakkeshop (max 20 kg)',
           delivery_estimate: {
             minimum: { unit: 'business_day', value: 1 },
@@ -87,7 +102,7 @@ export default async function handler(req, res) {
     shippingOptions.push({
       shipping_rate_data: {
         type: 'fixed_amount',
-        fixed_amount: { amount: 6900, currency: 'dkk' },
+        fixed_amount: { amount: getPrivatPrice(totalWeightKg), currency: 'dkk' },
         display_name: 'GLS Privatadresse (max 25 kg)',
         delivery_estimate: {
           minimum: { unit: 'business_day', value: 1 },
@@ -100,8 +115,8 @@ export default async function handler(req, res) {
       payment_method_types: ['card', 'mobilepay'],
       line_items,
       mode: 'payment',
-      success_url: `${req.headers.origin}/success.html?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.origin}/shop.html`,
+      success_url: `${req.headers.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${req.headers.origin}/shop`,
       shipping_address_collection: {
         allowed_countries: ['DK', 'SE', 'NO', 'DE', 'NL', 'GB'],
       },
