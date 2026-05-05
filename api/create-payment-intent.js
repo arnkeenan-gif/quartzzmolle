@@ -23,8 +23,9 @@ export default async function handler(req, res) {
     const stripe = (await import('stripe')).default(process.env.STRIPE_SECRET_KEY);
 
     // Compact items summary — Stripe metadata has a 500-char limit per field.
+    // Format: productName|productType|weightLabel|qty|price
     const itemsSummary = items.map(it =>
-      `${it.productName}|${it.weightLabel}|${it.qty}|${it.price}`
+      `${it.productName}|${it.productType || ''}|${it.weightLabel}|${it.qty}|${it.price}`
     ).join(';').slice(0, 490);
 
     const metadata = {
