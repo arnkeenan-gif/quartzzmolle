@@ -12,13 +12,17 @@ export default async function handler(req, res) {
       expand: ['line_items.data.price.product', 'shipping_cost.shipping_rate'],
     });
 
-    const items = (session.line_items?.data || []).map(li => ({
-      name: li.description || li.price?.product?.name || 'Produkt',
-      qty: li.quantity || 1,
-      price: ((li.amount_total || 0) / (li.quantity || 1)) / 100,
-      lineTotal: (li.amount_total || 0) / 100,
-      image: li.price?.product?.images?.[0] || null,
-    }));
+    const items = (session.line_items?.data || []).map(li => {
+      const img = li.price?.product?.images?.[0] || null;
+      console.log('Order summary item:', li.description, '| product images:', li.price?.product?.images, '| picked:', img);
+      return {
+        name: li.description || li.price?.product?.name || 'Produkt',
+        qty: li.quantity || 1,
+        price: ((li.amount_total || 0) / (li.quantity || 1)) / 100,
+        lineTotal: (li.amount_total || 0) / 100,
+        image: img,
+      };
+    });
 
     return res.status(200).json({
       ok: true,
