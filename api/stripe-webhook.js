@@ -185,22 +185,11 @@ export default async function handler(req, res) {
       ship_to: shipTo,
       order_lines: orderLines,
       total_weight: Math.round(totalWeightKg * 1000), // in grams
-      // Default to 'ship' (auto-book label). Set SHIPMONDO_ACTION=none in Vercel env vars
-      // for free testing — order goes into Shipmondo as draft, no GLS label is purchased.
-      action: process.env.SHIPMONDO_ACTION || 'ship',
     };
 
-    // Attach packaging if matched - this is required for Shipmondo to actually book the label
+    // Attach packaging to order — the actual fulfillment is created in step 2 below
     if (packagingId) {
       payload.sales_order_packaging_id = packagingId;
-      // Also include order_fulfillments so Shipmondo knows what to package
-      payload.order_fulfillments = [{
-        sales_order_packaging_id: packagingId,
-        line_items: orderLines.map((ol, idx) => ({
-          item_no: ol.item_no,
-          quantity: ol.quantity,
-        })),
-      }];
     } else {
       console.warn('No packaging ID matched for weight', totalWeightKg, 'kg — order will be created as draft only');
     }
@@ -236,7 +225,43 @@ export default async function handler(req, res) {
       return res.status(200).json({ received: true, shipmondo_error: smText });
     }
 
-    console.log('Shipmondo draft created for', orderData.externalId);
+    console.log('Shipmondo sales order created for', orderData.externalId);
+
+    // Step 2: Create fulfillment to trigger actual label booking
+    // The sales_orders endpoint accepts the order but doesn't auto-fulfill — we need
+    // a separate POST to /sales_orders/{id}/order_fulfillments with action: "ship"
+    if (packagingId && process.env.SHIPMONDO_ACTION !== 'none') {
+      try {
+        const smOrder = JSON.parse(smText);
+        const salesOrderId = smOrder.id;
+        const fulfillmentPayload = {
+          sales_order_packaging_id: packagingId,
+          line_items: orderLines.map(ol => ({
+            item_no: ol.item_no,
+            quantity: ol.quantity,
+          })),
+          action: 'ship',
+        };
+        console.log('Creating fulfillment for sales order', salesOrderId, 'payload:', JSON.stringify(fulfillmentPayload));
+        const ffRes = await fetch(`https://app.shipmondo.com/api/public/v3/sales_orders/${salesOrderId}/order_fulfillments`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Basic ${auth}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(fulfillmentPayload),
+        });
+        const ffText = await ffRes.text();
+        console.log('Shipmondo fulfillment response', ffRes.status, ffText);
+        if (!ffRes.ok) {
+          console.error('Shipmondo fulfillment failed', ffRes.status, ffText);
+        } else {
+          console.log('Shipmondo fulfillment created — label should be booked');
+        }
+      } catch (ffErr) {
+        console.error('Fulfillment step error:', ffErr);
+      }
+    }
 
     // Send branded order confirmation email (best-effort, don't fail webhook if email fails)
     try {
