@@ -17,7 +17,7 @@ export default async function handler(req, res) {
     const stripe = (await import('stripe')).default(process.env.STRIPE_SECRET_KEY);
 
     const itemsSummary = Array.isArray(items) ? items.map(it =>
-      `${it.productName}|${it.weightLabel}|${it.qty}|${it.price}`
+      `${it.productName}|${it.productType || ''}|${it.weightLabel}|${it.qty}|${it.price}`
     ).join(';').slice(0, 490) : '';
 
     const metadata = {
