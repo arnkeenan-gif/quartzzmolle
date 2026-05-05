@@ -158,70 +158,62 @@ export default async function handler(req, res) {
       mobile: orderData.customerPhone,
     };
 
-    // Map our delivery key + template ID to Shipmondo product_code
-    function getProductCode(deliveryKey, shippingName) {
-      const name = (shippingName || '').toLowerCase();
-      if (deliveryKey === 'gls_pakkeshop' || name.includes('pakkeshop')) return 'GLSDK_SD'; // GLS ShopDelivery
-      return 'GLSDK_HD'; // GLS Home Delivery (default for Privatadresse)
-    }
-    const productCode = getProductCode(orderData.deliveryKey, orderData.shippingDisplayName);
-
-    // Create the shipment payload (this is the proper endpoint that books labels)
-    const shipmentPayload = {
-      own_agreement: false, // Set to true if you want to use your own GLS agreement (kundenummer 31881)
-      product_code: productCode,
-      service_codes: 'EMAIL_NT', // email notification to recipient
+    const payload = {
+      order_id: shortId,
+      order_date: new Date().toISOString(),
+      currency_code: 'DKK',
+      order_amount: orderAmountKr,
+      order_amount_incl_vat: orderAmountKr,
+      order_amount_excl_vat: orderAmountExclVat,
+      order_vat_amount: orderVatAmount,
+      paid_amount: orderAmountKr,
+      payment_status: 'paid',
+      payment_details: {
+        payment_method: 'Stripe',
+        transaction_id: String(orderData.transactionId).slice(-50),
+        amount_including_vat: orderAmountKr,
+        amount_excluding_vat: orderAmountExclVat,
+        captured_amount: orderAmountKr,
+        authorized_amount: orderAmountKr,
+        currency_code: 'DKK',
+        vat_amount: orderVatAmount,
+        vat_percent: VAT_FRAC,
+      },
+      order_status: 'new',
       reference: refId,
-      parties: [
-        {
-          type: 'sender',
-          name: 'Quartz Mølle',
-          address1: 'Suså Landevej 101',
-          postal_code: '4160',
-          city: 'Herlufmagle',
-          country_code: 'DK',
-          email: 'ordre@quartzmolle.dk',
-          phone: '+4531421677',
-        },
-        {
-          type: 'receiver',
-          name: orderData.customerName,
-          address1: orderData.address.line1 || '',
-          address2: orderData.address.line2 || '',
-          postal_code: orderData.address.postal_code || '',
-          city: orderData.address.city || '',
-          country_code: normalizeCountry(orderData.address.country),
-          email: orderData.customerEmail,
-          phone: orderData.customerPhone,
-        },
-      ],
-      parcels: [
-        { weight: Math.round(totalWeightKg * 1000) || 1000 }, // grams; min 1kg
-      ],
+      shipment_template_id: templateId,
+      ship_to: shipTo,
+      order_lines: orderLines,
+      total_weight: Math.round(totalWeightKg * 1000), // in grams
     };
 
-    console.log('Shipmondo shipment payload:', JSON.stringify(shipmentPayload));
-    const auth = Buffer.from(`${process.env.SHIPMONDO_USER}:${process.env.SHIPMONDO_KEY}`).toString('base64');
-
-    if (process.env.SHIPMONDO_ACTION === 'none') {
-      console.log('SHIPMONDO_ACTION=none — skipping shipment booking');
+    // Pre-select packaging on the order so when you click "Create fulfillment" in
+    // Shipmondo, the right box (1-5kg, 5-10kg, etc.) is already chosen
+    if (packagingId) {
+      payload.sales_order_packaging_id = packagingId;
     } else {
-      const smRes = await fetch('https://app.shipmondo.com/api/public/v3/shipments', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Basic ${auth}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(shipmentPayload),
-      });
-      const smText = await smRes.text();
-      console.log('Shipmondo shipment response', smRes.status, smText.slice(0, 1000));
-      if (!smRes.ok) {
-        console.error('Shipmondo shipment booking failed:', smRes.status);
-      } else {
-        console.log('Shipmondo shipment booked — label sent to ordre@quartzmolle.dk');
-      }
+      console.warn('No packaging ID matched for weight', totalWeightKg, 'kg');
     }
+
+    const auth = Buffer.from(`${process.env.SHIPMONDO_USER}:${process.env.SHIPMONDO_KEY}`).toString('base64');
+    console.log('Shipmondo payload:', JSON.stringify(payload));
+    const smRes = await fetch('https://app.shipmondo.com/api/public/v3/sales_orders', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${auth}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const smText = await smRes.text();
+    console.log('Shipmondo response', smRes.status, smText);
+    if (!smRes.ok) {
+      console.error('Shipmondo API error', smRes.status, smText);
+      return res.status(200).json({ received: true, shipmondo_error: smText });
+    }
+
+    console.log('Shipmondo sales order created for', orderData.externalId);
 
     // Send branded order confirmation email (best-effort, don't fail webhook if email fails)
     try {
