@@ -1315,6 +1315,11 @@ body.past-videos .video-overlay {
 /* ── RESPONSIVE ── */
 @media (max-width: 768px) {
   .nav { position: fixed; } /* stays pinned so status bar area stays consistent */
+  /* On the products listing, forhandlere, and om os pages, let the nav
+     scroll away with the page on mobile instead of staying pinned. */
+  body:has(.shop-hero) .nav,
+  body:has(.forhandlere-hero) .nav,
+  body:has(.om-hero) .nav { position: absolute; }
   .nav-links, .nav-cta { display: none; }
   .nav-burger { display: flex; }
   .nav-logo img.eco-mark { display: none; }
