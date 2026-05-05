@@ -15,16 +15,7 @@
     html { background: #000; }
     body { background: var(--dark, #0f0f0f); }
 
-    /* Mobile: fixed nav that stays pinned. Desktop: nav scrolls with the page. */
-    @media (max-width: 768px) {
-      body .nav {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        background: transparent !important;
-      }
-    }
+    /* Mobile: nav scrolls with the page (handled by global stylesheet). */
     /* Push hero down below the nav */
     .om-hero { padding-top: calc(var(--nav-h) + 1.75rem) !important; }
 
