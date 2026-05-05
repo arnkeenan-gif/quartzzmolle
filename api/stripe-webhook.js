@@ -86,6 +86,33 @@ export default async function handler(req, res) {
     const orderAmountExclVat = Number((orderAmountKr / 1.25).toFixed(2));
     const orderVatAmount = Number((orderAmountKr - orderAmountExclVat).toFixed(2));
 
+    // Calculate total cart weight (kg) — used to pick correct packaging
+    function parseWeightKg(label) {
+      if (!label) return 0;
+      const m = String(label).match(/(\d+(?:[.,]\d+)?)\s*kg/i);
+      if (!m) return 0;
+      return parseFloat(m[1].replace(',', '.')) || 0;
+    }
+    const totalWeightKg = orderData.items.reduce((sum, it) => {
+      return sum + (parseWeightKg(it.weightLabel) * (it.qty || 1));
+    }, 0);
+    console.log('Total order weight:', totalWeightKg, 'kg');
+
+    // Pick packaging based on weight bracket
+    // Packaging IDs are configured in Vercel env var SHIPMONDO_PACKAGING
+    // Format: {"5":id,"10":id,"15":id,"20":id,"25":id}
+    let packagingMap = {};
+    try { packagingMap = JSON.parse(process.env.SHIPMONDO_PACKAGING || '{}'); } catch {}
+    function pickPackagingId(weightKg) {
+      if (weightKg <= 5) return packagingMap['5'];
+      if (weightKg <= 10) return packagingMap['10'];
+      if (weightKg <= 15) return packagingMap['15'];
+      if (weightKg <= 20) return packagingMap['20'];
+      return packagingMap['25'];
+    }
+    const packagingId = pickPackagingId(totalWeightKg);
+    console.log('Picked packaging ID:', packagingId, 'for weight', totalWeightKg, 'kg');
+
     const orderLines = orderData.items.map((it, idx) => {
       const qty = it.qty || 1;
       const unitInclVat = it.price;
@@ -155,10 +182,26 @@ export default async function handler(req, res) {
       shipment_template_id: templateId,
       ship_to: shipTo,
       order_lines: orderLines,
+      total_weight: Math.round(totalWeightKg * 1000), // in grams
       // Default to 'ship' (auto-book label). Set SHIPMONDO_ACTION=none in Vercel env vars
       // for free testing — order goes into Shipmondo as draft, no GLS label is purchased.
       action: process.env.SHIPMONDO_ACTION || 'ship',
     };
+
+    // Attach packaging if matched - this is required for Shipmondo to actually book the label
+    if (packagingId) {
+      payload.sales_order_packaging_id = packagingId;
+      // Also include order_fulfillments so Shipmondo knows what to package
+      payload.order_fulfillments = [{
+        sales_order_packaging_id: packagingId,
+        line_items: orderLines.map((ol, idx) => ({
+          item_no: ol.item_no,
+          quantity: ol.quantity,
+        })),
+      }];
+    } else {
+      console.warn('No packaging ID matched for weight', totalWeightKg, 'kg — order will be created as draft only');
+    }
 
     // If customer picked a specific pakkeshop, pass it as the service point
     if (orderData.pakkeshop && orderData.pakkeshop.id) {
@@ -227,7 +270,8 @@ async function sendOrderConfirmationEmail(orderData) {
   const totalKr = Number(orderData.amountKr).toFixed(2).replace('.', ',');
 
   const itemsHtml = (orderData.items || []).map(it => {
-    const name = it.productName + (it.productType ? ` – ${it.productType}` : '') + (it.weightLabel ? ` – ${it.weightLabel}` : '');
+    console.log('Email item:', it.productName, '| has image:', !!it.image, '| url:', it.image);
+    const name = it.productName + (it.weightLabel ? ` – ${it.weightLabel}` : '');
     const lineTotal = (Number(it.price) * Number(it.qty)).toFixed(2).replace('.', ',');
     const imgCell = it.image
       ? `<td style="padding:12px 14px 12px 0;border-bottom:1px solid #eee;width:64px;vertical-align:middle;">
@@ -275,7 +319,7 @@ async function sendOrderConfirmationEmail(orderData) {
         <img src="${logoUrl}" alt="Quartz Mølle" width="64" height="64" style="display:block;width:64px;height:64px;border-radius:50%;" />
       </a>
 
-      <table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 6px 28px rgba(0,0,0,0.08);" cellpadding="0" cellspacing="0" bgcolor="#ffffff">
+      <table role="presentation" width="100%" style="max-width:560px;background:#f5f1e8;border-radius:16px;overflow:hidden;box-shadow:0 6px 28px rgba(0,0,0,0.08);" cellpadding="0" cellspacing="0" bgcolor="#f5f1e8">
 
         <!-- Blue banner with eyebrow + heading -->
         <tr><td style="background:#273071;color:#fff;padding:44px 32px 36px;text-align:center;">
@@ -389,20 +433,11 @@ function parsePaymentIntent(pi) {
   const items = [];
   if (meta.items_summary) {
     for (const chunk of meta.items_summary.split(';')) {
-      const parts = chunk.split('|');
-      // Support both old format (4 fields: name|weight|qty|price)
-      // and new format (5 fields: name|type|weight|qty|price)
-      let productName, productType, weightLabel, qty, price;
-      if (parts.length >= 5) {
-        [productName, productType, weightLabel, qty, price] = parts;
-      } else {
-        [productName, weightLabel, qty, price] = parts;
-        productType = '';
-      }
+      const [productName, weightLabel, qty, price] = chunk.split('|');
       if (productName && qty && price) {
         items.push({
           productName,
-          productType: productType || '',
+          productType: '',
           weightLabel: weightLabel || '',
           qty: parseInt(qty, 10) || 1,
           price: parseFloat(price) || 0,
@@ -450,60 +485,19 @@ async function parseCheckoutSession(session) {
   const shippingDisplayName = shippingRate?.display_name || '';
 
   const lineItems = full.line_items?.data || [];
-
-  // PRIMARY: use metadata items_summary (most reliable — set at session creation)
-  // Format: name|type|weight|qty|price (5 fields)
-  const metaItems = [];
-  if (full.metadata?.items_summary) {
-    console.log('parseCheckoutSession: using metadata items_summary:', full.metadata.items_summary);
-    for (const chunk of full.metadata.items_summary.split(';')) {
-      const parts = chunk.split('|');
-      let productName, productType, weightLabel, qty, price;
-      if (parts.length >= 5) {
-        [productName, productType, weightLabel, qty, price] = parts;
-      } else {
-        [productName, weightLabel, qty, price] = parts;
-        productType = '';
-      }
-      if (productName && productName.trim()) {
-        metaItems.push({
-          productName: productName.trim(),
-          productType: (productType || '').trim(),
-          weightLabel: (weightLabel || '').trim(),
-          qty: parseInt(qty, 10) || 1,
-          price: parseFloat(price) || 0,
-          image: null,
-        });
-      }
-    }
-  }
-
-  // Enrich with images from Stripe line items, or fall back to parsing Stripe data
-  const items = metaItems.length > 0
-    ? metaItems.map((mi, idx) => {
-        const li = lineItems[idx];
-        const productImages = li?.price?.product?.images || [];
-        return { ...mi, image: productImages[0] || null };
-      })
-    : lineItems.map(li => {
-        // FALLBACK: parse product name "Name – Type" format (old orders without metadata)
-        const descField = li.price?.product?.description || '';
-        const weightMatch = descField.match(/(\d+[,.]?\d*)\s*kg/i);
-        const productImages = li.price?.product?.images || [];
-        const fullName = li.price?.product?.name || li.description || 'Produkt';
-        const dashIdx = fullName.indexOf(' – ');
-        const productName = dashIdx >= 0 ? fullName.slice(0, dashIdx) : fullName;
-        const productType = dashIdx >= 0 ? fullName.slice(dashIdx + 3) : '';
-        console.log('parseCheckoutSession fallback: fullName=', fullName, 'productType=', productType);
-        return {
-          productName,
-          productType,
-          weightLabel: weightMatch ? weightMatch[0] : '',
-          qty: li.quantity || 1,
-          price: ((li.amount_total || 0) / (li.quantity || 1)) / 100,
-          image: productImages[0] || null,
-        };
-      });
+  const items = lineItems.map(li => {
+    const descField = li.price?.product?.description || '';
+    const weightMatch = descField.match(/(\d+[,.]?\d*)\s*kg/i);
+    const productImages = li.price?.product?.images || [];
+    return {
+      productName: li.description || li.price?.product?.name || 'Produkt',
+      productType: '',
+      weightLabel: weightMatch ? weightMatch[0] : '',
+      qty: li.quantity || 1,
+      price: ((li.amount_total || 0) / (li.quantity || 1)) / 100,
+      image: productImages[0] || null,
+    };
+  });
 
   return {
     externalId: full.id,
