@@ -18,8 +18,10 @@ export default async function handler(req, res) {
     const origin = 'https://quartzzmolle-dusky.vercel.app';
 
     const line_items = items.map(it => {
+      // Build name: "Rød hvede – Type 70" so it shows in Stripe AND Shipmondo
+      const typeStr = it.productType ? ` – ${it.productType}` : '';
       const product_data = {
-        name: it.productName,
+        name: `${it.productName}${typeStr}`,
         description: `${it.weightLabel} · Malet på stenkværn i Danmark · Certificeret Økologisk`,
       };
       if (it.image) {
@@ -111,6 +113,12 @@ export default async function handler(req, res) {
       },
     });
 
+    // Embed items in metadata (format: name|type|weight|qty|price) so the webhook
+    // can always recover productType even if the Stripe product name parsing fails.
+    const itemsSummary = items.map(it =>
+      `${it.productName}|${it.productType || ''}|${it.weightLabel}|${it.qty}|${it.price}`
+    ).join(';').slice(0, 490);
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card', 'mobilepay'],
       line_items,
@@ -123,6 +131,7 @@ export default async function handler(req, res) {
       phone_number_collection: { enabled: true },
       shipping_options: shippingOptions,
       locale: 'da',
+      metadata: { items_summary: itemsSummary },
     });
 
     return res.status(200).json({ url: session.url });
