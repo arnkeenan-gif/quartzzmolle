@@ -227,7 +227,7 @@ async function sendOrderConfirmationEmail(orderData) {
   const totalKr = Number(orderData.amountKr).toFixed(2).replace('.', ',');
 
   const itemsHtml = (orderData.items || []).map(it => {
-    const name = it.productName + (it.weightLabel ? ` – ${it.weightLabel}` : '');
+    const name = it.productName + (it.productType ? ` – ${it.productType}` : '') + (it.weightLabel ? ` – ${it.weightLabel}` : '');
     const lineTotal = (Number(it.price) * Number(it.qty)).toFixed(2).replace('.', ',');
     const imgCell = it.image
       ? `<td style="padding:12px 14px 12px 0;border-bottom:1px solid #eee;width:64px;vertical-align:middle;">
@@ -389,11 +389,20 @@ function parsePaymentIntent(pi) {
   const items = [];
   if (meta.items_summary) {
     for (const chunk of meta.items_summary.split(';')) {
-      const [productName, weightLabel, qty, price] = chunk.split('|');
+      const parts = chunk.split('|');
+      // Support both old format (4 fields: name|weight|qty|price)
+      // and new format (5 fields: name|type|weight|qty|price)
+      let productName, productType, weightLabel, qty, price;
+      if (parts.length >= 5) {
+        [productName, productType, weightLabel, qty, price] = parts;
+      } else {
+        [productName, weightLabel, qty, price] = parts;
+        productType = '';
+      }
       if (productName && qty && price) {
         items.push({
           productName,
-          productType: '',
+          productType: productType || '',
           weightLabel: weightLabel || '',
           qty: parseInt(qty, 10) || 1,
           price: parseFloat(price) || 0,
@@ -445,9 +454,14 @@ async function parseCheckoutSession(session) {
     const descField = li.price?.product?.description || '';
     const weightMatch = descField.match(/(\d+[,.]?\d*)\s*kg/i);
     const productImages = li.price?.product?.images || [];
+    // Product name is stored as "Name – Type" (e.g. "Rød hvede – Type 70")
+    const fullName = li.price?.product?.name || li.description || 'Produkt';
+    const dashIdx = fullName.indexOf(' – ');
+    const productName = dashIdx >= 0 ? fullName.slice(0, dashIdx) : fullName;
+    const productType = dashIdx >= 0 ? fullName.slice(dashIdx + 3) : '';
     return {
-      productName: li.description || li.price?.product?.name || 'Produkt',
-      productType: '',
+      productName,
+      productType,
       weightLabel: weightMatch ? weightMatch[0] : '',
       qty: li.quantity || 1,
       price: ((li.amount_total || 0) / (li.quantity || 1)) / 100,
