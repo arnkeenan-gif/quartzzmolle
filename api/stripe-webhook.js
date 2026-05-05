@@ -102,7 +102,9 @@ export default async function handler(req, res) {
     // Packaging IDs are configured in Vercel env var SHIPMONDO_PACKAGING
     // Format: {"5":id,"10":id,"15":id,"20":id,"25":id}
     let packagingMap = {};
-    try { packagingMap = JSON.parse(process.env.SHIPMONDO_PACKAGING || '{}'); } catch {}
+    console.log('Raw SHIPMONDO_PACKAGING env:', JSON.stringify(process.env.SHIPMONDO_PACKAGING));
+    try { packagingMap = JSON.parse(process.env.SHIPMONDO_PACKAGING || '{}'); } catch (e) { console.error('Failed to parse SHIPMONDO_PACKAGING:', e.message); }
+    console.log('Parsed packagingMap:', packagingMap);
     function pickPackagingId(weightKg) {
       if (weightKg <= 5) return packagingMap['5'];
       if (weightKg <= 10) return packagingMap['10'];
