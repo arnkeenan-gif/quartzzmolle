@@ -119,6 +119,7 @@ export default async function handler(req, res) {
       const qty = it.qty || 1;
       const unitInclVat = it.price;
       const unitExclVat = unitInclVat / (1 + VAT_FRAC);
+      const unitWeightKg = parseWeightKg(it.weightLabel);
       const parts = [it.productName];
       if (it.productType) parts.push(it.productType);
       if (it.weightLabel) parts.push(it.weightLabel);
@@ -130,6 +131,7 @@ export default async function handler(req, res) {
         unit_price_excluding_vat: unitExclVat.toFixed(2),
         vat_percent: VAT_FRAC,
         currency_code: 'DKK',
+        unit_weight: Math.round(unitWeightKg * 1000), // in grams per unit
       };
     });
 
