@@ -20,7 +20,7 @@ function fragtReglerHTML() {
   return `
     <p><strong>GLS</strong> Levering til pakkeshop i Danmark – <strong>max 20 kg</strong></p>
     <p><strong>GLS</strong> Levering til privatadresse i Danmark – <strong>max 25 kg</strong></p>
-    <p>Vores 12,5 kg melposer har altid mere mel i poserne – derfor kan vi ikke sende 2 stk. 12,5 kg med GLS på en 25 kg levering.</p>
+    <p>Bemærk: Du kan <strong>ikke bestille 2 stk. 12,5 kg melposer</strong> i samme ordre. Vores 12,5 kg poser indeholder altid lidt mere mel end angivet, så to af dem vejer omkring <strong>25,2 kg</strong> – hvilket overskrider GLS' grænse på 25 kg.</p>
     <p><strong>Danske Fragtmand</strong> Privatlevering – forudsætter, at der er <strong>nogen til stede til at modtage leveringen</strong>, eller at der på forhånd gives tydelige instruktioner om <strong>et sikkert sted, hvor pakken kan stilles</strong>. Hvis leveringen ikke kan modtages personligt, og der ikke er angivet et sikkert afleveringssted, <strong>vil forsendelsen blive sendt retur til møllen</strong>.</p>
   `;
 }
