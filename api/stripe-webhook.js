@@ -96,7 +96,9 @@ export default async function handler(req, res) {
     }
 
     let templates = {};
-    try { templates = JSON.parse(process.env.SHIPMENT_TEMPLATES || '{}'); } catch {}
+    console.log('Raw SHIPMENT_TEMPLATES env:', JSON.stringify(process.env.SHIPMENT_TEMPLATES));
+    try { templates = JSON.parse(process.env.SHIPMENT_TEMPLATES || '{}'); } catch (e) { console.error('Failed to parse SHIPMENT_TEMPLATES:', e.message); }
+    console.log('Parsed templates:', templates);
 
     // Calculate total cart weight (kg) — used to pick correct template + packaging
     function parseWeightKg(label) {
@@ -527,6 +529,25 @@ async function parseCheckoutSession(session) {
     };
   });
 
+  // Try to read delivery_method from the session's metadata, or from the
+  // linked PaymentIntent's metadata if not on the session itself.
+  let deliveryKey = full.metadata?.delivery_method || null;
+  if (!deliveryKey && full.payment_intent) {
+    try {
+      const pi = await stripe.paymentIntents.retrieve(full.payment_intent);
+      deliveryKey = pi.metadata?.delivery_method || null;
+    } catch (e) {
+      console.error('Failed to fetch linked PaymentIntent for delivery_method:', e.message);
+    }
+  }
+  // Last-resort fallback: derive from shipping_rate display name.
+  if (!deliveryKey) {
+    const lower = (shippingDisplayName || '').toLowerCase();
+    if (lower.includes('pakkeshop')) deliveryKey = 'gls_pakkeshop';
+    else if (lower.includes('privat')) deliveryKey = 'gls_privat';
+  }
+  console.log('Resolved deliveryKey for checkout session:', deliveryKey, '| shippingDisplayName:', shippingDisplayName);
+
   return {
     externalId: full.id,
     transactionId: full.payment_intent || full.id,
@@ -535,7 +556,7 @@ async function parseCheckoutSession(session) {
     customerEmail: customer.email || '',
     customerPhone: customer.phone || '',
     address,
-    deliveryKey: null,
+    deliveryKey,
     shippingDisplayName,
     items,
   };
