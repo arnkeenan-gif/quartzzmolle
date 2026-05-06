@@ -23,11 +23,35 @@ function normalizeCountry(c) {
   return String(c).toUpperCase().slice(0, 2);
 }
 
-function pickTemplateId(deliveryKey, shippingName, templates) {
-  if (deliveryKey && templates[deliveryKey]) return templates[deliveryKey];
-  const name = (shippingName || '').toLowerCase();
-  if (name.includes('pakkeshop')) return templates.gls_pakkeshop;
-  if (name.includes('privat')) return templates.gls_privat;
+// Pick which weight bracket (5/10/15/20) a cart falls into.
+// Brackets match GLS price tiers: 0-1 kg, 1-5 kg, 5-10 kg, 10-15 kg, 15-20 kg.
+// We don't have a 0-1 kg template, so 0-1 kg orders fall into the 1-5 kg bracket.
+function pickWeightBracket(weightKg) {
+  if (weightKg <= 5) return '5';
+  if (weightKg <= 10) return '10';
+  if (weightKg <= 15) return '15';
+  return '20'; // 15-20 kg (anything above 20 also goes here as a safety fallback)
+}
+
+function pickTemplateId(deliveryKey, shippingName, templates, weightKg) {
+  // Determine delivery type: 'gls_pakkeshop' or 'gls_privat'
+  let deliveryType = deliveryKey;
+  if (!deliveryType) {
+    const name = (shippingName || '').toLowerCase();
+    if (name.includes('pakkeshop')) deliveryType = 'gls_pakkeshop';
+    else if (name.includes('privat')) deliveryType = 'gls_privat';
+    else deliveryType = 'gls_privat'; // default fallback
+  }
+
+  // Try weight-bracketed key first, e.g. gls_pakkeshop_10 for a 7 kg order to Pakkeshop
+  const bracket = pickWeightBracket(weightKg || 0);
+  const bracketedKey = `${deliveryType}_${bracket}`;
+  if (templates[bracketedKey]) return templates[bracketedKey];
+
+  // Fallback to non-bracketed key (legacy behavior, single template per delivery type)
+  if (templates[deliveryType]) return templates[deliveryType];
+
+  // Final fallback: any template
   return templates.gls_privat || templates.gls_pakkeshop;
 }
 
@@ -73,20 +97,8 @@ export default async function handler(req, res) {
 
     let templates = {};
     try { templates = JSON.parse(process.env.SHIPMENT_TEMPLATES || '{}'); } catch {}
-    const templateId = pickTemplateId(orderData.deliveryKey, orderData.shippingDisplayName, templates);
-    if (!templateId) {
-      console.error('No template matched. deliveryKey=', orderData.deliveryKey, 'shippingName=', orderData.shippingDisplayName);
-      return res.status(200).json({ received: true, error: 'No template matched' });
-    }
 
-    const VAT_FRAC = 0.25;
-    const shortId = String(orderData.externalId).slice(-38);
-    const refId = String(orderData.externalId).slice(-38);
-    const orderAmountKr = orderData.amountKr;
-    const orderAmountExclVat = Number((orderAmountKr / 1.25).toFixed(2));
-    const orderVatAmount = Number((orderAmountKr - orderAmountExclVat).toFixed(2));
-
-    // Calculate total cart weight (kg) — used to pick correct packaging
+    // Calculate total cart weight (kg) — used to pick correct template + packaging
     function parseWeightKg(label) {
       if (!label) return 0;
       const m = String(label).match(/(\d+(?:[.,]\d+)?)\s*kg/i);
@@ -97,6 +109,20 @@ export default async function handler(req, res) {
       return sum + (parseWeightKg(it.weightLabel) * (it.qty || 1));
     }, 0);
     console.log('Total order weight:', totalWeightKg, 'kg');
+
+    const templateId = pickTemplateId(orderData.deliveryKey, orderData.shippingDisplayName, templates, totalWeightKg);
+    if (!templateId) {
+      console.error('No template matched. deliveryKey=', orderData.deliveryKey, 'shippingName=', orderData.shippingDisplayName, 'weightKg=', totalWeightKg);
+      return res.status(200).json({ received: true, error: 'No template matched' });
+    }
+    console.log('Picked template ID:', templateId, 'for', orderData.deliveryKey, 'at', totalWeightKg, 'kg');
+
+    const VAT_FRAC = 0.25;
+    const shortId = String(orderData.externalId).slice(-38);
+    const refId = String(orderData.externalId).slice(-38);
+    const orderAmountKr = orderData.amountKr;
+    const orderAmountExclVat = Number((orderAmountKr / 1.25).toFixed(2));
+    const orderVatAmount = Number((orderAmountKr - orderAmountExclVat).toFixed(2));
 
     // Pick packaging based on weight bracket
     // Packaging IDs are configured in Vercel env var SHIPMONDO_PACKAGING
@@ -119,7 +145,6 @@ export default async function handler(req, res) {
       const qty = it.qty || 1;
       const unitInclVat = it.price;
       const unitExclVat = unitInclVat / (1 + VAT_FRAC);
-      const unitWeightKg = parseWeightKg(it.weightLabel);
       const parts = [it.productName];
       if (it.productType) parts.push(it.productType);
       if (it.weightLabel) parts.push(it.weightLabel);
@@ -131,7 +156,6 @@ export default async function handler(req, res) {
         unit_price_excluding_vat: unitExclVat.toFixed(2),
         vat_percent: VAT_FRAC,
         currency_code: 'DKK',
-        unit_weight: Math.round(unitWeightKg * 1000), // in grams per unit
       };
     });
 
@@ -187,14 +211,37 @@ export default async function handler(req, res) {
       ship_to: shipTo,
       order_lines: orderLines,
       total_weight: Math.round(totalWeightKg * 1000), // in grams
+      // Default to 'ship' (auto-book label). Set SHIPMONDO_ACTION=none in Vercel env vars
+      // for free testing — order goes into Shipmondo as draft, no GLS label is purchased.
+      action: process.env.SHIPMONDO_ACTION || 'ship',
     };
 
-    // Pre-select packaging on the order so when you click "Create fulfillment" in
-    // Shipmondo, the right box (1-5kg, 5-10kg, etc.) is already chosen
+    // Attach packaging if matched - this is required for Shipmondo to actually book the label
     if (packagingId) {
       payload.sales_order_packaging_id = packagingId;
+      // Also include order_fulfillments so Shipmondo knows what to package
+      payload.order_fulfillments = [{
+        sales_order_packaging_id: packagingId,
+        line_items: orderLines.map((ol, idx) => ({
+          item_no: ol.item_no,
+          quantity: ol.quantity,
+        })),
+      }];
     } else {
-      console.warn('No packaging ID matched for weight', totalWeightKg, 'kg');
+      console.warn('No packaging ID matched for weight', totalWeightKg, 'kg — order will be created as draft only');
+    }
+
+    // If customer picked a specific pakkeshop, pass it as the service point
+    if (orderData.pakkeshop && orderData.pakkeshop.id) {
+      payload.service_point = {
+        id: orderData.pakkeshop.id,
+        name: orderData.pakkeshop.name,
+        address1: orderData.pakkeshop.address,
+        zipcode: orderData.pakkeshop.zipcode,
+        city: orderData.pakkeshop.city,
+        country_code: 'DK',
+        shipping_agent: 'gls',
+      };
     }
 
     const auth = Buffer.from(`${process.env.SHIPMONDO_USER}:${process.env.SHIPMONDO_KEY}`).toString('base64');
@@ -215,7 +262,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ received: true, shipmondo_error: smText });
     }
 
-    console.log('Shipmondo sales order created for', orderData.externalId);
+    console.log('Shipmondo draft created for', orderData.externalId);
 
     // Send branded order confirmation email (best-effort, don't fail webhook if email fails)
     try {
