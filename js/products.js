@@ -1,300 +1,225 @@
 // ============================================================
-// QUARTZ MØLLE — PRODUCT DATA
+// QUARTZ MØLLE — PRODUCT PAGE
 // ============================================================
-// previewImage = the branded promo image shown in lists + as default product hero
-// weight.image = the physical pack-shot shown when a size is selected
-// nutrition = typical values per 100g for this variety
-// NOTE: Nutrition values are typical stone-milled ranges. Replace with
-// lab-verified values from your Quartz Mølle analyses when available.
 
-const PRODUCTS = [
-  {
-    id: 'dalarna-fuldkorn',
-    name: 'Dalarna',
-    type: 'Fuldkornshvedemel',
-    badge: 'gammel',
-    color: '#c0392b',
-    previewImage: 'images/dalarna_type85.png',
-    description: 'Dalarna er en klassisk dansk hvedesort med en rig smag og god bageevne. Perfekt til rugbrød, boller og grovbrød. Dyrket og malet i Danmark.',
-    certifications: ['DK-ØKO-100', 'Dansk jordbrug', 'EU-jordbrug', 'Statskontrolleret Økologisk'],
-    origin: 'Dyrket i Danmark & malet på stenkværn',
-    nutrition: {
-      energy: '1440 kJ / 343 kcal',
-      fat: '2,3 g', saturated: '0,4 g',
-      carbs: '62 g', sugars: '1,0 g',
-      fiber: '11 g', protein: '13 g',
-      salt: '0,01 g'
-    },
-    weights: [
-      { label: '3 kg', price: 99, image: 'images/Dalarna-3Kg-fuldkorn-96x139mm-outlined_copy.jpg' },
-      { label: '12,5 kg', price: 315, image: 'images/Dalarna-12_5Kg-fuldkorn-96x139mm-outlined_copy.jpg' }
-    ]
-  },
-  {
-    id: 'dalarna-type85',
-    name: 'Dalarna',
-    type: 'Mellemsigtet hvedemel – Type 85',
-    badge: 'gammel',
-    color: '#c0392b',
-    previewImage: 'images/fuldkorn_dalarna.png',
-    description: 'Dalarna Type 85 er et mellemsigtet mel der bevarer mere af kornets naturlige smag og næringsindhold end fintere mel. Ideel til brød med karakter.',
-    certifications: ['DK-ØKO-100', 'Dansk jordbrug', 'EU-jordbrug', 'Statskontrolleret Økologisk'],
-    origin: 'Dyrket i Danmark & malet på stenkværn',
-    nutrition: {
-      energy: '1455 kJ / 347 kcal',
-      fat: '1,8 g', saturated: '0,3 g',
-      carbs: '67 g', sugars: '1,0 g',
-      fiber: '8 g', protein: '12 g',
-      salt: '0,01 g'
-    },
-    weights: [
-      { label: '3 kg', price: 99, image: 'images/Dalarna-3Kg-type85-96x139mm-outlined_copy.jpg' },
-      { label: '12,5 kg', price: 315, image: 'images/Dalarna-12_5Kg-type85-96x139mm-outlined_copy.jpg' }
-    ]
-  },
-  {
-    id: 'mariagertoba-type70',
-    name: 'Mariagertoba',
-    type: 'Fintsigtet hvedemel – Type 70',
-    badge: 'bestseller',
-    color: '#d4890a',
-    previewImage: 'images/mariagertoba.png',
-    description: 'Mariagertoba er et fintsigtet hvedemel med fremragende bageegenskaber. Det giver luftige og velsmagende brød og boller. En af vores mest elskede sorter.',
-    certifications: ['DK-ØKO-100', 'Dansk jordbrug', 'EU-jordbrug', 'Statskontrolleret Økologisk'],
-    origin: 'Dyrket i Danmark & malet på stenkværn',
-    nutrition: {
-      energy: '1460 kJ / 348 kcal',
-      fat: '1,5 g', saturated: '0,3 g',
-      carbs: '70 g', sugars: '1,0 g',
-      fiber: '5 g', protein: '12 g',
-      salt: '0,01 g'
-    },
-    weights: [
-      { label: '3 kg', price: 99, image: 'images/Mariagertoba-type70-3Kg-96x139mm-outlined_copy.jpg' },
-      { label: '12,5 kg', price: 315, image: 'images/Mariagertoba-type70-12_5Kg-148x214_29mm-outlined_copy.jpg' }
-    ]
-  },
-  {
-    id: 'olands-fuldkorn',
-    name: 'Ølands / Quarna',
-    type: 'Fuldkornshvedemel',
-    badge: 'gammel',
-    color: '#5b8dd9',
-    previewImage: 'images/olands_fuldkorn.png',
-    description: 'Ølandshvede er en gammel nordisk kornsort med en kompleks og nøddeagtig smag. Perfekt til surdejsbrød og håndværkerbrød der kræver karakter.',
-    certifications: ['DK-ØKO-100', 'Dansk jordbrug', 'EU-jordbrug', 'Statskontrolleret Økologisk'],
-    origin: 'Dyrket i Danmark & malet på stenkværn',
-    nutrition: {
-      energy: '1435 kJ / 342 kcal',
-      fat: '2,4 g', saturated: '0,4 g',
-      carbs: '61 g', sugars: '1,0 g',
-      fiber: '11 g', protein: '13 g',
-      salt: '0,01 g'
-    },
-    weights: [
-      { label: '3 kg', price: 99, image: 'images/OlandsHvede-fuldkorn-3Kg-96x139mm-outlined_copy.jpg' },
-      { label: '12,5 kg', price: 300, image: 'images/OlandsHvede-fuldkorn-12_5Kg-148x214_29mm-outlined_copy.jpg' }
-    ]
-  },
-  {
-    id: 'olands-type85',
-    name: 'Ølands / Quarna',
-    type: 'Mellemsigtet hvedemel – Type 85',
-    badge: 'gammel',
-    color: '#5b8dd9',
-    previewImage: 'images/olands_type85.png',
-    description: 'Ølands Type 85 kombinerer det bedste fra fuldkorn og hvidt mel. En alsidig meltype der giver brød med dybde og god struktur.',
-    certifications: ['DK-ØKO-100', 'Dansk jordbrug', 'EU-jordbrug', 'Statskontrolleret Økologisk'],
-    origin: 'Dyrket i Danmark & malet på stenkværn',
-    nutrition: {
-      energy: '1450 kJ / 345 kcal',
-      fat: '1,8 g', saturated: '0,3 g',
-      carbs: '66 g', sugars: '1,0 g',
-      fiber: '8 g', protein: '12 g',
-      salt: '0,01 g'
-    },
-    weights: [
-      { label: '3 kg', price: 99, image: 'images/OlandsHvede-type85-3Kg-96x139mm-outlined_copy.jpg' },
-      { label: '12,5 kg', price: 315, image: 'images/OlandsHvede-type85-12_5Kg-148x214_29mm-outlined_copy.jpg' }
-    ]
-  },
-  {
-    id: 'purpurhvede-fuldkorn',
-    name: 'Purpurhvede',
-    type: 'Fuldkornshvedemel',
-    badge: 'bestseller',
-    color: '#7b2fbe',
-    previewImage: 'images/purpurhvede.png',
-    description: 'Purpurhvede er en smuk og sjælden hvedesort med en dyb, lilla farve. Rig på antioxidanter og med en markant, sødlig smag der løfter ethvert bagværk.',
-    certifications: ['DK-ØKO-100', 'Dansk jordbrug', 'EU-jordbrug', 'Statskontrolleret Økologisk'],
-    origin: 'Dyrket i Danmark & malet på stenkværn',
-    nutrition: {
-      energy: '1440 kJ / 343 kcal',
-      fat: '2,4 g', saturated: '0,4 g',
-      carbs: '62 g', sugars: '1,0 g',
-      fiber: '11 g', protein: '13 g',
-      salt: '0,01 g'
-    },
-    weights: [
-      { label: '3 kg', price: 108, image: 'images/Purpurhvede-fuldkorn-3Kg-96x139mm-outlined_copy.jpg' },
-      { label: '12,5 kg', price: 330, image: 'images/Purpurhvede-fuldkorn-12_5Kg-148x214_29mm-outlined_copy.jpg' }
-    ]
-  },
-  {
-    id: 'quartz-special-fuldkorn',
-    name: 'Quartz Special',
-    type: 'Fuldkornsmel',
-    badge: null,
-    color: '#2d6a4f',
-    previewImage: 'images/qs_fuldkorn.png',
-    description: 'Quartz Special er vores husets særlige blanding – en unik sammensætning af udvalgte kornsorter der giver et komplekst og smagfuldt fuldkornsmel.',
-    certifications: ['DK-ØKO-100', 'Statskontrolleret Økologisk'],
-    origin: 'Malet på stenkværn i Danmark',
-    nutrition: {
-      energy: '1440 kJ / 343 kcal',
-      fat: '2,3 g', saturated: '0,4 g',
-      carbs: '62 g', sugars: '1,0 g',
-      fiber: '11 g', protein: '13 g',
-      salt: '0,01 g'
-    },
-    weights: [
-      { label: '3 kg', price: 108, image: 'images/QS-Fuldkorn-3kg-Webshop.jpg' },
-      { label: '12,5 kg', price: 330, image: 'images/QS-Fuldkorn-12_5_Webshop.jpg' }
-    ]
-  },
-  {
-    id: 'quartz-special-type85',
-    name: 'Quartz Special',
-    type: 'Mellemsigtet mel – Type 85',
-    badge: null,
-    color: '#2d6a4f',
-    previewImage: 'images/qs_type85.png',
-    description: 'Quartz Special Type 85 er vores husets mellemsigtede mel – en særlig blanding med fremragende bageegenskaber og en rig, kompleks smag.',
-    certifications: ['DK-ØKO-100', 'Statskontrolleret Økologisk'],
-    origin: 'Malet på stenkværn i Danmark',
-    nutrition: {
-      energy: '1455 kJ / 347 kcal',
-      fat: '1,8 g', saturated: '0,3 g',
-      carbs: '67 g', sugars: '1,0 g',
-      fiber: '8 g', protein: '12 g',
-      salt: '0,01 g'
-    },
-    weights: [
-      { label: '3 kg', price: 108, image: 'images/QS-Type85-3kg-Webshop.jpg' },
-      { label: '12,5 kg', price: 315, image: 'images/QS-Type85-12_5_Webshop.jpg' }
-    ]
-  },
-  {
-    id: 'rod-hvede-fuldkorn',
-    name: 'Rød hvede',
-    type: 'Fuldkornshvedemel',
-    badge: null,
-    color: '#c0392b',
-    previewImage: 'images/rod_fuldkorn.png',
-    description: 'Rød hvede er en klassisk dansk hvedesort med en smuk rødlig farve og en fyldig, robust smag. Ideel til grove brød og boller med karakter.',
-    certifications: ['DK-ØKO-100', 'EU-Jordbrug', 'Statskontrolleret Økologisk'],
-    origin: 'Malet på stenkværn i Danmark',
-    nutrition: {
-      energy: '1440 kJ / 343 kcal',
-      fat: '2,3 g', saturated: '0,4 g',
-      carbs: '62 g', sugars: '1,0 g',
-      fiber: '11 g', protein: '13 g',
-      salt: '0,01 g'
-    },
-    weights: [
-      { label: '3 kg', price: 99, image: 'images/Rod-Fuldkorn-3kg.jpg' },
-      { label: '12,5 kg', price: 300, image: 'images/Rod-Fuldkorn-12_5.jpg' }
-    ]
-  },
-  {
-    id: 'rod-hvede-type70',
-    name: 'Rød hvede',
-    type: 'Fintsigtet hvedemel – Type 70',
-    badge: 'bestseller',
-    color: '#c0392b',
-    previewImage: 'images/rod_type70.png',
-    description: 'Rød hvede Type 70 er et let sigtet mel der giver luftige og velsmagende brød. Perfekt når du ønsker det bedste fra rød hvede i en finere tekstur.',
-    certifications: ['DK-ØKO-100', 'EU-Jordbrug', 'Statskontrolleret Økologisk'],
-    origin: 'Malet på stenkværn i Danmark',
-    nutrition: {
-      energy: '1460 kJ / 348 kcal',
-      fat: '1,5 g', saturated: '0,3 g',
-      carbs: '70 g', sugars: '1,0 g',
-      fiber: '5 g', protein: '12 g',
-      salt: '0,01 g'
-    },
-    weights: [
-      { label: '3 kg', price: 99, image: 'images/Rod-Type70-3kg.jpg' },
-      { label: '12,5 kg', price: 315, image: 'images/Rod-Type70-12_5.jpg' }
-    ]
-  },
-  {
-    id: 'rod-hvede-type85',
-    name: 'Rød hvede',
-    type: 'Mellemsigtet hvedemel – Type 85',
-    badge: null,
-    color: '#c0392b',
-    previewImage: 'images/rod_type85.png',
-    description: 'Rød hvede Type 85 er det perfekte kompromis mellem fuldkorn og finere mel. Beholder kornets naturlige smag med en mere tilgængelig tekstur.',
-    certifications: ['DK-ØKO-100', 'EU-Jordbrug', 'Statskontrolleret Økologisk'],
-    origin: 'Malet på stenkværn i Danmark',
-    nutrition: {
-      energy: '1455 kJ / 347 kcal',
-      fat: '1,8 g', saturated: '0,3 g',
-      carbs: '67 g', sugars: '1,0 g',
-      fiber: '8 g', protein: '12 g',
-      salt: '0,01 g'
-    },
-    weights: [
-      { label: '3 kg', price: 99, image: 'images/Rod-Type85-3kg.jpg' },
-      { label: '12,5 kg', price: 315, image: 'images/Rod-Type85-12_5.jpg' }
-    ]
-  },
-  {
-    id: 'rug-fuldkorn',
-    name: 'Rug',
-    type: 'Rugmel fuldkorn',
-    badge: 'bestseller',
-    color: '#4a7c59',
-    previewImage: 'images/ruggreen_fuldkorn.png',
-    description: 'Vores rugmel er malet af hele rugkerner på stenkværn. Rig på fibre og med en dyb, jordnær smag der er uundværlig i det klassiske danske rugbrød.',
-    certifications: ['DK-ØKO-100', 'Dansk jordbrug', 'Statskontrolleret Økologisk'],
-    origin: 'Dyrket i Danmark & malet på stenkværn',
-    nutrition: {
-      energy: '1340 kJ / 320 kcal',
-      fat: '2,0 g', saturated: '0,3 g',
-      carbs: '58 g', sugars: '1,5 g',
-      fiber: '14 g', protein: '9 g',
-      salt: '0,02 g'
-    },
-    weights: [
-      { label: '3 kg', price: 85, image: 'images/RugGreen-3Kg-fuldkorn-96x139mm-outlined.jpg' },
-      { label: '11 kg', price: 250, image: 'images/RugGreen-11Kg-fuldkorn-96x139mm-outlined.jpg' }
-    ]
-  },
-  {
-    id: 'spelt-fuldkorn',
-    name: 'Spelt',
-    type: 'Fuldkornsmel',
-    badge: null,
-    color: '#6b6b6b',
-    previewImage: 'images/spelt_fuldkorn.png',
-    description: 'Spelt er en urgammel kornsort med en nøddeagtig, sødlig smag. Lettere fordøjeligt end hvede og perfekt til brød, kager og pasta med en særlig karakter.',
-    certifications: ['DK-ØKO-100', 'Dansk jordbrug', 'EU-jordbrug', 'Statskontrolleret Økologisk'],
-    origin: 'Malet på stenkværn i Danmark',
-    nutrition: {
-      energy: '1420 kJ / 339 kcal',
-      fat: '2,5 g', saturated: '0,4 g',
-      carbs: '60 g', sugars: '1,5 g',
-      fiber: '10 g', protein: '14 g',
-      salt: '0,01 g'
-    },
-    weights: [
-      { label: '3 kg', price: 108, image: 'images/Spelt-fuldkorn-3kg-Webshop.jpg' },
-      { label: '12,5 kg', price: 330, image: 'images/Spelt-fuldkorn-12_5_Webshop.jpg' }
-    ]
+const STRIPE_PK = 'pk_live_51L5wKqCCp2Usx7QSCdRAk3JMWtoKxZcrRi0V99qHiPsRQHQC9h5q4ZZmzjSdDqliSIUVEvKD60sB54tuaKw9VZfr00HLho5fWW';
+let stripe;
+try { stripe = Stripe(STRIPE_PK); } catch(e) { console.warn('Stripe not loaded'); }
+
+let selectedWeightIndex = -1;   // -1 means no size chosen yet → show preview image
+let currentProduct = null;
+
+function getBadgeHTML(badge) {
+  // Intentionally no bestseller badge on the product page itself
+  // (cards in shop/bestsellers still show it, just not the full product page)
+  return '';
+}
+
+// ── Fragt Regler content (same for every product) ──
+function fragtReglerHTML() {
+  return `
+    <p><strong>GLS</strong> Levering til pakkeshop i Danmark – <strong>max 20 kg</strong></p>
+    <p><strong>GLS</strong> Levering til privatadresse i Danmark – <strong>max 25 kg</strong></p>
+    <p>Bemærk: Du kan <strong>ikke bestille 2 stk. 12,5 kg melposer</strong> i samme ordre. Vores 12,5 kg poser indeholder altid lidt mere mel end angivet, så to af dem vejer omkring <strong>25,2 kg</strong> – hvilket overskrider GLS' grænse på 25 kg.</p>
+    <p><strong>Danske Fragtmand</strong> Privatlevering – forudsætter, at der er <strong>nogen til stede til at modtage leveringen</strong>, eller at der på forhånd gives tydelige instruktioner om <strong>et sikkert sted, hvor pakken kan stilles</strong>. Hvis leveringen ikke kan modtages personligt, og der ikke er angivet et sikkert afleveringssted, <strong>vil forsendelsen blive sendt retur til møllen</strong>.</p>
+  `;
+}
+
+// ── Næringsindhold table (per product) ──
+function nutritionTableHTML(n) {
+  if (!n) return '<p style="color:#888;font-size:0.9rem">Næringsindhold er ikke tilgængelig for dette produkt.</p>';
+  return `
+    <table class="nutrition-table">
+      <caption>Næringsindhold pr. 100 g</caption>
+      <tbody>
+        <tr><th>Energi</th><td>${n.energy || '—'}</td></tr>
+        <tr><th>Fedt</th><td>${n.fat || '—'}</td></tr>
+        <tr class="indent"><th>heraf mættede fedtsyrer</th><td>${n.saturated || '—'}</td></tr>
+        <tr><th>Kulhydrat</th><td>${n.carbs || '—'}</td></tr>
+        <tr class="indent"><th>heraf sukkerarter</th><td>${n.sugars || '—'}</td></tr>
+        <tr><th>Kostfibre</th><td>${n.fiber || '—'}</td></tr>
+        <tr><th>Protein</th><td>${n.protein || '—'}</td></tr>
+        <tr><th>Salt</th><td>${n.salt || '—'}</td></tr>
+      </tbody>
+    </table>
+  `;
+}
+
+function renderProduct(product) {
+  currentProduct = product;
+  const inner = document.getElementById('productInner');
+  document.title = `${product.name} – ${product.type} | Quartz Mølle`;
+
+  const certsHTML = product.certifications.map(c =>
+    `<span class="cert-tag">${c}</span>`
+  ).join('');
+
+  // No weight selected yet → show branded preview image + lowest price
+  const defaultImage = product.previewImage || product.weights[0].image;
+  const defaultPrice = product.weights[0].price;
+
+  const weightBtns = product.weights.map((wt, i) => `
+    <button class="weight-btn" data-weight-index="${i}">
+      ${wt.label}
+    </button>
+  `).join('');
+
+  inner.innerHTML = `
+    <div>
+      <a href="shop.html" class="btn-back">← Tilbage til shop</a>
+      <img src="${defaultImage}" alt="${product.name}"
+           class="product-page-img" id="productImg" />
+    </div>
+    <div class="product-page-info">
+      ${getBadgeHTML(product.badge)}
+      <h1 class="product-page-name">${product.name}</h1>
+      <p class="product-page-type">${product.type}</p>
+      <p class="product-page-desc">${product.description}</p>
+
+      <div class="weight-selector">
+        <h3>Vælg størrelse</h3>
+        <div class="weight-options">${weightBtns}</div>
+      </div>
+
+      <div class="product-price-display" id="priceDisplay">
+        Fra ${defaultPrice},00 kr.
+      </div>
+
+      <div class="qty-selector">
+        <span class="qty-label">Antal</span>
+        <div class="qty-stepper">
+          <button class="qty-btn" id="qtyMinus" type="button" aria-label="Mindre">−</button>
+          <input class="qty-input" id="qtyInput" type="number" min="1" max="99" value="1" inputmode="numeric" />
+          <button class="qty-btn" id="qtyPlus" type="button" aria-label="Mere">+</button>
+        </div>
+      </div>
+
+      <button class="btn-buy" id="buyBtn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+        </svg>
+        Tilføj til kurv
+      </button>
+
+      <div class="certifications">${certsHTML}</div>
+
+      <p style="font-size:0.82rem;color:#999;line-height:1.6;margin-top:0.25rem">
+        ${product.origin}<br>
+        Fragt beregnes ved checkout &middot; Sikker betaling via Stripe
+      </p>
+
+      <div class="accordion">
+        <div class="accordion-item">
+          <button class="accordion-header" type="button">
+            Fragt regler
+            <svg class="chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="accordion-body">
+            <div class="accordion-content">${fragtReglerHTML()}</div>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <button class="accordion-header" type="button">
+            Næringsindhold
+            <svg class="chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="accordion-body">
+            <div class="accordion-content">${nutritionTableHTML(product.nutrition)}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Wire up size buttons
+  inner.querySelectorAll('.weight-btn').forEach(btn => {
+    btn.addEventListener('click', () => selectWeight(parseInt(btn.dataset.weightIndex, 10)));
+  });
+  document.getElementById('buyBtn').addEventListener('click', handleBuy);
+
+  // Wire up quantity stepper
+  const qtyInput = document.getElementById('qtyInput');
+  const qtyMinus = document.getElementById('qtyMinus');
+  const qtyPlus = document.getElementById('qtyPlus');
+  function clampQty() {
+    let n = parseInt(qtyInput.value, 10);
+    if (isNaN(n) || n < 1) n = 1;
+    if (n > 99) n = 99;
+    qtyInput.value = n;
   }
-];
+  qtyMinus.addEventListener('click', () => {
+    qtyInput.value = Math.max(1, (parseInt(qtyInput.value, 10) || 1) - 1);
+  });
+  qtyPlus.addEventListener('click', () => {
+    qtyInput.value = Math.min(99, (parseInt(qtyInput.value, 10) || 1) + 1);
+  });
+  qtyInput.addEventListener('change', clampQty);
+  qtyInput.addEventListener('blur', clampQty);
+}
 
-// Bestsellers for homepage
-const BESTSELLERS = PRODUCTS.filter(p => p.badge === 'bestseller').slice(0, 4);
+function selectWeight(index) {
+  if (!currentProduct) return;
+  selectedWeightIndex = index;
+  const w = currentProduct.weights[index];
+
+  // Fade-swap the image to the actual pack shot
+  const img = document.getElementById('productImg');
+  if (img) {
+    img.style.transition = 'opacity 0.25s';
+    img.style.opacity = '0';
+    setTimeout(() => {
+      img.src = w.image;
+      img.alt = `${currentProduct.name} ${currentProduct.type} ${w.label}`;
+      img.style.opacity = '1';
+    }, 200);
+  }
+
+  const price = document.getElementById('priceDisplay');
+  if (price) price.textContent = `${w.price},00 kr.`;
+
+  document.querySelectorAll('.weight-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', i === index);
+  });
+}
+
+async function handleBuy() {
+  if (!currentProduct) return;
+
+  if (selectedWeightIndex < 0) {
+    // Gently flash the size selector instead of a toast
+    const sel = document.querySelector('.weight-selector');
+    if (sel) {
+      sel.classList.add('needs-attention');
+      setTimeout(() => sel.classList.remove('needs-attention'), 1200);
+    }
+    return;
+  }
+
+  const w = currentProduct.weights[selectedWeightIndex];
+  const qtyEl = document.getElementById('qtyInput');
+  const qty = Math.max(1, Math.min(99, parseInt(qtyEl?.value, 10) || 1));
+
+  if (window.QuartzCart) {
+    window.QuartzCart.add({
+      productId: currentProduct.id,
+      productName: currentProduct.name,
+      productType: currentProduct.type,
+      weightLabel: w.label,
+      price: w.price,
+      image: w.image,
+      qty: qty,
+    });
+    window.QuartzCart.open();
+  }
+}
+
+function loadProduct() {
+  const id = new URLSearchParams(window.location.search).get('id');
+  if (!id) { window.location.href = 'shop.html'; return; }
+  const product = PRODUCTS.find(p => p.id === id);
+  if (!product) { window.location.href = 'shop.html'; return; }
+  renderProduct(product);
+}
+
+document.addEventListener('DOMContentLoaded', loadProduct);
