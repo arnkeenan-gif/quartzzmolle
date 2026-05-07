@@ -15,9 +15,26 @@ if (burger && mobileMenu) {
     }
     mobileMenu.classList.add('open');
   });
-  // When user clicks a link/button inside the menu, the page navigates anyway,
-  // so no reload needed there.
-  mobileMenu.querySelectorAll('a, button').forEach(el => {
+  // When user clicks a link inside the mobile menu
+  mobileMenu.querySelectorAll('a').forEach(el => {
+    el.addEventListener('click', (e) => {
+      const href = el.getAttribute('href');
+      if (!href) return;
+      // Special case: Kontakt anchor - reload page with anchor to avoid
+      // iOS Safari overlay state bug after closing the burger menu.
+      if (href === '#kontakt' || href.endsWith('#kontakt')) {
+        e.preventDefault();
+        mobileMenu.classList.remove('open');
+        const target = href.startsWith('#') ? window.location.pathname + href : href;
+        window.location.replace(target);
+        setTimeout(() => window.location.reload(), 30);
+        return;
+      }
+      // All other links: just close menu, let default behavior happen
+      mobileMenu.classList.remove('open');
+    });
+  });
+  mobileMenu.querySelectorAll('button').forEach(el => {
     el.addEventListener('click', () => mobileMenu.classList.remove('open'));
   });
 }
@@ -203,13 +220,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Re-fire scroll on pageshow so when user returns to this page (e.g. via back button
-// from /om.html) the video-fade state and bottom-mask refresh correctly. If page is
-// restored from bfcache (event.persisted is true), force a full reload to avoid
-// stale layout/scroll state that causes the bottom mask to fail.
-window.addEventListener('pageshow', (event) => {
-  if (event.persisted) {
-    window.location.reload();
-    return;
-  }
+// from /om.html) the video-fade state and bottom-mask refresh correctly.
+// We previously reloaded on bfcache restore but that created redirect loops with
+// Vercel cleanUrls. Now we only refresh scroll state.
+window.addEventListener('pageshow', () => {
   window.dispatchEvent(new Event('scroll'));
 });
