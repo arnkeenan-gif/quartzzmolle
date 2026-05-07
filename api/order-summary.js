@@ -14,9 +14,13 @@ export default async function handler(req, res) {
 
     const items = (session.line_items?.data || []).map(li => {
       const img = li.price?.product?.images?.[0] || null;
-      console.log('Order summary item:', li.description, '| product images:', li.price?.product?.images, '| picked:', img);
+      const desc = li.price?.product?.description || '';
+      const weightMatch = desc.match(/(\d+(?:[.,]\d+)?)\s*kg/i);
+      const weightLabel = weightMatch ? weightMatch[0] : '';
+      console.log('Order summary item:', li.description, '| weight:', weightLabel, '| picked:', img);
       return {
         name: li.description || li.price?.product?.name || 'Produkt',
+        weightLabel: weightLabel,
         qty: li.quantity || 1,
         price: ((li.amount_total || 0) / (li.quantity || 1)) / 100,
         lineTotal: (li.amount_total || 0) / 100,
