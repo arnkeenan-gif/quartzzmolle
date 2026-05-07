@@ -427,11 +427,14 @@
         var fmt = function(n) { return Number(n).toFixed(2).replace('.', ',') + ' kr.'; };
         var html = '';
         (data.items || []).forEach(function(it) {
+          var qtyParts = [];
+          if (it.weightLabel) qtyParts.push(it.weightLabel);
+          qtyParts.push('Antal: ' + it.qty);
           html += '<div class="success-order-item">'
             + (it.image ? '<img src="' + it.image + '" alt="" />' : '<div class="success-order-item-noimg"></div>')
             + '<div class="success-order-item-info">'
             +   '<div class="success-order-item-name">' + it.name + '</div>'
-            +   '<div class="success-order-item-qty">Antal: ' + it.qty + '</div>'
+            +   '<div class="success-order-item-qty">' + qtyParts.join(' · ') + '</div>'
             + '</div>'
             + '<div class="success-order-item-price">' + fmt(it.lineTotal) + '</div>'
           + '</div>';
