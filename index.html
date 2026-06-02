@@ -14,26 +14,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
-    /* Mobile bottom mask – BLACK, not blue */
-    @media (max-width: 768px) {
-      .bottom-mask {
-        position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        height: 4px;
-        background: #000;
-        pointer-events: none;
-        z-index: 9999;
-        transform: translate3d(0, 0, 0);
-        -webkit-transform: translate3d(0, 0, 0);
-        will-change: transform;
-      }
-    }
-    @media (min-width: 769px) {
-      .bottom-mask { display: none; }
-    }
-
     /* Ensure all video backgrounds never pause */
     .video-bg {
       pointer-events: none;
@@ -41,8 +21,6 @@
   </style>
 </head>
 <body>
-<div class="bottom-mask" aria-hidden="true"></div>
-
   <nav class="nav" id="nav">
     <a href="index.html" class="nav-logo">
       <img src="images/logopng.png" alt="Quartz Mølle" class="brand-mark" />
