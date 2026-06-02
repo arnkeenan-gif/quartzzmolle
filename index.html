@@ -22,7 +22,7 @@
 </head>
 <body>
   <nav class="nav" id="nav">
-    <a href="index.html" class="nav-logo">
+    <a href="index.html" class="nav-logo" onclick="event.preventDefault(); window.location.reload();">
       <img src="images/logopng.png" alt="Quartz Mølle" class="brand-mark" />
       <img src="images/eu-organic.jpg" alt="EU Økologi" class="eco-mark" />
       <img src="images/statskontrolleret.png" alt="Statskontrolleret Økologisk" class="eco-mark" />
@@ -186,14 +186,17 @@
   <script>
     (function () {
       function forcePlay(vid) {
+        if (!vid) return;
         vid.muted = true;
         vid.loop = true;
         vid.setAttribute('muted', '');
         vid.setAttribute('loop', '');
         vid.setAttribute('playsinline', '');
         vid.setAttribute('webkit-playsinline', '');
-        var p = vid.play();
-        if (p && p.catch) p.catch(function () {});
+        if (vid.paused || vid.ended) {
+          var p = vid.play();
+          if (p && p.catch) p.catch(function () {});
+        }
       }
 
       function initAll() {
@@ -207,16 +210,25 @@
           forcePlay(vid);
           vid.addEventListener('pause', function () { forcePlay(vid); });
           vid.addEventListener('ended', function () { forcePlay(vid); });
+          vid.addEventListener('stalled', function () { forcePlay(vid); });
+          vid.addEventListener('suspend', function () { forcePlay(vid); });
+          vid.addEventListener('waiting', function () { forcePlay(vid); });
         });
       }
 
       initAll();
       window.addEventListener('load', initAll);
       document.addEventListener('visibilitychange', function () { if (!document.hidden) initAll(); });
+      window.addEventListener('scroll', initAll, { passive: true });
       document.addEventListener('touchstart', function handler() {
         initAll();
         document.removeEventListener('touchstart', handler);
       });
+
+      // Continuously check every 1 second that all videos are playing
+      setInterval(function () {
+        document.querySelectorAll('video.video-bg').forEach(forcePlay);
+      }, 1000);
     })();
   </script>
 </body>
