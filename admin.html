@@ -173,11 +173,19 @@
   .order-row .date { color: var(--muted); font-size: 12px; }
 
   .product-row {
-    display: flex; justify-content: space-between; padding: 10px 0;
+    display: flex; align-items: center; gap: 12px; padding: 10px 0;
     border-bottom: 1px solid var(--border); font-size: 14px;
   }
   .product-row:last-child { border-bottom: none; }
-  .product-row .qty { color: var(--blue); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .product-row img {
+    width: 40px; height: 40px; border-radius: 8px; object-fit: cover;
+    background: var(--cream); flex-shrink: 0;
+  }
+  .product-row .product-noimg {
+    width: 40px; height: 40px; border-radius: 8px; background: var(--cream); flex-shrink: 0;
+  }
+  .product-row .product-name { flex: 1; min-width: 0; }
+  .product-row .qty { color: var(--blue); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
   .location-row {
     display: grid; grid-template-columns: 1fr 80px;
@@ -310,10 +318,11 @@
   let pollTimer = null;
 
   function login() {
-    const u = document.getElementById('username').value.trim();
+    const u = document.getElementById('username').value.trim().toLowerCase();
     const p = document.getElementById('password').value;
-    if (u === VALID_USER && p === VALID_PASS) {
-      sessionStorage.setItem('qm_admin_auth', btoa(u + ':' + p));
+    if (u === VALID_USER.toLowerCase() && p === VALID_PASS) {
+      // Always store the normalized lowercase username so the API receives it consistently
+      sessionStorage.setItem('qm_admin_auth', btoa(VALID_USER.toLowerCase() + ':' + p));
       showDashboard();
     } else {
       document.getElementById('loginError').textContent = 'Forkert brugernavn eller adgangskode.';
@@ -420,7 +429,8 @@
     } else {
       productsEl.innerHTML = data.topProducts.map(p => `
         <div class="product-row">
-          <div>${escapeHtml(p.name)}</div>
+          ${p.image ? `<img src="${escapeHtml(p.image)}" alt="" />` : '<div class="product-noimg"></div>'}
+          <div class="product-name">${escapeHtml(p.name)}</div>
           <div class="qty">${p.qty}×</div>
         </div>
       `).join('');
