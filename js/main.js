@@ -2,6 +2,15 @@
 // QUARTZ MØLLE — MAIN JS
 // ============================================================
 
+// Load visitor tracker for admin dashboard analytics
+(function loadTracker() {
+  if (window.location.pathname.includes('/admin')) return;
+  const s = document.createElement('script');
+  s.src = 'js/track.js';
+  s.async = true;
+  document.head.appendChild(s);
+})();
+
 // ── MOBILE MENU ──
 const burger = document.getElementById('burger');
 const mobileMenu = document.getElementById('mobileMenu');
