@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Skabsstyring · Quartz Mølle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#273071; --blue-dark:#1b2252; --blue-light:#3a4599;
+    --blue-soft:rgba(39,48,113,.08);
+    --cream:#faf7f2; --warm:#f5f0e8; --line:#e7e1d6;
+    --text:#1a1611; --muted:#6b6256; --white:#fff;
+    --green:#2e8b57; --green-soft:#e6f1ea;
+    --red:#b23b3b; --red-soft:#f6e7e4;
+    --grey:#9b9488; --grey-soft:#ece8e0;
+    --shadow:0 4px 18px rgba(39,48,113,.10);
+    --radius:18px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+    background:var(--cream); color:var(--text); -webkit-font-smoothing:antialiased;
+    line-height:1.5;
+  }
+  button{font-family:inherit;cursor:pointer;border:none}
+  .hide{display:none!important}
+
+  /* ---------- LOGIN ---------- */
+  #login{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .login-card{
+    background:var(--white);border:1px solid var(--line);border-radius:24px;
+    box-shadow:var(--shadow);padding:38px 30px;width:100%;max-width:380px;text-align:center
+  }
+  .login-card img{width:96px;height:96px;object-fit:contain;margin-bottom:10px}
+  .login-card h1{font-size:20px;font-weight:700;color:var(--blue);letter-spacing:.2px}
+  .login-card p{color:var(--muted);font-size:14px;margin-top:4px;margin-bottom:24px}
+  .code-input{
+    width:100%;text-align:center;font-size:30px;font-weight:700;letter-spacing:10px;
+    color:var(--blue);padding:16px;border:2px solid var(--line);border-radius:14px;
+    background:var(--cream);outline:none;transition:border-color .15s
+  }
+  .code-input:focus{border-color:var(--blue-light)}
+  .login-btn{
+    width:100%;margin-top:16px;background:var(--blue);color:#fff;font-size:17px;font-weight:600;
+    padding:16px;border-radius:14px;transition:background .15s
+  }
+  .login-btn:active{background:var(--blue-dark)}
+  .login-err{color:var(--red);font-size:14px;font-weight:500;margin-top:14px;min-height:18px}
+
+  /* ---------- TOPBAR ---------- */
+  .top{
+    position:sticky;top:0;z-index:30;background:var(--blue);color:#fff;
+    display:flex;align-items:center;gap:12px;padding:14px 18px;
+    padding-top:calc(14px + env(safe-area-inset-top));
+  }
+  .top img{width:34px;height:34px;object-fit:contain;border-radius:8px;background:#fff;padding:3px}
+  .top .ttl{font-weight:700;font-size:16px;line-height:1.15}
+  .top .ttl small{display:block;font-weight:500;font-size:11px;opacity:.8}
+  .top .spacer{flex:1}
+  .pill{
+    display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;
+    padding:6px 11px;border-radius:999px;background:rgba(255,255,255,.14)
+  }
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--grey)}
+  .pill.online .dot{background:#5ad07f;box-shadow:0 0 0 3px rgba(90,208,127,.25)}
+  .pill.online{background:rgba(90,208,127,.16)}
+  .logout{background:rgba(255,255,255,.14);color:#fff;font-size:13px;font-weight:600;padding:8px 12px;border-radius:10px}
+
+  /* ---------- LAYOUT ---------- */
+  .wrap{max-width:860px;margin:0 auto;padding:18px 16px 60px}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .btn{
+    border-radius:13px;font-size:15px;font-weight:600;padding:14px 18px;
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:transform .05s,background .15s
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn-primary{background:var(--green);color:#fff}
+  .btn-blue{background:var(--blue);color:#fff}
+  .btn-ghost{background:var(--white);color:var(--blue);border:1.5px solid var(--line)}
+  .btn-grow{flex:1}
+
+  .statline{display:flex;align-items:center;gap:14px;margin:18px 2px 12px;color:var(--muted);font-size:14px;font-weight:500}
+  .statline b{color:var(--blue);font-weight:700}
+
+  /* ---------- GRID ---------- */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+  .card{
+    background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+    padding:15px 15px 14px;text-align:left;transition:transform .05s,box-shadow .15s;
+    box-shadow:0 1px 3px rgba(39,48,113,.05);min-height:104px;display:flex;flex-direction:column
+  }
+  .card:active{transform:scale(.98)}
+  .card .num{font-size:15px;font-weight:700}
+  .card .badge{font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;align-self:flex-start;margin-top:8px}
+  .card .code{font-size:24px;font-weight:800;letter-spacing:1px;margin-top:8px}
+  .card .age{font-size:11.5px;margin-top:2px}
+  .card.free{background:var(--white)}
+  .card.free .num{color:var(--blue)}
+  .card.free .badge{background:var(--green-soft);color:var(--green)}
+  .card.occ{background:var(--blue);border-color:var(--blue)}
+  .card.occ .num{color:#fff}
+  .card.occ .badge{background:rgba(255,255,255,.18);color:#fff}
+  .card.occ .code{color:#fff}
+  .card.occ .age{color:rgba(255,255,255,.75)}
+  .card.oos{background:var(--grey-soft);border-color:var(--line)}
+  .card.oos .num{color:var(--muted)}
+  .card.oos .badge{background:#dcd6cb;color:var(--muted)}
+
+  /* ---------- HISTORY ---------- */
+  .sec-h{margin:30px 2px 12px;font-size:15px;font-weight:700;color:var(--blue);display:flex;align-items:center;gap:8px}
+  .hist{display:flex;flex-direction:column;gap:8px}
+  .hrow{background:var(--white);border:1px solid var(--line);border-radius:13px;padding:12px 14px}
+  .hrow .l1{font-size:14px;font-weight:600}
+  .hrow .l1.in{color:var(--green)} .hrow .l1.out{color:var(--blue)} .hrow .l1.sys{color:var(--muted)}
+  .hrow .l2{font-size:12px;color:var(--muted);margin-top:1px}
+  .empty{color:var(--muted);font-size:14px;padding:8px 2px}
+
+  /* ---------- MODAL / SHEET ---------- */
+  .ov{position:fixed;inset:0;background:rgba(20,16,12,.45);z-index:50;display:flex;align-items:flex-end;justify-content:center;padding:0}
+  .ov.center{align-items:center;padding:24px}
+  .sheet{
+    background:var(--cream);width:100%;max-width:460px;border-radius:22px 22px 0 0;
+    padding:22px 20px calc(22px + env(safe-area-inset-bottom));box-shadow:0 -8px 30px rgba(0,0,0,.2)
+  }
+  .ov.center .sheet{border-radius:22px}
+  .sheet h3{font-size:18px;font-weight:700;color:var(--blue);text-align:center}
+  .sheet .subtt{text-align:center;color:var(--muted);font-size:13px;margin-top:2px;margin-bottom:16px}
+  .sheet .opt{
+    width:100%;text-align:left;background:var(--white);border:1px solid var(--line);
+    border-radius:13px;padding:15px 16px;font-size:15.5px;font-weight:600;color:var(--text);margin-top:9px;
+    display:flex;align-items:center;gap:11px
+  }
+  .sheet .opt.danger{color:var(--red)}
+  .sheet .opt.blue{color:var(--blue)}
+  .sheet .opt .em{font-size:18px}
+  .sheet .cancel{width:100%;margin-top:14px;background:transparent;color:var(--muted);font-weight:600;font-size:15px;padding:12px}
+
+  .codebox{background:var(--white);border:2px dashed var(--blue-light);border-radius:16px;padding:20px;text-align:center;margin:6px 0 4px}
+  .codebox .big{font-size:42px;font-weight:800;letter-spacing:4px;color:var(--blue)}
+  .codebox .lbl{font-size:13px;color:var(--muted);margin-bottom:6px}
+  .toast{
+    position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:var(--blue);color:#fff;
+    font-size:14px;font-weight:600;padding:12px 20px;border-radius:999px;z-index:80;box-shadow:var(--shadow);
+    opacity:0;transition:opacity .2s,transform .2s;pointer-events:none
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px)}
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN ===== -->
+<div id="login">
+  <div class="login-card">
+    <img src="/images/logo.png" alt="Quartz Mølle" onerror="this.style.display='none'">
+    <h1>Skabsstyring</h1>
+    <p>Indtast adgangskode</p>
+    <input id="codeInput" class="code-input" type="password" inputmode="numeric"
+           autocomplete="off" maxlength="10" placeholder="••••">
+    <button id="loginBtn" class="login-btn">Lås op</button>
+    <div id="loginErr" class="login-err"></div>
+  </div>
+</div>
+
+<!-- ===== DASHBOARD ===== -->
+<div id="app" class="hide">
+  <div class="top">
+    <img src="/images/logo.png" alt="" onerror="this.style.display='none'">
+    <div class="ttl">Skabsstyring<small>Quartz Mølle</small></div>
+    <div class="spacer"></div>
+    <span id="statusPill" class="pill"><span class="dot"></span><span id="statusText">…</span></span>
+    <button class="logout" id="logoutBtn">Log ud</button>
+  </div>
+
+  <div class="wrap">
+    <div class="row">
+      <button class="btn btn-primary btn-grow" id="depositBtn">＋ Ny aflevering</button>
+      <button class="btn btn-ghost" id="refreshBtn">↻ Opdatér</button>
+    </div>
+
+    <div class="statline">
+      <span><b id="occCount">0</b> / 22 optaget</span>
+      <span id="freeCount" style="color:var(--green)"></span>
+    </div>
+
+    <div class="grid" id="grid"></div>
+
+    <div class="sec-h">Historik</div>
+    <div class="hist" id="hist"></div>
+  </div>
+</div>
+
+<div id="overlayRoot"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const DOORS = 22;
+let pollTimer = null, idleTimer = null, lastState = null;
+
+const $ = s => document.querySelector(s);
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1900); }
+
+async function api(path, opts={}){
+  const r = await fetch(path, { credentials:'same-origin', headers:{'Content-Type':'application/json'}, ...opts });
+  if (r.status === 401) { showLogin(); throw new Error('unauth'); }
+  return r;
+}
+
+/* ---------- LOGIN ---------- */
+function showLogin(){
+  stopPolling();
+  $('#app').classList.add('hide');
+  $('#login').classList.remove('hide');
+  $('#codeInput').value=''; $('#loginErr').textContent='';
+  setTimeout(()=>$('#codeInput').focus(), 100);
+}
+async function doLogin(){
+  const code = $('#codeInput').value.trim();
+  if(!code){ return; }
+  $('#loginBtn').textContent='…';
+  try{
+    const r = await fetch('/api/locker-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code})});
+    const d = await r.json();
+    if(r.ok){ enterApp(); }
+    else { $('#loginErr').textContent = d.error || 'Forkert kode'; $('#codeInput').value=''; $('#codeInput').focus(); }
+  }catch(e){ $('#loginErr').textContent='Netværksfejl'; }
+  $('#loginBtn').textContent='Lås op';
+}
+$('#loginBtn').addEventListener('click', doLogin);
+$('#codeInput').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+
+function enterApp(){
+  $('#login').classList.add('hide');
+  $('#app').classList.remove('hide');
+  refresh();
+  startPolling();
+  resetIdle();
+}
+async function logout(){
+  try{ await fetch('/api/locker-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'logout'})}); }catch{}
+  showLogin();
+}
+$('#logoutBtn').addEventListener('click', logout);
+
+/* auto-logout after 15 min of no interaction */
+function resetIdle(){ clearTimeout(idleTimer); idleTimer=setTimeout(logout, 15*60*1000); }
+['click','keydown','touchstart'].forEach(ev=>document.addEventListener(ev,()=>{ if(!$('#app').classList.contains('hide')) resetIdle(); },{passive:true}));
+
+/* ---------- POLLING ---------- */
+function startPolling(){ stopPolling(); pollTimer=setInterval(refresh, 4000); }
+function stopPolling(){ if(pollTimer) clearInterval(pollTimer); pollTimer=null; }
+
+async function refresh(){
+  try{
+    const r = await api('/api/locker-state');
+    const d = await r.json();
+    lastState = d;
+    render(d);
+  }catch(e){ /* 401 handled in api() */ }
+}
+
+/* ---------- RENDER ---------- */
+function ageText(since){
+  if(!since) return '';
+  const m = Math.floor((Date.now()-since)/60000);
+  if(m<1) return 'lige nu';
+  if(m<60) return m+' min siden';
+  const h=Math.floor(m/60); return h+' t '+(m%60)+' min siden';
+}
+function fmt(t){ const d=new Date(t); const p=n=>String(n).padStart(2,'0'); return p(d.getDate())+'/'+p(d.getMonth()+1)+' '+p(d.getHours())+':'+p(d.getMinutes()); }
+
+function render(d){
+  // status pill
+  const pill=$('#statusPill'), txt=$('#statusText');
+  if(d.device.online){ pill.classList.add('online'); txt.textContent='Tablet online'; }
+  else { pill.classList.remove('online'); txt.textContent = d.device.lastSeen? ('Offline · '+fmt(d.device.lastSeen)) : 'Tablet offline'; }
+
+  // counts
+  const occ = d.lockers.filter(l=>l.occ).length;
+  $('#occCount').textContent = occ;
+  const free = d.lockers.filter(l=>!l.occ && !l.oos).length;
+  $('#freeCount').textContent = free+' ledige';
+
+  // grid
+  const g=$('#grid'); g.innerHTML='';
+  d.lockers.forEach(l=>{
+    const c=document.createElement('button');
+    c.className='card '+(l.oos?'oos':l.occ?'occ':'free');
+    let inner='<div class="num">Skab '+l.door+'</div>';
+    if(l.oos){ inner+='<div class="badge">Ud af drift</div>'; }
+    else if(l.occ){ inner+='<div class="badge">Optaget</div><div class="code">'+l.code+'</div><div class="age">'+ageText(l.since)+'</div>'; }
+    else { inner+='<div class="badge">Ledig</div>'; }
+    c.innerHTML=inner;
+    c.addEventListener('click',()=>openActions(l));
+    g.appendChild(c);
+  });
+
+  // history
+  const h=$('#hist'); h.innerHTML='';
+  if(!d.history.length){ h.innerHTML='<div class="empty">Ingen hændelser endnu.</div>'; }
+  d.history.forEach(o=>{
+    const isIn=o.type==='in', isOut=o.type==='out';
+    const cls=isIn?'in':isOut?'out':'sys';
+    const label=isIn?'Aflevering':isOut?'Afhentning':o.type==='open'?'Dør åbnet':o.type==='oos_on'?'Sat ud af drift':o.type==='oos_off'?'Sat i drift':o.type;
+    const row=document.createElement('div'); row.className='hrow';
+    const src=o.source==='web'?'web':o.source==='kiosk'?'tablet':'';
+    row.innerHTML='<div class="l1 '+cls+'">'+label+' · Skab '+o.locker+'</div>'+
+      '<div class="l2">'+fmt(o.t)+(o.code?' · kode '+o.code:'')+(src?' · '+src:'')+'</div>';
+    h.appendChild(row);
+  });
+}
+
+/* ---------- ACTIONS ---------- */
+function overlay(html, center){
+  const root=$('#overlayRoot');
+  root.innerHTML='<div class="ov '+(center?'center':'')+'"><div class="sheet">'+html+'</div></div>';
+  root.querySelector('.ov').addEventListener('click',e=>{ if(e.target.classList.contains('ov')) closeOverlay(); });
+}
+function closeOverlay(){ $('#overlayRoot').innerHTML=''; }
+
+function openActions(l){
+  const opts=[];
+  opts.push('<button class="opt blue" data-a="open"><span class="em">🔓</span> Åbn dør</button>');
+  if(l.occ){
+    opts.push('<button class="opt" data-a="copy"><span class="em">📋</span> Kopiér kode ('+l.code+')</button>');
+    opts.push('<button class="opt danger" data-a="clear"><span class="em">🧹</span> Ryd skab (markér ledig)</button>');
+  }
+  opts.push('<button class="opt" data-a="oos"><span class="em">'+(l.oos?'✅':'⚠️')+'</span> '+(l.oos?'Sæt i drift':'Sæt ud af drift')+'</button>');
+  overlay('<h3>Skab '+l.door+'</h3><div class="subtt">'+(l.oos?'Ud af drift':l.occ?'Optaget · kode '+l.code:'Ledig')+'</div>'+opts.join('')+
+          '<button class="cancel" data-a="cancel">Annullér</button>');
+  $('#overlayRoot').querySelectorAll('.opt,.cancel').forEach(b=>{
+    b.addEventListener('click',()=>handleAction(b.dataset.a,l));
+  });
+}
+
+async function handleAction(a,l){
+  if(a==='cancel'){ closeOverlay(); return; }
+  if(a==='copy'){ copy(l.code); closeOverlay(); return; }
+  if(a==='open'){
+    closeOverlay();
+    confirmOpen(l.door);
+    return;
+  }
+  closeOverlay();
+  if(a==='clear'){ await cmd({action:'clear',door:l.door}); toast('Skab '+l.door+' ryddet'); }
+  if(a==='oos'){ await cmd({action:'oos',door:l.door}); toast('Skab '+l.door+' opdateret'); }
+}
+
+function confirmOpen(door){
+  overlay('<h3>Åbn skab '+door+'?</h3><div class="subtt">Døren åbnes fysisk på lockeren.</div>'+
+    '<button class="opt blue" data-a="yes"><span class="em">🔓</span> Ja, åbn døren</button>'+
+    '<button class="cancel" data-a="no">Annullér</button>', true);
+  $('#overlayRoot').querySelector('[data-a="yes"]').addEventListener('click',async()=>{
+    closeOverlay(); await cmd({action:'open',door}); toast('Åbner skab '+door+'…');
+  });
+  $('#overlayRoot').querySelector('[data-a="no"]').addEventListener('click',closeOverlay);
+}
+
+async function cmd(body){
+  try{
+    const r=await api('/api/locker-command',{method:'POST',body:JSON.stringify(body)});
+    const d=await r.json();
+    if(!r.ok){ toast(d.error||'Fejl'); return null; }
+    refresh();
+    return d;
+  }catch(e){ return null; }
+}
+
+/* new deposit */
+$('#depositBtn').addEventListener('click', async()=>{
+  const d=await cmd({action:'deposit'});
+  if(d && d.ok){ showDepositResult(d.door, d.code); }
+});
+function showDepositResult(door, code){
+  overlay('<h3>Skab '+door+' åbnet</h3><div class="subtt">Læg pakken i skab '+door+'</div>'+
+    '<div class="codebox"><div class="lbl">Kode til kunden</div><div class="big">'+code+'</div></div>'+
+    '<button class="opt blue" data-a="copy"><span class="em">📋</span> Kopiér kode</button>'+
+    '<button class="cancel" data-a="done">Færdig</button>', true);
+  $('#overlayRoot').querySelector('[data-a="copy"]').addEventListener('click',()=>{ copy(code); });
+  $('#overlayRoot').querySelector('[data-a="done"]').addEventListener('click',closeOverlay);
+}
+
+$('#refreshBtn').addEventListener('click', refresh);
+
+function copy(text){
+  navigator.clipboard?.writeText(text).then(()=>toast('Kode kopieret: '+text)).catch(()=>toast(text));
+}
+
+/* ---------- BOOT ---------- */
+(async function boot(){
+  // If we already have a valid session cookie, go straight in.
+  try{
+    const r=await fetch('/api/locker-state',{credentials:'same-origin'});
+    if(r.ok){ enterApp(); return; }
+  }catch{}
+  showLogin();
+})();
+</script>
+</body>
+</html>
