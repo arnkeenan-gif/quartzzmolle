@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style>
+<style
   :root{
     --blue:#273071; --blue-dark:#1b2252; --blue-light:#3a4599;
     --blue-soft:rgba(39,48,113,.08);
@@ -362,7 +362,7 @@ function confirmOpen(door){
 
 async function cmd(body){
   try{
-    const r=await api('/api/locker-command',{method:'POST',body:JSON.stringify(body)});
+    const r=await api('/api/locker-state',{method:'POST',body:JSON.stringify(body)});
     const d=await r.json();
     if(!r.ok){ toast(d.error||'Fejl'); return null; }
     refresh();
