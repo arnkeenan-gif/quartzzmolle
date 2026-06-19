@@ -10,6 +10,30 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
+  <!-- from-resolver -->
+  <script>
+  (function () {
+    try {
+      var raw = new URLSearchParams(location.search).get('from');
+      if (!raw) return;
+      var s = decodeURIComponent(raw).toLowerCase()
+                .replace(/\u00f8/g, 'o').replace(/%c3%b8/g, 'o');
+      var t85 = /t-?85|type-?85/.test(s);
+      var t70 = /t-?70|type-?70/.test(s);
+      var id = null;
+      if (/mariagertoba/.test(s))            id = 'mariagertoba-type70';
+      else if (/spelt/.test(s))              id = 'spelt-fuldkorn';
+      else if (/purpur/.test(s))             id = 'purpurhvede-fuldkorn';
+      else if (/rug|ruggreen/.test(s))       id = 'rug-fuldkorn';
+      else if (/olands|quarna/.test(s))      id = t85 ? 'olands-type85' : 'olands-fuldkorn';
+      else if (/dalarna/.test(s))            id = t85 ? 'dalarna-type85' : 'dalarna-fuldkorn';
+      else if (/rodhvede|rod-hvede|hvede-t/.test(s))
+                                             id = t70 ? 'rod-hvede-type70'
+                                                      : (t85 ? 'rod-hvede-type85' : 'rod-hvede-fuldkorn');
+      if (id) location.replace('product.html?id=' + id);
+    } catch (e) {}
+  })();
+  </script>
 </head>
 <body>
 
@@ -56,12 +80,20 @@
   <footer class="footer">
     <div class="footer-inner">
       <img src="images/logopng.png" alt="Quartz Mølle" class="footer-logo" />
-      <p>© 2025 Quartz Mølle · Suså Landevej 101, 4160 Herlufmagle · <a href="mailto:hello@quartzmolle.dk">hello@quartzmolle.dk</a></p>
+      <p>© 2025 Quartz Mølle · CVR 42117188 · Suså Landevej 101, 4160 Herlufmagle · <a href="mailto:hello@quartzmolle.dk">hello@quartzmolle.dk</a></p>
       <div class="footer-links">
         <a href="shop.html">Shop</a>
         <a href="forhandlere.html">Forhandlere</a>
         <a href="om.html">Om os</a>
         <a href="index.html#kontakt">Kontakt</a>
+        <a href="https://www.findsmiley.dk/Sider/KontrolRapport.aspx?Virk=7162357" class="footer-smiley-link" target="_blank" rel="noopener" title="Smileyrapport – se vores kontrolrapport fra Fødevarestyrelsen" aria-label="Smileyrapport – se vores kontrolrapport fra Fødevarestyrelsen">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M8.6 14.3c.85 1.1 2 1.7 3.4 1.7s2.55-.6 3.4-1.7"></path>
+            <path d="M9 9.6h.01M15 9.6h.01"></path>
+          </svg>
+          <span class="footer-smiley-word">Smiley­rapport</span>
+        </a>
       </div>
     </div>
   </footer>
