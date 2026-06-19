@@ -1,5 +1,14 @@
 {
   "version": 2,
   "cleanUrls": true,
-  "trailingSlash": false
+  "trailingSlash": false,
+  "redirects": [
+    { "source": "/butik/ws-/products/rødhvede-fuldkorn-3kg", "destination": "/product?id=rod-hvede-fuldkorn", "permanent": true },
+    { "source": "/butik/ws-/products/rødhvede-t85-3kg", "destination": "/product?id=rod-hvede-type85", "permanent": true },
+    { "source": "/butik/ws-/products/rødhvede-t70-12-0x2e-5kg", "destination": "/product?id=rod-hvede-type70", "permanent": true },
+    { "source": "/butik/ws-/products/mariagertoba-t70-3kg", "destination": "/product?id=mariagertoba-type70", "permanent": true },
+    { "source": "/butik/:path*", "destination": "/shop", "permanent": true },
+    { "source": "/about", "destination": "/om", "permanent": true },
+    { "source": "/forhandler", "destination": "/forhandlere", "permanent": true }
+  ]
 }
