@@ -158,6 +158,23 @@ export default async function handler(req, res) {
       await logEvt({ type: 'in', locker: d, code, source: 'web' });
       return res.status(200).json({ ok: true, door: d, code });
     }
+    if (action === 'depositmulti') {
+      const doors = Array.isArray(req.body?.doors)
+        ? req.body.doors.map(n => parseInt(n, 10)).filter(n => n >= 1 && n <= DOORS) : [];
+      if (!doors.length) return res.status(400).json({ error: 'Ingen skabe valgt' });
+      const targets = [];
+      for (const dn of doors) {
+        const t = lockers.find(l => l.door === dn);
+        if (!t || t.occ || t.oos) return res.status(409).json({ error: 'Skab ' + dn + ' er ikke ledigt' });
+        targets.push(t);
+      }
+      const code = genCode(lockers);
+      const now = Date.now();
+      for (const t of targets) { t.occ = true; t.code = code; t.since = now; }
+      await saveLockers(lockers);
+      for (const t of targets) { await queueOpen(t.door); await logEvt({ type: 'in', locker: t.door, code, source: 'web' }); }
+      return res.status(200).json({ ok: true, doors: targets.map(t => t.door), code });
+    }
     if (action === 'clear') {
       const t = lockers.find(l => l.door === door);
       if (!t) return res.status(400).json({ error: 'Ugyldig dør' });

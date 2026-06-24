@@ -111,6 +111,28 @@
   .card.oos .num{color:var(--muted)}
   .card.oos .badge{background:#dcd6cb;color:var(--muted)}
 
+  /* ---------- CABINET (visual layout matching the real locker) ---------- */
+  .cabinet{display:flex;gap:5px;background:var(--blue-dark);padding:7px;border-radius:16px;box-shadow:var(--shadow);margin-top:4px;max-width:600px}
+  .col{display:flex;flex-direction:column;gap:5px;flex:1;min-width:0}
+  .door{
+    position:relative;flex:1;min-height:64px;border-radius:7px;border:2px solid var(--blue);
+    background:var(--cream);display:flex;flex-direction:column;align-items:center;justify-content:center;
+    cursor:pointer;transition:transform .05s;padding:4px;text-align:center;overflow:hidden
+  }
+  .door:active{transform:scale(.96)}
+  .door .dn{position:absolute;top:3px;left:5px;font-size:10.5px;font-weight:800;opacity:.6}
+  .door .dcode{font-size:15px;font-weight:800;line-height:1.1;letter-spacing:.5px}
+  .door .dlbl{font-size:10px;font-weight:600;opacity:.85}
+  .door.free{background:var(--cream);color:var(--blue)}
+  .door.occ{background:var(--blue);border-color:var(--blue-light);color:#fff}
+  .door.oos{background:var(--grey-soft);border-color:var(--line);color:var(--muted)}
+  .screen{flex:2;border-radius:7px;border:2px solid var(--blue-light);background:linear-gradient(160deg,#10163a,#273071);display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:64px}
+  .screen img{width:72%;max-height:72%;object-fit:contain}
+  .pkgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:8px 0 14px}
+  .pk{background:var(--white);border:1.5px solid var(--line);border-radius:11px;padding:14px 0;font-size:16px;font-weight:700;color:var(--blue);transition:transform .05s}
+  .pk:active{transform:scale(.95)}
+  .pk.sel{background:var(--blue);color:#fff;border-color:var(--blue)}
+
   /* ---------- HISTORY ---------- */
   .sec-h{margin:30px 2px 12px;font-size:15px;font-weight:700;color:var(--blue);display:flex;align-items:center;gap:8px}
   .hist{display:flex;flex-direction:column;gap:8px}
@@ -191,7 +213,7 @@
       <span id="freeCount" style="color:var(--green)"></span>
     </div>
 
-    <div class="grid" id="grid"></div>
+    <div class="cabinet" id="cabinet"></div>
 
     <div class="sec-h">Historik</div>
     <div class="hist" id="hist"></div>
@@ -203,6 +225,16 @@
 
 <script>
 const DOORS = 22;
+// Physical cabinet layout: 6 columns, numbered top-to-bottom; the tablet screen
+// sits at the top of column 4 (spanning 2 rows). Matches the real locker.
+const LAYOUT = [
+  [1,2,3,4],
+  [5,6,7,8],
+  [9,10,11,12],
+  ['screen','screen',13,14],
+  [15,16,17,18],
+  [19,20,21,22],
+];
 let pollTimer = null, idleTimer = null, lastState = null;
 
 const $ = s => document.querySelector(s);
@@ -289,18 +321,32 @@ function render(d){
   const free = d.lockers.filter(l=>!l.occ && !l.oos).length;
   $('#freeCount').textContent = free+' ledige';
 
-  // grid
-  const g=$('#grid'); g.innerHTML='';
-  d.lockers.forEach(l=>{
-    const c=document.createElement('button');
-    c.className='card '+(l.oos?'oos':l.occ?'occ':'free');
-    let inner='<div class="num">Skab '+l.door+'</div>';
-    if(l.oos){ inner+='<div class="badge">Ud af drift</div>'; }
-    else if(l.occ){ inner+='<div class="badge">Optaget</div><div class="code">'+l.code+'</div><div class="age">'+ageText(l.since)+'</div>'; }
-    else { inner+='<div class="badge">Ledig</div>'; }
-    c.innerHTML=inner;
-    c.addEventListener('click',()=>openActions(l));
-    g.appendChild(c);
+  // cabinet (visual layout matching the real locker)
+  const byDoor={}; d.lockers.forEach(l=>byDoor[l.door]=l);
+  const cab=$('#cabinet'); cab.innerHTML='';
+  LAYOUT.forEach(colCells=>{
+    const col=document.createElement('div'); col.className='col';
+    let i=0;
+    while(i<colCells.length){
+      if(colCells[i]==='screen'){
+        let span=0; while(i<colCells.length && colCells[i]==='screen'){span++;i++;}
+        const s=document.createElement('div'); s.className='screen'; s.style.flex=span;
+        s.innerHTML='<img src="/images/logopng.png" alt="" onerror="this.style.display=\'none\'">';
+        col.appendChild(s); continue;
+      }
+      const num=colCells[i];
+      const l=byDoor[num]||{door:num,occ:false,oos:false,code:null,since:0};
+      const dr=document.createElement('button');
+      dr.className='door '+(l.oos?'oos':l.occ?'occ':'free');
+      let inner='<span class="dn">'+l.door+'</span>';
+      if(l.oos){ inner+='<span class="dlbl">Ud af drift</span>'; }
+      else if(l.occ){ inner+='<span class="dcode">'+l.code+'</span>'; }
+      else { inner+='<span class="dlbl">Ledig</span>'; }
+      dr.innerHTML=inner;
+      dr.addEventListener('click',()=>openActions(l));
+      col.appendChild(dr); i++;
+    }
+    cab.appendChild(col);
   });
 
   // history
@@ -375,13 +421,51 @@ async function cmd(body){
   }catch(e){ return null; }
 }
 
-/* new deposit */
-$('#depositBtn').addEventListener('click', async()=>{
-  const d=await cmd({action:'deposit'});
-  if(d && d.ok){ showDepositResult(d.door, d.code); }
-});
-function showDepositResult(door, code){
-  overlay('<h3>Skab '+door+' åbnet</h3><div class="subtt">Læg pakken i skab '+door+'</div>'+
+/* new deposit — ask how many (1-5), pick which lockers, then one shared code */
+$('#depositBtn').addEventListener('click', askQty);
+
+function freeDoors(){ return (lastState? lastState.lockers:[]).filter(l=>!l.occ && !l.oos).map(l=>l.door); }
+
+function askQty(){
+  const free=freeDoors();
+  if(!free.length){ toast('Alle skabe er optaget'); return; }
+  const maxQ=Math.min(5, free.length);
+  let opts='';
+  for(let n=1;n<=maxQ;n++) opts+='<button class="opt blue" data-n="'+n+'"><span class="em">📦</span> '+n+(n===1?' skab':' skabe')+'</button>';
+  overlay('<h3>Hvor mange skabe?</h3><div class="subtt">Vælg antal skabe til ordren</div>'+opts+
+    '<button class="cancel" data-a="cancel">Annullér</button>', true);
+  $('#overlayRoot').querySelectorAll('[data-n]').forEach(b=>b.addEventListener('click',()=>pickDoors(parseInt(b.dataset.n,10))));
+  $('#overlayRoot').querySelector('[data-a="cancel"]').addEventListener('click',closeOverlay);
+}
+
+function pickDoors(need){
+  const free=freeDoors();
+  const chosen=new Set();
+  (function rerender(){
+    let grid=''; free.forEach(dn=>{ grid+='<button class="pk'+(chosen.has(dn)?' sel':'')+'" data-d="'+dn+'">'+dn+'</button>'; });
+    overlay('<h3>Vælg '+need+' skab'+(need>1?'e':'')+'</h3><div class="subtt">'+chosen.size+' / '+need+' valgt</div>'+
+      '<div class="pkgrid">'+grid+'</div>'+
+      '<button class="opt blue" data-a="ok"><span class="em">✓</span> Opret kode</button>'+
+      '<button class="cancel" data-a="cancel">Annullér</button>', true);
+    $('#overlayRoot').querySelectorAll('[data-d]').forEach(b=>b.addEventListener('click',()=>{
+      const dn=parseInt(b.dataset.d,10);
+      if(chosen.has(dn)) chosen.delete(dn);
+      else { if(chosen.size>=need){ toast('Vælg præcis '+need); return; } chosen.add(dn); }
+      rerender();
+    }));
+    $('#overlayRoot').querySelector('[data-a="ok"]').addEventListener('click',async()=>{
+      if(chosen.size!==need){ toast('Vælg præcis '+need+' skab'+(need>1?'e':'')); return; }
+      closeOverlay();
+      const r=await cmd({action:'depositmulti',doors:[...chosen]});
+      if(r && r.ok) showDepositResult(r.doors, r.code);
+    });
+    $('#overlayRoot').querySelector('[data-a="cancel"]').addEventListener('click',closeOverlay);
+  })();
+}
+
+function showDepositResult(doors, code){
+  const arr=Array.isArray(doors)?doors:[doors]; const many=arr.length>1; const list=arr.join(', ');
+  overlay('<h3>Skab'+(many?'e':'')+' '+list+' åbnet</h3><div class="subtt">Læg pakken i skab'+(many?'e':'')+' '+list+(many?' · samme kode åbner alle':'')+'</div>'+
     '<div class="codebox"><div class="lbl">Kode til kunden</div><div class="big">'+code+'</div></div>'+
     '<button class="opt blue" data-a="copy"><span class="em">📋</span> Kopiér kode</button>'+
     '<button class="cancel" data-a="done">Færdig</button>', true);
