@@ -1696,8 +1696,8 @@ body.past-videos .video-overlay {
   bottom: 1.5rem;
   width: 320px;
   max-width: calc(100vw - 2rem);
-  background: #14161f;
-  border: 1px solid rgba(58, 69, 153, 0.45);
+  background: var(--brand-blue);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 18px;
   padding: 1.4rem 1.4rem 1.3rem;
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
@@ -1720,13 +1720,13 @@ body.past-videos .video-overlay {
   gap: 0.55rem;
   margin-bottom: 0.7rem;
 }
-.lang-pop-head svg { flex: 0 0 auto; color: var(--brand-blue-light); }
+.lang-pop-head svg { flex: 0 0 auto; color: var(--cream); }
 .lang-pop-head span {
   font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--brand-blue-light);
+  color: rgba(250, 247, 242, 0.75);
 }
 
 .lang-pop-q {
@@ -1756,27 +1756,30 @@ body.past-videos .video-overlay {
 .lang-pop-btn:active { transform: scale(0.98); }
 
 .lang-pop-btn.secondary {
-  background: #23262f;
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: var(--dark);
+  color: var(--cream);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 .lang-pop-btn.secondary:hover {
-  background: #2c303b;
-  border-color: rgba(58, 69, 153, 0.6);
+  background: #161616;
 }
 
 .lang-pop-btn.primary {
-  background: var(--brand-blue);
-  color: #fff;
+  background: var(--cream);
+  color: var(--dark);
 }
-.lang-pop-btn.primary:hover { background: var(--brand-blue-light); }
+.lang-pop-btn.primary:hover { background: #ffffff; }
 
 @media (max-width: 768px) {
   .lang-pop {
-    right: 1rem;
-    bottom: 1rem;
-    width: 300px;
-    max-width: calc(100vw - 2rem);
-    padding-bottom: calc(1.3rem + env(safe-area-inset-bottom, 0px));
+    right: 0.85rem;
+    bottom: 0.85rem;
+    width: 260px;
+    max-width: calc(100vw - 1.7rem);
+    padding: 1.1rem 1.1rem 1rem;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    border-radius: 16px;
   }
+  .lang-pop-q { font-size: 0.88rem; margin-bottom: 0.9rem; }
+  .lang-pop-btn { padding: 0.72rem 1rem; font-size: 0.9rem; }
 }
