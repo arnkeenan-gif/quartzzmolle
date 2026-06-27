@@ -1766,22 +1766,17 @@ body.past-videos .video-overlay {
 }
 
 .lang-pop-btn.primary {
-  background: #ffffff;
-  color: #14161f;
+  background: var(--brand-blue);
+  color: #fff;
 }
-.lang-pop-btn.primary:hover { background: #e9ecf7; }
+.lang-pop-btn.primary:hover { background: var(--brand-blue-light); }
 
 @media (max-width: 768px) {
   .lang-pop {
-    right: 0;
-    left: 0;
-    bottom: 0;
-    width: 100%;
-    max-width: 100%;
-    border-radius: 18px 18px 0 0;
-    border-left: none;
-    border-right: none;
-    border-bottom: none;
+    right: 1rem;
+    bottom: 1rem;
+    width: 300px;
+    max-width: calc(100vw - 2rem);
     padding-bottom: calc(1.3rem + env(safe-area-inset-bottom, 0px));
   }
 }
