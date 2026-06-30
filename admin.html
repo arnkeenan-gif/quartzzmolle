@@ -1,419 +1,205 @@
-<!DOCTYPE html>
-<html lang="da">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="robots" content="noindex,nofollow" />
-<title>Admin · Quartz Mølle</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-<style>
-  :root{
-    --blue:#273071; --blue-dark:#1b2252; --blue-light:#3a4599;
-    --blue-soft:rgba(39,48,113,.08);
-    --cream:#faf7f2; --warm:#f5f0e8; --line:#e7e1d6;
-    --text:#1a1611; --muted:#6b6256; --white:#fff;
-    --green:#2e8b57; --green-soft:#e6f1ea;
-    --red:#b23b3b; --red-soft:#f6e7e4;
-    --grey:#9b9488; --grey-soft:#ece8e0;
-    --shadow:0 4px 18px rgba(39,48,113,.10);
-    --radius:18px;
-  }
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  html,body{min-height:100%}
-  body{
-    font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
-    background:var(--cream); color:var(--text); -webkit-font-smoothing:antialiased; line-height:1.5;
-  }
-  button{font-family:inherit;cursor:pointer;border:none}
-  a{color:inherit}
-  .hide{display:none!important}
+// api/admin-stats.js — Returns dashboard data from Stripe + visitor stats from Vercel KV
+//
+// Auth: shares the /locker session cookie (lk_sess) — log in with the same
+//       passcode used on /locker and /fulfill.
+// Query: ?days=7 (default 7, options: 7/30/90)
 
-  /* ---------- LOGIN ---------- */
-  #loginWrap{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px}
-  .login-card{
-    background:var(--white);border:1px solid var(--line);border-radius:24px;
-    box-shadow:var(--shadow);padding:38px 30px;width:100%;max-width:380px;text-align:center
-  }
-  .login-card img{width:96px;height:96px;object-fit:contain;margin-bottom:10px}
-  .login-card h1{font-size:20px;font-weight:700;color:var(--blue);letter-spacing:.2px}
-  .login-card p{color:var(--muted);font-size:14px;margin-top:4px;margin-bottom:24px}
-  .code-input{
-    width:100%;text-align:center;font-size:24px;font-weight:700;letter-spacing:6px;
-    color:var(--blue);padding:16px;border:2px solid var(--line);border-radius:14px;
-    background:var(--cream);outline:none;transition:border-color .15s;font-family:inherit
-  }
-  .code-input:focus{border-color:var(--blue-light)}
-  .login-btn{
-    width:100%;margin-top:16px;background:var(--blue);color:#fff;font-size:17px;font-weight:600;
-    padding:16px;border-radius:14px;transition:background .15s
-  }
-  .login-btn:active{background:var(--blue-dark)}
-  .login-error{color:var(--red);font-size:14px;font-weight:500;margin-top:14px;min-height:18px}
+import { createHmac, timingSafeEqual } from 'crypto';
 
-  /* ---------- TOPBAR ---------- */
-  .topbar{
-    position:sticky;top:0;z-index:30;background:var(--blue);color:#fff;
-    display:flex;align-items:center;gap:12px;padding:14px 18px;
-    padding-top:calc(14px + env(safe-area-inset-top));
-  }
-  .topbar img{width:34px;height:34px;object-fit:contain;border-radius:8px;background:#fff;padding:3px}
-  .topbar .ttl{font-weight:700;font-size:16px;line-height:1.15}
-  .topbar .ttl small{display:block;font-weight:500;font-size:11px;opacity:.8}
-  .topbar .spacer{flex:1}
-  .topbar .upd{font-size:12px;opacity:.8;margin-right:4px;white-space:nowrap}
-  .logout{background:rgba(255,255,255,.14);color:#fff;font-size:13px;font-weight:600;padding:8px 12px;border-radius:10px}
+// Map product names (from Stripe line item descriptions) to image paths in our repo
+function getProductImage(productName) {
+  if (!productName) return null;
+  const n = productName.toLowerCase();
+  const baseUrl = 'https://quartzmolle.dk';
+  // Match by keywords in product name
+  if (n.includes('dalarna') && n.includes('fuldkorn')) return `${baseUrl}/images/Dalarna-3Kg-fuldkorn-96x139mm-outlined_copy.jpg`;
+  if (n.includes('dalarna') && n.includes('type 85')) return `${baseUrl}/images/Dalarna-3Kg-type85-96x139mm-outlined_copy.jpg`;
+  if (n.includes('mariagertoba')) return `${baseUrl}/images/Mariagertoba-type70-3Kg-96x139mm-outlined_copy.jpg`;
+  if (n.includes('ølands') && n.includes('fuldkorn')) return `${baseUrl}/images/OlandsHvede-fuldkorn-3Kg-96x139mm-outlined_copy.jpg`;
+  if (n.includes('ølands') && n.includes('type 85')) return `${baseUrl}/images/OlandsHvede-type85-3Kg-96x139mm-outlined_copy.jpg`;
+  if (n.includes('purpurhvede')) return `${baseUrl}/images/Purpurhvede-fuldkorn-3Kg-96x139mm-outlined_copy.jpg`;
+  if (n.includes('rød hvede') && n.includes('fuldkorn')) return `${baseUrl}/images/Rod-Fuldkorn-3kg.jpg`;
+  if (n.includes('rød hvede') && n.includes('type 70')) return `${baseUrl}/images/Rod-Type70-3kg.jpg`;
+  if (n.includes('rød hvede') && n.includes('type 85')) return `${baseUrl}/images/Rod-Type85-3kg.jpg`;
+  if (n.includes('rug')) return `${baseUrl}/images/RugGreen-3Kg-fuldkorn-96x139mm-outlined.jpg`;
+  if (n.includes('spelt')) return `${baseUrl}/images/Spelt-fuldkorn-3kg-Webshop.jpg`;
+  return null;
+}
 
-  /* ---------- LAYOUT ---------- */
-  .wrap{max-width:1100px;margin:0 auto;padding:20px 16px 60px}
+const SESSION_SECRET = process.env.LOCKER_SESSION_SECRET || 'CHANGE_ME_IN_VERCEL_ENV';
 
-  /* ---------- STAT CARDS ---------- */
-  .stat-grid{
-    display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:13px;margin-bottom:8px
-  }
-  .stat-card{
-    background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
-    padding:18px 18px 16px;box-shadow:0 1px 3px rgba(39,48,113,.05);
-    display:flex;flex-direction:column;gap:2px;position:relative;overflow:hidden
-  }
-  .stat-card .ic{
-    position:absolute;right:14px;top:14px;width:34px;height:34px;border-radius:10px;
-    display:flex;align-items:center;justify-content:center;background:var(--blue-soft);color:var(--blue)
-  }
-  .stat-card .label{font-size:12px;font-weight:600;color:var(--muted);display:flex;align-items:center}
-  .stat-card .value{
-    font-size:28px;font-weight:800;color:var(--blue);letter-spacing:-.01em;
-    font-variant-numeric:tabular-nums;margin-top:6px;line-height:1.1
-  }
-  .stat-card .delta{font-size:12px;color:var(--muted);margin-top:5px;font-weight:500}
-  .live-dot{
-    display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);
-    margin-right:6px;vertical-align:middle;box-shadow:0 0 0 0 rgba(46,139,87,.6);animation:pulse 2s infinite
-  }
-  @keyframes pulse{
-    0%{box-shadow:0 0 0 0 rgba(46,139,87,.5)}
-    70%{box-shadow:0 0 0 8px rgba(46,139,87,0)}
-    100%{box-shadow:0 0 0 0 rgba(46,139,87,0)}
+// Verify the HMAC-signed lk_sess cookie set by /api/locker (action=login) —
+// the same login used by /locker and /fulfill.
+function checkAuth(req) {
+  const m = (req.headers.cookie || '').match(/(?:^|;\s*)lk_sess=([^;]+)/);
+  if (!m) return false;
+  const tok = decodeURIComponent(m[1]);
+  const dot = tok.lastIndexOf('.');
+  if (dot < 0) return false;
+  const data = tok.slice(0, dot), mac = tok.slice(dot + 1);
+  const expect = createHmac('sha256', SESSION_SECRET).update(data).digest('hex');
+  try {
+    if (mac.length !== expect.length) return false;
+    if (!timingSafeEqual(Buffer.from(mac, 'hex'), Buffer.from(expect, 'hex'))) return false;
+  } catch { return false; }
+  const exp = parseInt(data, 10);
+  return Number.isFinite(exp) && exp > Date.now();
+}
+
+// Parse a YYYY-MM-DD string into a UNIX timestamp (seconds) at the start or end
+// of that day. Returns null if the string isn't a valid date.
+function dayBoundary(str, endOfDay) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(str)) return null;
+  const t = Date.parse(str + (endOfDay ? 'T23:59:59.999Z' : 'T00:00:00.000Z'));
+  if (!Number.isFinite(t)) return null;
+  return Math.floor(t / 1000);
+}
+
+export default async function handler(req, res) {
+  if (!checkAuth(req)) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  /* ---------- FILTER ---------- */
-  .filter-bar{display:flex;gap:8px;margin:24px 0 14px;flex-wrap:wrap}
-  .filter-bar button{
-    background:var(--white);border:1.5px solid var(--line);color:var(--blue);
-    padding:9px 16px;border-radius:12px;font-size:13px;font-weight:600;transition:all .12s
-  }
-  .filter-bar button:active{transform:translateY(1px)}
-  .filter-bar button.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+  const nowTs = Math.floor(Date.now() / 1000);
 
-  /* ---------- PANELS ---------- */
-  .panel{
-    background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
-    padding:20px 22px;box-shadow:0 1px 3px rgba(39,48,113,.05);margin-bottom:18px
-  }
-  .panel h2{
-    font-size:14px;font-weight:700;color:var(--blue);
-    padding-bottom:12px;margin-bottom:6px;border-bottom:1px solid var(--line);
-    display:flex;align-items:center;gap:8px
-  }
-  .panel h2 svg{color:var(--blue-light)}
+  // Time window: either an explicit ?from=YYYY-MM-DD[&to=YYYY-MM-DD] range
+  // (lets staff pick a specific day, e.g. 5th of May), or ?days=N back from now.
+  const fromStr = (req.query.from || '').toString().trim();
+  const toStr = (req.query.to || '').toString().trim();
+  let since, until, rangeLabel;
 
-  .order-row{
-    display:grid;grid-template-columns:96px 1fr 78px 100px 92px;
-    gap:14px;padding:13px 0;border-bottom:1px solid var(--line);font-size:14px;align-items:center
-  }
-  .order-row:last-child{border-bottom:none}
-  .order-row .ref{color:var(--blue);font-weight:700;font-size:12px;letter-spacing:.02em}
-  .order-row .name{font-weight:600}
-  .order-row .city{color:var(--muted);font-size:13px}
-  .order-row .stk{color:var(--muted);font-size:13px}
-  .order-row .amount{text-align:right;font-weight:700;color:var(--blue);font-variant-numeric:tabular-nums}
-  .order-row .date{color:var(--grey);font-size:12px;text-align:right}
-
-  .product-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px}
-  .product-row:last-child{border-bottom:none}
-  .product-row img{width:42px;height:42px;border-radius:10px;object-fit:cover;background:var(--warm);flex-shrink:0}
-  .product-row .product-noimg{width:42px;height:42px;border-radius:10px;background:var(--warm);flex-shrink:0}
-  .product-row .product-name{flex:1;min-width:0;font-weight:500}
-  .product-row .rank{width:22px;height:22px;border-radius:7px;background:var(--blue-soft);color:var(--blue);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-  .product-row .qty{color:var(--blue);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
-
-  .location-row{display:grid;grid-template-columns:1fr 70px;padding:10px 0;font-size:14px;border-bottom:1px solid var(--line);align-items:center}
-  .location-row:last-child{border-bottom:none}
-  .location-row .count{color:var(--blue);font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
-
-  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-  .loading{text-align:center;padding:28px;color:var(--muted);font-size:14px}
-  .empty{text-align:center;padding:20px;color:var(--muted);font-size:13px}
-
-  @media (max-width:700px){
-    .two-col{grid-template-columns:1fr}
-    .order-row{grid-template-columns:1fr auto;row-gap:3px;column-gap:10px}
-    .order-row .ref{grid-column:1/2}
-    .order-row .date{grid-column:2/3}
-    .order-row .stk{display:none}
-    .order-row .amount{grid-column:2/3;text-align:right}
-    .topbar .upd{display:none}
-  }
-</style>
-</head>
-<body>
-
-<!-- ===== LOGIN ===== -->
-<div class="login-wrap" id="loginWrap">
-  <div class="login-card">
-    <img src="/images/logopng.png" alt="Quartz Mølle" onerror="this.style.display='none'" />
-    <h1>Quartz Mølle Admin</h1>
-    <p>Indtast adgangskode</p>
-    <input id="password" class="code-input" type="password" autocomplete="current-password" placeholder="••••••" />
-    <button id="loginBtn" class="login-btn" onclick="login()">Lås op</button>
-    <div class="login-error" id="loginError"></div>
-  </div>
-</div>
-
-<!-- ===== DASHBOARD ===== -->
-<div class="dashboard hide" id="dashboard">
-  <div class="topbar">
-    <img src="/images/logopng.png" alt="" onerror="this.style.display='none'" />
-    <div class="ttl">Admin<small>Statistik · Quartz Mølle</small></div>
-    <div class="spacer"></div>
-    <span class="upd" id="lastUpdate"></span>
-    <button class="logout" onclick="logout()">Log ud</button>
-  </div>
-
-  <div class="wrap">
-
-    <!-- Live stats -->
-    <div class="stat-grid">
-      <div class="stat-card">
-        <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
-        <div class="label"><span class="live-dot"></span>Aktive nu</div>
-        <div class="value" id="activeNow">–</div>
-        <div class="delta">Sidste 60 sek.</div>
-      </div>
-      <div class="stat-card">
-        <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-        <div class="label">Besøgende i dag</div>
-        <div class="value" id="visitorsToday">–</div>
-        <div class="delta" id="visitorsYesterday"></div>
-      </div>
-      <div class="stat-card">
-        <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></div>
-        <div class="label">Ordrer i dag</div>
-        <div class="value" id="ordersToday">–</div>
-        <div class="delta" id="ordersWeek"></div>
-      </div>
-      <div class="stat-card">
-        <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-        <div class="label">Omsætning i dag</div>
-        <div class="value" id="revenueToday">–</div>
-        <div class="delta" id="revenueWeek"></div>
-      </div>
-      <div class="stat-card">
-        <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
-        <div class="label">Konvertering</div>
-        <div class="value" id="conversionRate">–</div>
-        <div class="delta">Ordrer / besøgende</div>
-      </div>
-    </div>
-
-    <!-- Time range filter -->
-    <div class="filter-bar">
-      <button class="active" data-range="7" onclick="setRange(7)">7 dage</button>
-      <button data-range="30" onclick="setRange(30)">30 dage</button>
-      <button data-range="90" onclick="setRange(90)">90 dage</button>
-    </div>
-
-    <!-- Recent orders -->
-    <div class="panel">
-      <h2><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>Seneste ordrer</h2>
-      <div id="ordersList" class="loading">Henter ordrer…</div>
-    </div>
-
-    <div class="two-col">
-      <!-- Top products -->
-      <div class="panel">
-        <h2><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Mest solgte produkter</h2>
-        <div id="topProducts" class="loading">Henter…</div>
-      </div>
-
-      <!-- Customer locations -->
-      <div class="panel">
-        <h2><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Kunde lokationer</h2>
-        <div id="locations" class="loading">Henter…</div>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<script>
-  // Simple client-side auth check (the API also checks server-side)
-  const VALID_USER = 'fintankeenan';
-  const VALID_PASS = 'Laragh';
-  let currentRange = 7;
-  let pollTimer = null;
-
-  function login() {
-    const p = document.getElementById('password').value;
-    const err = document.getElementById('loginError');
-    err.textContent = '';
-    if (!p) { err.textContent = 'Indtast adgangskode'; return; }
-    if (p === VALID_PASS) {
-      // Username is fixed; store it lowercase so the API receives it consistently
-      sessionStorage.setItem('qm_admin_auth', btoa(VALID_USER.toLowerCase() + ':' + p));
-      showDashboard();
-    } else {
-      err.textContent = 'Forkert adgangskode';
-      document.getElementById('password').value = '';
-      document.getElementById('password').focus();
-    }
+  const fromTs = dayBoundary(fromStr, false);
+  if (fromTs !== null) {
+    since = fromTs;
+    const toTs = dayBoundary(toStr, true);
+    until = toTs !== null ? toTs : dayBoundary(fromStr, true); // single day if no "to"
+    if (until > nowTs) until = nowTs;
+    rangeLabel = toStr && toStr !== fromStr ? `${fromStr} – ${toStr}` : fromStr;
+  } else {
+    const days = Math.min(Math.max(parseInt(req.query.days, 10) || 7, 1), 365);
+    since = nowTs - days * 86400;
+    until = nowTs;
+    rangeLabel = `${days} dage`;
   }
 
-  function logout() {
-    sessionStorage.removeItem('qm_admin_auth');
-    if (pollTimer) clearInterval(pollTimer);
-    document.getElementById('loginWrap').classList.remove('hide');
-    document.getElementById('dashboard').classList.add('hide');
-    document.getElementById('password').value = '';
-  }
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayTs = Math.floor(todayStart.getTime() / 1000);
 
-  function showDashboard() {
-    document.getElementById('loginWrap').classList.add('hide');
-    document.getElementById('dashboard').classList.remove('hide');
-    loadDashboard();
-    // Refresh active users every 15 sec
-    pollTimer = setInterval(refreshLiveStats, 15000);
-  }
+  try {
+    const stripe = (await import('stripe')).default(process.env.STRIPE_SECRET_KEY);
 
-  function setRange(days) {
-    currentRange = days;
-    document.querySelectorAll('.filter-bar button').forEach(b => {
-      b.classList.toggle('active', Number(b.dataset.range) === days);
+    // Aggregate stats
+    let totalRevenue = 0;
+    let revenueToday = 0;
+    let ordersToday = 0;
+    let totalOrders = 0;
+    const locationCounts = {};
+    const paid = []; // every paid session in the window (for orders + product fetch)
+
+    // Paginate through EVERY session in the window (not just the first 100) so
+    // the revenue/order totals are fully accurate. Money comes from amount_total,
+    // which is always present — no extra API calls needed for the headline numbers.
+    // Safety cap so a huge window can never run the function past its timeout.
+    const MAX_SESSIONS = 3000;
+    let scanned = 0;
+
+    const iterator = stripe.checkout.sessions.list({
+      limit: 100,
+      created: { gte: since, lte: until },
     });
-    loadDashboard();
-  }
 
-  async function loadDashboard() {
-    const auth = sessionStorage.getItem('qm_admin_auth');
-    try {
-      const res = await fetch('/api/admin-stats?days=' + currentRange, {
-        headers: { 'Authorization': 'Basic ' + auth }
-      });
-      if (!res.ok) {
-        if (res.status === 401) { logout(); return; }
-        throw new Error('API error ' + res.status);
+    for await (const s of iterator) {
+      if (++scanned > MAX_SESSIONS) break;
+      if (s.payment_status !== 'paid') continue;
+
+      totalOrders++;
+      const amountKr = (s.amount_total || 0) / 100;
+      totalRevenue += amountKr;
+
+      if (s.created >= todayTs) {
+        revenueToday += amountKr;
+        ordersToday++;
       }
-      const data = await res.json();
-      renderDashboard(data);
-    } catch (err) {
-      console.error(err);
-      document.getElementById('ordersList').innerHTML = '<div class="empty">Kunne ikke hente data: ' + err.message + '</div>';
-    }
-  }
 
-  async function refreshLiveStats() {
-    const auth = sessionStorage.getItem('qm_admin_auth');
-    try {
-      const res = await fetch('/api/admin-live', {
-        headers: { 'Authorization': 'Basic ' + auth }
+      // Extract location from shipping/billing
+      const addr = s.shipping_details?.address || s.collected_information?.shipping_details?.address || s.customer_details?.address || {};
+      const country = (addr.country || 'DK').toUpperCase();
+      const city = addr.city || 'Ukendt';
+      const locKey = `${city}, ${country}`;
+      locationCounts[locKey] = (locationCounts[locKey] || 0) + 1;
+
+      paid.push({
+        id: s.id,
+        ref: String(s.id).slice(-12).toUpperCase(),
+        customerName: s.customer_details?.name || s.shipping_details?.name || 'Kunde',
+        email: s.customer_details?.email || '',
+        amount: amountKr,
+        city: city,
+        country: country,
+        itemCount: null,
+        created: s.created || 0,
+        date: new Date((s.created || 0) * 1000).toISOString(),
       });
-      if (res.ok) {
-        const data = await res.json();
-        document.getElementById('activeNow').textContent = data.activeNow || 0;
-        document.getElementById('visitorsToday').textContent = data.visitorsToday || 0;
-        document.getElementById('visitorsYesterday').textContent = 'I går: ' + (data.visitorsYesterday || 0);
-        document.getElementById('lastUpdate').textContent = 'Opdateret kl. ' + new Date().toLocaleTimeString('da-DK');
-        // Recalc conversion rate
-        const orders = parseInt(document.getElementById('ordersToday').textContent) || 0;
-        const visitors = data.visitorsToday || 0;
-        const conv = visitors > 0 ? ((orders / visitors) * 100).toFixed(1) + '%' : '–';
-        document.getElementById('conversionRate').textContent = conv;
-      }
-    } catch (err) { /* silent */ }
-  }
-
-  function renderDashboard(data) {
-    // Top stats
-    document.getElementById('ordersToday').textContent = data.ordersToday || 0;
-    document.getElementById('ordersWeek').textContent = (data.totalOrders || 0) + ' i ' + currentRange + ' dage';
-    document.getElementById('revenueToday').textContent = formatKr(data.revenueToday || 0);
-    document.getElementById('revenueWeek').textContent = formatKr(data.totalRevenue || 0) + ' i ' + currentRange + ' dage';
-
-    // Live stats refresh
-    refreshLiveStats();
-
-    // Orders list
-    const ordersEl = document.getElementById('ordersList');
-    if (!data.orders || data.orders.length === 0) {
-      ordersEl.innerHTML = '<div class="empty">Ingen ordrer i denne periode.</div>';
-    } else {
-      ordersEl.innerHTML = data.orders.map(o => `
-        <div class="order-row">
-          <div class="ref">#${escapeHtml(o.ref)}</div>
-          <div>
-            <div class="name">${escapeHtml(o.customerName)}</div>
-            <div class="city">${escapeHtml(o.city || '')}${o.country ? ', ' + escapeHtml(o.country) : ''}</div>
-          </div>
-          <div class="stk">${escapeHtml(o.itemCount)} stk.</div>
-          <div class="amount">${formatKr(o.amount)}</div>
-          <div class="date">${formatDate(o.date)}</div>
-        </div>
-      `).join('');
     }
 
-    // Top products
-    const productsEl = document.getElementById('topProducts');
-    if (!data.topProducts || data.topProducts.length === 0) {
-      productsEl.innerHTML = '<div class="empty">Ingen data.</div>';
-    } else {
-      productsEl.innerHTML = data.topProducts.map((p, i) => `
-        <div class="product-row">
-          <div class="rank">${i + 1}</div>
-          ${p.image ? `<img src="${escapeHtml(p.image)}" alt="" />` : '<div class="product-noimg"></div>'}
-          <div class="product-name">${escapeHtml(p.name)}</div>
-          <div class="qty">${p.qty}×</div>
-        </div>
-      `).join('');
+    // Newest first
+    paid.sort((a, b) => b.created - a.created);
+
+    // Product breakdown + per-order item counts need line items (one call each).
+    // Fetch them for the most recent orders only, in small concurrent batches, so
+    // we stay well within the function timeout. For a shop this size that usually
+    // covers the whole window; if not, the headline totals above are still exact.
+    const productCounts = {};
+    const LINE_ITEM_LIMIT = 150;
+    const toFetch = paid.slice(0, LINE_ITEM_LIMIT);
+    const BATCH = 8;
+    for (let i = 0; i < toFetch.length; i += BATCH) {
+      const batch = toFetch.slice(i, i + BATCH);
+      await Promise.all(batch.map(async (o) => {
+        try {
+          const lineItems = await stripe.checkout.sessions.listLineItems(o.id, { limit: 50 });
+          let itemCount = 0;
+          for (const li of lineItems.data) {
+            const name = li.description || 'Produkt';
+            const qty = li.quantity || 1;
+            if (!productCounts[name]) productCounts[name] = { qty: 0, image: getProductImage(name) };
+            productCounts[name].qty += qty;
+            itemCount += qty;
+          }
+          o.itemCount = itemCount;
+        } catch (e) { /* leave itemCount null */ }
+      }));
     }
 
-    // Locations
-    const locEl = document.getElementById('locations');
-    if (!data.locations || data.locations.length === 0) {
-      locEl.innerHTML = '<div class="empty">Ingen data.</div>';
-    } else {
-      locEl.innerHTML = data.locations.map(l => `
-        <div class="location-row">
-          <div>${escapeHtml(l.location)}</div>
-          <div class="count">${l.count}</div>
-        </div>
-      `).join('');
-    }
-  }
+    const recentOrders = paid.map(({ id, created, ...rest }) => rest);
 
-  function formatKr(amount) {
-    return Math.round(amount).toLocaleString('da-DK') + ' kr.';
-  }
-  function formatDate(iso) {
-    const d = new Date(iso);
-    return d.toLocaleDateString('da-DK', { day: 'numeric', month: 'short' }) + ' ' +
-           d.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' });
-  }
-  function escapeHtml(s) {
-    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
+    // Sort + top N
+    const topProducts = Object.entries(productCounts)
+      .map(([name, data]) => ({ name, qty: data.qty, image: data.image }))
+      .sort((a, b) => b.qty - a.qty)
+      .slice(0, 8);
 
-  // Auto-login if already authed
-  if (sessionStorage.getItem('qm_admin_auth')) {
-    showDashboard();
+    const topLocations = Object.entries(locationCounts)
+      .map(([location, count]) => ({ location, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+
+    recentOrders.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    return res.status(200).json({
+      totalOrders,
+      totalRevenue,
+      ordersToday,
+      revenueToday,
+      rangeLabel,
+      truncated: scanned > MAX_SESSIONS,
+      orders: recentOrders.slice(0, 300), // enough to search across; UI filters by name/number
+      topProducts,
+      locations: topLocations,
+    });
+  } catch (err) {
+    console.error('Admin stats error:', err);
+    return res.status(500).json({ error: err.message });
   }
-
-  // Submit on Enter
-  document.getElementById('password').addEventListener('keydown', e => {
-    if (e.key === 'Enter') login();
-  });
-</script>
-
-<script src="js/i18n.js"></script>
-</body>
-</html>
+}
