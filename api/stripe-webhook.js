@@ -96,6 +96,20 @@ export default async function handler(req, res) {
       return res.status(200).json({ received: true, skipped: 'no order data' });
     }
 
+    // ── CLICK & COLLECT (afhentning) ──
+    // No carrier shipment: skip Shipmondo/GLS label booking entirely and just send
+    // the order confirmation + merchant notification emails. This also covers orders
+    // heavier than GLS can carry, which can only be completed via pickup.
+    if (orderData.deliveryKey === 'pickup') {
+      console.log('Click & Collect order — skipping Shipmondo, sending emails only for', orderData.externalId);
+      // Persist the order so the staff fulfilment page (/fulfill) can list it and
+      // later email the customer their locker door + code.
+      try { await savePickupOrder(orderData); } catch (e) { console.error('Failed to save pickup order to KV:', e); }
+      try { await sendOrderConfirmationEmail(orderData); } catch (e) { console.error('Order confirmation email failed:', e); }
+      try { await sendMerchantNotification(orderData); } catch (e) { console.error('Merchant notification failed:', e); }
+      return res.status(200).json({ received: true, pickup: true });
+    }
+
     let templates = {};
     console.log('Raw SHIPMENT_TEMPLATES env:', JSON.stringify(process.env.SHIPMENT_TEMPLATES));
     try { templates = JSON.parse(process.env.SHIPMENT_TEMPLATES || '{}'); } catch (e) { console.error('Failed to parse SHIPMENT_TEMPLATES:', e.message); }
@@ -304,7 +318,8 @@ async function sendOrderConfirmationEmail(orderData) {
   const fullName = orderData.customerName || orderData.name || '';
   const customerName = fullName.split(' ')[0]; // first name only
   const orderRef = String(orderData.externalId).slice(-12).toUpperCase();
-  const deliveryLabel = orderData.deliveryKey === 'gls_pakkeshop' ? 'GLS Pakkeshop' : 'GLS Privatadresse';
+  const isPickup = orderData.deliveryKey === 'pickup';
+  const deliveryLabel = deliveryLabelFor(orderData.deliveryKey);
   const totalKr = Number(orderData.amountKr).toFixed(2).replace('.', ',');
 
   const itemsHtml = (orderData.items || []).map(it => {
@@ -368,7 +383,9 @@ async function sendOrderConfirmationEmail(orderData) {
         <!-- Greeting paragraph -->
         <tr><td style="padding:36px 36px 12px;">
           <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#444;">
-            Vi har modtaget din ordre og pakker den hurtigst muligt. Du får en ny e-mail med tracking når pakken er afsendt.
+            ${isPickup
+              ? 'Vi har modtaget din ordre og gør den klar til afhentning. Du får en ny e-mail når den er klar til at blive hentet på møllen.'
+              : 'Vi har modtaget din ordre og pakker den hurtigst muligt. Du får en ny e-mail med tracking når pakken er afsendt.'}
           </p>
           <p style="margin:0 0 28px;font-size:14px;color:#666;">
             <span style="color:#888;">Ordrenummer:</span> <strong style="color:#222;letter-spacing:0.04em;">${escapeHtmlEmail(orderRef)}</strong>
@@ -391,7 +408,9 @@ async function sendOrderConfirmationEmail(orderData) {
         <tr><td style="padding:32px 36px 8px;">
           <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#888;margin-bottom:10px;">Levering</div>
           <div style="font-size:15px;color:#222;font-weight:500;">${escapeHtmlEmail(deliveryLabel)}</div>
-          <div style="font-size:13px;color:#777;margin-top:6px;">1–3 hverdage efter afsendelse</div>
+          <div style="font-size:13px;color:#777;margin-top:6px;">${isPickup
+            ? escapeHtmlEmail(PICKUP_ADDRESS) + ' · Vi sender dig en besked når din ordre er klar til afhentning'
+            : '1–3 hverdage efter afsendelse'}</div>
         </td></tr>
 
         <!-- View order button -->
@@ -454,7 +473,7 @@ async function sendMerchantNotification(orderData) {
 
   const orderRef = String(orderData.externalId).slice(-12).toUpperCase();
   const totalKr = Number(orderData.amountKr).toFixed(2).replace('.', ',');
-  const deliveryLabel = orderData.deliveryKey === 'gls_pakkeshop' ? 'GLS Pakkeshop' : 'GLS Privatadresse';
+  const deliveryLabel = deliveryLabelFor(orderData.deliveryKey);
   const customerName = orderData.customerName || 'Kunde';
   const customerEmail = orderData.customerEmail || '';
 
@@ -542,6 +561,38 @@ async function sendMerchantNotification(orderData) {
     console.log('Merchant notification sent for', orderRef);
   }
 }
+
+// Persist a Click & Collect order so the staff fulfilment page (/fulfill) can
+// list it and later email the customer their locker door + code.
+async function savePickupOrder(orderData) {
+  const { kv } = await import('@vercel/kv');
+  const record = {
+    ref: String(orderData.externalId).slice(-12).toUpperCase(),
+    externalId: orderData.externalId,
+    name: orderData.customerName || 'Kunde',
+    email: orderData.customerEmail || '',
+    phone: orderData.customerPhone || '',
+    total: Number(orderData.amountKr) || 0,
+    items: (orderData.items || []).map(it => ({
+      name: it.productName,
+      weightLabel: it.weightLabel || '',
+      qty: it.qty || 1,
+    })),
+    createdAt: Date.now(),
+  };
+  await kv.lpush('pickup:orders', record);
+  await kv.ltrim('pickup:orders', 0, 199);
+}
+
+// Human-readable delivery label for emails.
+function deliveryLabelFor(key) {
+  if (key === 'gls_pakkeshop') return 'GLS Pakkeshop';
+  if (key === 'pickup') return 'Click & Collect – Afhentning på møllen';
+  return 'GLS Privatadresse';
+}
+
+// Pickup location shown to the customer for Click & Collect orders.
+const PICKUP_ADDRESS = 'Suså Landevej 101, 4160 Herlufmagle';
 
 function escapeHtmlEmail(s) {
   return String(s || '')
@@ -648,7 +699,8 @@ async function parseCheckoutSession(session) {
   // Last-resort fallback: derive from shipping_rate display name.
   if (!deliveryKey) {
     const lower = (shippingDisplayName || '').toLowerCase();
-    if (lower.includes('pakkeshop')) deliveryKey = 'gls_pakkeshop';
+    if (lower.includes('afhent') || lower.includes('collect')) deliveryKey = 'pickup';
+    else if (lower.includes('pakkeshop')) deliveryKey = 'gls_pakkeshop';
     else if (lower.includes('privat')) deliveryKey = 'gls_privat';
   }
   console.log('Resolved deliveryKey for checkout session:', deliveryKey, '| shippingDisplayName:', shippingDisplayName);

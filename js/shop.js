@@ -5,12 +5,19 @@
 const SUPABASE_URL = 'https://eqmxgfuhbtsouoprtgix.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxbXhnZnVoYnRzb3VvcHJ0Z2l4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0MjE2MTcsImV4cCI6MjA5MTk5NzYxN30.ZdAsVKYLhDVgSbcd4otO6PP2CT7Wd4ob0yBu-JHTxaU';
 
+// Full catalog currently loaded (local data, later merged with Supabase).
+// The search bar filters this list without re-fetching.
+let SHOP_PRODUCTS = [];
+
 function renderShopGrid(products) {
   const grid = document.getElementById('shopGrid');
   if (!grid) return;
 
   if (!products || products.length === 0) {
-    grid.innerHTML = '<div class="shop-loading">Ingen produkter fundet.</div>';
+    const q = (document.getElementById('shopSearch')?.value || '').trim();
+    grid.innerHTML = q
+      ? `<div class="shop-loading">Ingen produkter matcher “${escapeHTML(q)}”.</div>`
+      : '<div class="shop-loading">Ingen produkter fundet.</div>';
     return;
   }
 
@@ -36,8 +43,49 @@ function renderShopGrid(products) {
   }).join('');
 }
 
+// ── PRODUKTSØGNING ──
+// Escape brugerinput før det indsættes i innerHTML.
+function escapeHTML(str) {
+  return String(str).replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+
+// Filtrér det aktuelle sortiment på navn, type og beskrivelse.
+function filterProducts(query) {
+  const q = (query || '').trim().toLowerCase();
+  if (!q) return SHOP_PRODUCTS;
+  return SHOP_PRODUCTS.filter(p => {
+    const haystack = [p.name, p.type, p.description, p.badge]
+      .filter(Boolean).join(' ').toLowerCase();
+    return haystack.includes(q);
+  });
+}
+
+function applySearch() {
+  const input = document.getElementById('shopSearch');
+  const clearBtn = document.getElementById('shopSearchClear');
+  const query = input ? input.value : '';
+  // Vis kun ryd-knappen når der reelt er søgt (ikke ved blanktegn alene).
+  if (clearBtn) clearBtn.hidden = !query.trim();
+  renderShopGrid(filterProducts(query));
+}
+
+function initShopSearch() {
+  const input = document.getElementById('shopSearch');
+  const clearBtn = document.getElementById('shopSearchClear');
+  if (input) input.addEventListener('input', applySearch);
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      if (input) { input.value = ''; input.focus(); }
+      applySearch();
+    });
+  }
+}
+
 async function loadShopProducts() {
-  renderShopGrid(PRODUCTS);
+  SHOP_PRODUCTS = [...PRODUCTS];
+  applySearch();
 
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/products?select=*&order=created_at.asc`, {
@@ -57,7 +105,8 @@ async function loadShopProducts() {
           if (idx >= 0) merged[idx] = { ...merged[idx], ...dbP };
           else merged.push(dbP);
         });
-        renderShopGrid(merged);
+        SHOP_PRODUCTS = merged;
+        applySearch();
       }
     }
   } catch (e) {
@@ -65,4 +114,7 @@ async function loadShopProducts() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', loadShopProducts);
+document.addEventListener('DOMContentLoaded', () => {
+  initShopSearch();
+  loadShopProducts();
+});

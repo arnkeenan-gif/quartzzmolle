@@ -449,10 +449,10 @@
         });
         itemsEl.innerHTML = html;
 
-        // Render shipping (if any)
-        if (data.shippingAmount > 0) {
-          document.getElementById('success-shipping-name').textContent = data.shipping || 'Levering';
-          document.getElementById('success-shipping-amount').textContent = fmt(data.shippingAmount);
+        // Render delivery line (incl. free Click & Collect, shown as "Gratis")
+        if (data.shipping) {
+          document.getElementById('success-shipping-name').textContent = data.shipping;
+          document.getElementById('success-shipping-amount').textContent = data.shippingAmount > 0 ? fmt(data.shippingAmount) : 'Gratis';
           document.getElementById('success-shipping-row').style.display = 'flex';
         }
 
@@ -467,5 +467,6 @@
 
   <script src="js/cart.js"></script>
   <script src="js/main.js"></script>
+  <script src="js/i18n.js"></script>
 </body>
 </html>

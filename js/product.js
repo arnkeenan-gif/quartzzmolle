@@ -213,12 +213,53 @@ async function handleBuy() {
   }
 }
 
+// ── FORESLÅEDE PRODUKTER ──
+// Viser op til 4 andre produkter på hver produktside. Vi prioriterer
+// andre kornsorter end den viste (så listen ikke kun er størrelsesvarianter)
+// og lader bestsellers komme først.
+function renderSuggested(product) {
+  const section = document.getElementById('suggested');
+  const grid = document.getElementById('suggestedGrid');
+  if (!section || !grid || typeof PRODUCTS === 'undefined') return;
+
+  const others = PRODUCTS.filter(p => p.id !== product.id);
+  const sorted = others.slice().sort((a, b) => {
+    const diffName = (a.name === product.name) - (b.name === product.name);
+    if (diffName !== 0) return diffName; // andre sorter først
+    return (b.badge === 'bestseller') - (a.badge === 'bestseller'); // bestsellers først
+  });
+  const picks = sorted.slice(0, 4);
+  if (!picks.length) return;
+
+  grid.innerHTML = picks.map(p => {
+    const img = p.previewImage || p.weights[0].image;
+    const price = p.weights[0].price;
+    const badgeHTML = p.badge === 'bestseller'
+      ? `<span class="product-card-badge badge-bestseller">Bestseller</span>`
+      : '';
+    return `
+      <a href="product.html?id=${p.id}" class="product-card">
+        <img src="${img}" alt="${p.name} ${p.type}" class="product-card-img" loading="lazy" />
+        <div class="product-card-body">
+          ${badgeHTML}
+          <div class="product-card-name">${p.name}</div>
+          <div class="product-card-sub">${p.type}</div>
+          <div class="product-card-price">Fra ${price},00 kr.</div>
+        </div>
+      </a>
+    `;
+  }).join('');
+
+  section.hidden = false;
+}
+
 function loadProduct() {
   const id = new URLSearchParams(window.location.search).get('id');
   if (!id) { window.location.href = 'shop.html'; return; }
   const product = PRODUCTS.find(p => p.id === id);
   if (!product) { window.location.href = 'shop.html'; return; }
   renderProduct(product);
+  renderSuggested(product);
 }
 
 document.addEventListener('DOMContentLoaded', loadProduct);
