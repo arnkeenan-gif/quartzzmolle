@@ -205,7 +205,7 @@ body {
   z-index: 2;
   width: 100%;
   height: 100vh;
-  height: 100lvh; /* match video which uses 100lvh - section ends at same point as video */
+  height: 100svh; /* fit the VISIBLE viewport so centered text stays above the iOS bottom toolbar */
   overflow: hidden;
   display: flex;
   align-items: center;
