@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <!-- Blend the iOS status/address bars into the hero instead of stark black -->
-  <meta name="theme-color" content="#28301c" />
+  <meta name="theme-color" content="#000000" />
   <title>Quartz Mølle – Økologisk Mel fra Stenkværn</title>
   <link rel="icon" type="image/png" href="images/logopng.png">
   <link rel="apple-touch-icon" href="images/logopng.png">
@@ -20,23 +19,29 @@
     #mobileMenu.open { display: flex !important; }
     #vid1 { opacity: 1; }
 
-    /* Soft fade at the very bottom of the hero so it eases into the bottom
-       browser bar instead of a hard black edge. Hidden once past the videos. */
-    .hero-bottom-fade {
-      position: fixed;
-      left: 0; right: 0; bottom: 0;
-      height: 140px;
-      background: linear-gradient(to bottom, transparent, #28301c);
-      z-index: 1;
-      pointer-events: none;
-      opacity: 1;
-      transition: opacity 0.3s;
+    /* Black bar at bottom of mobile viewport - masks text scrolling under address bar */
+    @media (max-width: 768px) {
+      .bottom-mask {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 4px;
+        background: #000;
+        pointer-events: none;
+        z-index: 9999;
+        transform: translate3d(0, 0, 0);
+        -webkit-transform: translate3d(0, 0, 0);
+        will-change: transform;
+      }
     }
-    body.past-videos .hero-bottom-fade { opacity: 0; }
+    @media (min-width: 769px) {
+      .bottom-mask { display: none; }
+    }
   </style>
 </head>
 <body>
-  <div class="hero-bottom-fade" aria-hidden="true"></div>
+  <div class="bottom-mask" aria-hidden="true"></div>
   <nav class="nav" id="nav">
     <a href="index.html" class="nav-logo" onclick="event.preventDefault(); window.scrollTo(0, 0); window.location.replace('index.html?r=' + Date.now());">
       <img src="images/logopng.png" alt="Quartz Mølle" class="brand-mark" />
@@ -234,21 +239,6 @@
         initAll();
         document.removeEventListener('touchstart', handler);
       });
-    })();
-  </script>
-
-  <!-- Auto-hide the pinned header as soon as the page is scrolled, so it leaves
-       the screen cleanly instead of travelling up through the black status bar. -->
-  <script>
-    (function () {
-      var nav = document.getElementById('nav');
-      if (!nav) return;
-      function onScroll() {
-        if (window.scrollY > 10) nav.classList.add('nav-hidden');
-        else nav.classList.remove('nav-hidden');
-      }
-      window.addEventListener('scroll', onScroll, { passive: true });
-      onScroll();
     })();
   </script>
 </body>

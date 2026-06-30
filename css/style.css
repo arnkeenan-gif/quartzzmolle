@@ -205,7 +205,7 @@ body {
   z-index: 2;
   width: 100%;
   height: 100vh;
-  height: 100svh; /* fit the VISIBLE viewport so centered text stays above the iOS bottom toolbar */
+  height: 100lvh; /* match video which uses 100lvh - section ends at same point as video */
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -1315,25 +1315,11 @@ body.past-videos .video-overlay {
 /* ── RESPONSIVE ── */
 @media (max-width: 768px) {
   .nav { position: fixed; } /* stays pinned so status bar area stays consistent */
-  /* On the front page, products listing, forhandlere, and om os pages, let the
-     nav (logo, cart, menu) scroll away with the page on mobile instead of
-     staying pinned. The front page is targeted via its hero-content block. */
+  /* On the products listing, forhandlere, and om os pages, let the nav
+     scroll away with the page on mobile instead of staying pinned. */
   body:has(.shop-hero) .nav,
   body:has(.forhandlere-hero) .nav,
   body:has(.om-hero) .nav { position: absolute; }
-  /* Front page: the header (logo/menu/language/cart) is pinned at the top, and
-     fades cleanly off the screen as soon as you scroll — so it leaves the view
-     instead of slowly travelling up through the black status bar. It comes back
-     when you scroll to the top again. */
-  body:has(.hero-content) .nav {
-    position: fixed;
-    transition: opacity 0.25s ease, transform 0.25s ease;
-  }
-  body:has(.hero-content) .nav.nav-hidden {
-    opacity: 0;
-    transform: translateY(-12px);
-    pointer-events: none;
-  }
   .nav-links, .nav-cta { display: none; }
   .nav-burger { display: flex; }
   .nav-logo img.eco-mark { display: none; }
