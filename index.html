@@ -11,10 +11,26 @@
   <link rel="icon" href="images/logo-small.png" type="image/png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Warm up the video CDN connection early so the hero video starts faster -->
+  <link rel="preconnect" href="https://pub-a9fcbb930b0c4014b8286f9c245143a9.r2.dev" crossorigin />
+  <link rel="dns-prefetch" href="https://pub-a9fcbb930b0c4014b8286f9c245143a9.r2.dev" />
+  <link rel="preload" as="video" href="https://pub-a9fcbb930b0c4014b8286f9c245143a9.r2.dev/0602.mp4" type="video/mp4" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
     .video-bg { pointer-events: none; }
+    /* Hide the native play/pause control overlay on the background videos (looks unprofessional) */
+    .video-bg::-webkit-media-controls,
+    .video-bg::-webkit-media-controls-enclosure,
+    .video-bg::-webkit-media-controls-panel,
+    .video-bg::-webkit-media-controls-overlay-play-button,
+    .video-bg::-webkit-media-controls-start-playback-button,
+    .video-bg::-webkit-media-controls-play-button {
+      display: none !important;
+      -webkit-appearance: none !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
     #mobileMenu { display: none !important; }
     #mobileMenu.open { display: flex !important; }
     #vid1 { opacity: 1; }
@@ -72,7 +88,7 @@
 
   <!-- VIDEO 1 - HERO -->
   <section class="video-section is-active" id="vs1">
-    <video class="video-bg" id="vid1" autoplay muted loop playsinline webkit-playsinline preload="auto">
+    <video class="video-bg" id="vid1" autoplay muted loop playsinline webkit-playsinline preload="auto" disablepictureinpicture disableremoteplayback controlslist="nodownload nofullscreen noremoteplayback noplaybackrate" tabindex="-1">
       <source src="https://pub-a9fcbb930b0c4014b8286f9c245143a9.r2.dev/0602.mp4" type="video/mp4" />
     </video>
     <div class="video-overlay"></div>
@@ -87,7 +103,7 @@
 
   <!-- VIDEO 2 - STORY -->
   <section class="video-section" id="vs2">
-    <video class="video-bg" id="vid2" autoplay muted loop playsinline webkit-playsinline preload="auto">
+    <video class="video-bg" id="vid2" autoplay muted loop playsinline webkit-playsinline preload="metadata" disablepictureinpicture disableremoteplayback controlslist="nodownload nofullscreen noremoteplayback noplaybackrate" tabindex="-1">
       <source src="https://pub-a9fcbb930b0c4014b8286f9c245143a9.r2.dev/DJI_20250622141515_0006_D%20%282%29.mp4" type="video/mp4" />
     </video>
     <div class="video-overlay overlay-dark"></div>
@@ -102,7 +118,7 @@
 
   <!-- VIDEO 3 - PRODUCTS -->
   <section class="video-section" id="vs3">
-    <video class="video-bg" id="vid3" autoplay muted loop playsinline webkit-playsinline preload="auto">
+    <video class="video-bg" id="vid3" autoplay muted loop playsinline webkit-playsinline preload="metadata" disablepictureinpicture disableremoteplayback controlslist="nodownload nofullscreen noremoteplayback noplaybackrate" tabindex="-1">
       <source src="https://pub-a9fcbb930b0c4014b8286f9c245143a9.r2.dev/0602%281%29.mp4" type="video/mp4" />
     </video>
     <div class="video-overlay overlay-medium"></div>
