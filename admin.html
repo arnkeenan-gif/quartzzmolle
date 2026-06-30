@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="robots" content="noindex,nofollow" />
+<title>Admin · Quartz Mølle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --blue:#273071; --blue-dark:#1b2252; --blue-light:#3a4599;
+    --blue-soft:rgba(39,48,113,.08);
+    --cream:#faf7f2; --warm:#f5f0e8; --line:#e7e1d6;
+    --text:#1a1611; --muted:#6b6256; --white:#fff;
+    --green:#2e8b57; --green-soft:#e6f1ea;
+    --red:#b23b3b; --red-soft:#f6e7e4;
+    --grey:#9b9488; --grey-soft:#ece8e0;
+    --shadow:0 4px 18px rgba(39,48,113,.10);
+    --radius:18px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html,body{min-height:100%}
+  body{
+    font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+    background:var(--cream); color:var(--text); -webkit-font-smoothing:antialiased; line-height:1.5;
+  }
+  button{font-family:inherit;cursor:pointer;border:none}
+  a{color:inherit}
+  .hide{display:none!important}
+
+  /* ---------- LOGIN ---------- */
+  #loginWrap{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .login-card{
+    background:var(--white);border:1px solid var(--line);border-radius:24px;
+    box-shadow:var(--shadow);padding:38px 30px;width:100%;max-width:380px;text-align:center
+  }
+  .login-card img{width:96px;height:96px;object-fit:contain;margin-bottom:10px}
+  .login-card h1{font-size:20px;font-weight:700;color:var(--blue);letter-spacing:.2px}
+  .login-card p{color:var(--muted);font-size:14px;margin-top:4px;margin-bottom:24px}
+  .code-input{
+    width:100%;text-align:center;font-size:24px;font-weight:700;letter-spacing:6px;
+    color:var(--blue);padding:16px;border:2px solid var(--line);border-radius:14px;
+    background:var(--cream);outline:none;transition:border-color .15s;font-family:inherit
+  }
+  .code-input:focus{border-color:var(--blue-light)}
+  .login-btn{
+    width:100%;margin-top:16px;background:var(--blue);color:#fff;font-size:17px;font-weight:600;
+    padding:16px;border-radius:14px;transition:background .15s
+  }
+  .login-btn:active{background:var(--blue-dark)}
+  .login-error{color:var(--red);font-size:14px;font-weight:500;margin-top:14px;min-height:18px}
+
+  /* ---------- TOPBAR ---------- */
+  .topbar{
+    position:sticky;top:0;z-index:30;background:var(--blue);color:#fff;
+    display:flex;align-items:center;gap:12px;padding:14px 18px;
+    padding-top:calc(14px + env(safe-area-inset-top));
+  }
+  .topbar img{width:34px;height:34px;object-fit:contain;border-radius:8px;background:#fff;padding:3px}
+  .topbar .ttl{font-weight:700;font-size:16px;line-height:1.15}
+  .topbar .ttl small{display:block;font-weight:500;font-size:11px;opacity:.8}
+  .topbar .spacer{flex:1}
+  .topbar .upd{font-size:12px;opacity:.8;margin-right:4px;white-space:nowrap}
+  .logout{background:rgba(255,255,255,.14);color:#fff;font-size:13px;font-weight:600;padding:8px 12px;border-radius:10px}
+
+  /* ---------- LAYOUT ---------- */
+  .wrap{max-width:1100px;margin:0 auto;padding:20px 16px 60px}
+
+  /* ---------- STAT CARDS ---------- */
+  .stat-grid{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:13px;margin-bottom:8px
+  }
+  .stat-card{
+    background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px 18px 16px;box-shadow:0 1px 3px rgba(39,48,113,.05);
+    display:flex;flex-direction:column;gap:2px;position:relative;overflow:hidden
+  }
+  .stat-card .ic{
+    position:absolute;right:14px;top:14px;width:34px;height:34px;border-radius:10px;
+    display:flex;align-items:center;justify-content:center;background:var(--blue-soft);color:var(--blue)
+  }
+  .stat-card .label{font-size:12px;font-weight:600;color:var(--muted);display:flex;align-items:center}
+  .stat-card .value{
+    font-size:28px;font-weight:800;color:var(--blue);letter-spacing:-.01em;
+    font-variant-numeric:tabular-nums;margin-top:6px;line-height:1.1
+  }
+  .stat-card .delta{font-size:12px;color:var(--muted);margin-top:5px;font-weight:500}
+  .live-dot{
+    display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);
+    margin-right:6px;vertical-align:middle;box-shadow:0 0 0 0 rgba(46,139,87,.6);animation:pulse 2s infinite
+  }
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(46,139,87,.5)}
+    70%{box-shadow:0 0 0 8px rgba(46,139,87,0)}
+    100%{box-shadow:0 0 0 0 rgba(46,139,87,0)}
+  }
+
+  /* ---------- FILTER ---------- */
+  .filter-bar{display:flex;gap:8px;margin:24px 0 14px;flex-wrap:wrap}
+  .filter-bar button{
+    background:var(--white);border:1.5px solid var(--line);color:var(--blue);
+    padding:9px 16px;border-radius:12px;font-size:13px;font-weight:600;transition:all .12s
+  }
+  .filter-bar button:active{transform:translateY(1px)}
+  .filter-bar button.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+  /* custom range row */
+  .range-bar{
+    display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 16px;
+    background:var(--white);border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:0 1px 3px rgba(39,48,113,.05)
+  }
+  .range-bar .lbl{font-size:12px;font-weight:600;color:var(--muted)}
+  .range-bar input[type="date"],.range-bar input[type="number"]{
+    border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px;
+    font-family:inherit;color:var(--text);background:var(--cream);outline:none
+  }
+  .range-bar input[type="date"]:focus,.range-bar input[type="number"]:focus{border-color:var(--blue-light)}
+  .range-bar input[type="number"]{width:64px;text-align:center}
+  .range-bar .go{background:var(--blue);color:#fff;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:600}
+  .range-bar .go:active{background:var(--blue-dark)}
+  .range-bar .sep{width:1px;height:22px;background:var(--line);margin:0 2px}
+  .range-now{font-size:13px;font-weight:600;color:var(--blue);margin:0 2px 14px}
+
+  /* search */
+  .search-wrap{position:relative;margin:0 0 14px}
+  .search-in{
+    width:100%;padding:13px 16px 13px 42px;border:1.5px solid var(--line);border-radius:12px;
+    background:var(--white);font-size:14px;font-weight:500;color:var(--text);outline:none;font-family:inherit;transition:border-color .15s
+  }
+  .search-in::placeholder{color:var(--grey);font-weight:500}
+  .search-in:focus{border-color:var(--blue-light)}
+  .search-ic{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--grey);pointer-events:none;display:flex}
+  .search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--grey-soft);color:var(--muted);border-radius:50%;width:24px;height:24px;font-size:14px;line-height:1;display:none;align-items:center;justify-content:center}
+  .search-clear.show{display:flex}
+
+  /* ---------- PANELS ---------- */
+  .panel{
+    background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+    padding:20px 22px;box-shadow:0 1px 3px rgba(39,48,113,.05);margin-bottom:18px
+  }
+  .panel h2{
+    font-size:14px;font-weight:700;color:var(--blue);
+    padding-bottom:12px;margin-bottom:6px;border-bottom:1px solid var(--line);
+    display:flex;align-items:center;gap:8px
+  }
+  .panel h2 svg{color:var(--blue-light)}
+
+  .order-row{
+    display:grid;grid-template-columns:96px 1fr 78px 100px 92px;
+    gap:14px;padding:13px 0;border-bottom:1px solid var(--line);font-size:14px;align-items:center
+  }
+  .order-row:last-child{border-bottom:none}
+  .order-row .ref{color:var(--blue);font-weight:700;font-size:12px;letter-spacing:.02em}
+  .order-row .name{font-weight:600}
+  .order-row .city{color:var(--muted);font-size:13px}
+  .order-row .stk{color:var(--muted);font-size:13px}
+  .order-row .amount{text-align:right;font-weight:700;color:var(--blue);font-variant-numeric:tabular-nums}
+  .order-row .date{color:var(--grey);font-size:12px;text-align:right}
+
+  .product-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .product-row:last-child{border-bottom:none}
+  .product-row img{width:42px;height:42px;border-radius:10px;object-fit:cover;background:var(--warm);flex-shrink:0}
+  .product-row .product-noimg{width:42px;height:42px;border-radius:10px;background:var(--warm);flex-shrink:0}
+  .product-row .product-name{flex:1;min-width:0;font-weight:500}
+  .product-row .rank{width:22px;height:22px;border-radius:7px;background:var(--blue-soft);color:var(--blue);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .product-row .qty{color:var(--blue);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+  .location-row{display:grid;grid-template-columns:1fr 70px;padding:10px 0;font-size:14px;border-bottom:1px solid var(--line);align-items:center}
+  .location-row:last-child{border-bottom:none}
+  .location-row .count{color:var(--blue);font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .loading{text-align:center;padding:28px;color:var(--muted);font-size:14px}
+  .empty{text-align:center;padding:20px;color:var(--muted);font-size:13px}
+
+  @media (max-width:700px){
+    .two-col{grid-template-columns:1fr}
+    .order-row{grid-template-columns:1fr auto;row-gap:3px;column-gap:10px}
+    .order-row .ref{grid-column:1/2}
+    .order-row .date{grid-column:2/3}
+    .order-row .stk{display:none}
+    .order-row .amount{grid-column:2/3;text-align:right}
+    .topbar .upd{display:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN ===== -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-card">
+    <img src="/images/logopng.png" alt="Quartz Mølle" onerror="this.style.display='none'" />
+    <h1>Quartz Mølle Admin</h1>
+    <p>Indtast adgangskode</p>
+    <input id="codeInput" class="code-input" type="password" inputmode="numeric"
+           autocomplete="off" maxlength="10" placeholder="••••" />
+    <button id="loginBtn" class="login-btn" onclick="login()">Lås op</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<!-- ===== DASHBOARD ===== -->
+<div class="dashboard hide" id="dashboard">
+  <div class="topbar">
+    <img src="/images/logopng.png" alt="" onerror="this.style.display='none'" />
+    <div class="ttl">Admin<small>Statistik · Quartz Mølle</small></div>
+    <div class="spacer"></div>
+    <span class="upd" id="lastUpdate"></span>
+    <button class="logout" onclick="logout()">Log ud</button>
+  </div>
+
+  <div class="wrap">
+
+    <!-- Live stats -->
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+        <div class="label"><span class="live-dot"></span>Aktive nu</div>
+        <div class="value" id="activeNow">–</div>
+        <div class="delta">Sidste 60 sek.</div>
+      </div>
+      <div class="stat-card">
+        <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        <div class="label">Besøgende i dag</div>
+        <div class="value" id="visitorsToday">–</div>
+        <div class="delta" id="visitorsYesterday"></div>
+      </div>
+      <div class="stat-card">
+        <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></div>
+        <div class="label">Ordrer i dag</div>
+        <div class="value" id="ordersToday">–</div>
+        <div class="delta" id="ordersWeek"></div>
+      </div>
+      <div class="stat-card">
+        <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <div class="label">Omsætning i dag</div>
+        <div class="value" id="revenueToday">–</div>
+        <div class="delta" id="revenueWeek"></div>
+      </div>
+      <div class="stat-card">
+        <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+        <div class="label">Konvertering</div>
+        <div class="value" id="conversionRate">–</div>
+        <div class="delta">Ordrer / besøgende</div>
+      </div>
+    </div>
+
+    <!-- Time range filter -->
+    <div class="filter-bar">
+      <button class="active" data-range="7" onclick="setRange(7)">7 dage</button>
+      <button data-range="30" onclick="setRange(30)">30 dage</button>
+      <button data-range="90" onclick="setRange(90)">90 dage</button>
+    </div>
+
+    <!-- Custom range: pick a number of days, or a specific date / date range -->
+    <div class="range-bar">
+      <span class="lbl">Egne dage:</span>
+      <input type="number" id="customDays" min="1" max="365" placeholder="14" />
+      <button class="go" onclick="applyCustomDays()">Vis</button>
+      <span class="sep"></span>
+      <span class="lbl">Dato:</span>
+      <input type="date" id="dateFrom" />
+      <span class="lbl">til</span>
+      <input type="date" id="dateTo" />
+      <button class="go" onclick="applyDateRange()">Vis</button>
+    </div>
+    <div class="range-now" id="rangeNow"></div>
+
+    <!-- Recent orders -->
+    <div class="panel">
+      <h2><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>Ordrer</h2>
+      <div class="search-wrap">
+        <span class="search-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg></span>
+        <input id="orderSearch" class="search-in" type="text" autocomplete="off" placeholder="Søg ordre-nr. eller navn…" />
+        <button id="orderSearchClear" class="search-clear" aria-label="Ryd">✕</button>
+      </div>
+      <div id="ordersList" class="loading">Henter ordrer…</div>
+    </div>
+
+    <div class="two-col">
+      <!-- Top products -->
+      <div class="panel">
+        <h2><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Mest solgte produkter</h2>
+        <div id="topProducts" class="loading">Henter…</div>
+      </div>
+
+      <!-- Customer locations -->
+      <div class="panel">
+        <h2><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Kunde lokationer</h2>
+        <div id="locations" class="loading">Henter…</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // Auth: shares the /locker session cookie (lk_sess). Logging in here, on
+  // /locker or on /fulfill unlocks all three with the same code.
+  let pollTimer = null;
+  let currentQuery = 'days=7';   // what we ask the API for (days=N or from=..&to=..)
+  let lastOrders = [];           // all orders for the current range (for client-side search)
+  let orderQuery = '';           // current order search text
+
+  async function login() {
+    const codeInput = document.getElementById('codeInput');
+    const err = document.getElementById('loginError');
+    const btn = document.getElementById('loginBtn');
+    err.textContent = '';
+    const code = codeInput.value.trim();
+    if (!code) { err.textContent = 'Indtast adgangskode'; return; }
+    btn.textContent = '…';
+    try {
+      const r = await fetch('/api/locker', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'login', code: code })
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok && d.ok) { codeInput.value = ''; showDashboard(); }
+      else { err.textContent = d.error || 'Forkert kode'; codeInput.value = ''; codeInput.focus(); }
+    } catch (e) { err.textContent = 'Netværksfejl'; }
+    btn.textContent = 'Lås op';
+  }
+
+  async function logout() {
+    try { await fetch('/api/locker', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'logout' }) }); } catch (e) {}
+    if (pollTimer) clearInterval(pollTimer);
+    document.getElementById('loginWrap').classList.remove('hide');
+    document.getElementById('dashboard').classList.add('hide');
+    document.getElementById('codeInput').value = '';
+  }
+
+  function showDashboard() {
+    document.getElementById('loginWrap').classList.add('hide');
+    document.getElementById('dashboard').classList.remove('hide');
+    loadDashboard();
+    // Refresh active users every 15 sec
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(refreshLiveStats, 15000);
+  }
+
+  function showLogin() {
+    if (pollTimer) clearInterval(pollTimer);
+    document.getElementById('dashboard').classList.add('hide');
+    document.getElementById('loginWrap').classList.remove('hide');
+  }
+
+  function highlightQuickButton(days) {
+    document.querySelectorAll('.filter-bar button').forEach(b => {
+      b.classList.toggle('active', days != null && Number(b.dataset.range) === days);
+    });
+  }
+
+  function setRange(days) {
+    currentQuery = 'days=' + days;
+    document.getElementById('customDays').value = '';
+    document.getElementById('dateFrom').value = '';
+    document.getElementById('dateTo').value = '';
+    highlightQuickButton(days);
+    loadDashboard();
+  }
+
+  function applyCustomDays() {
+    let n = parseInt(document.getElementById('customDays').value, 10);
+    if (!Number.isFinite(n) || n < 1) { n = 7; }
+    if (n > 365) n = 365;
+    document.getElementById('customDays').value = n;
+    currentQuery = 'days=' + n;
+    document.getElementById('dateFrom').value = '';
+    document.getElementById('dateTo').value = '';
+    highlightQuickButton(n);
+    loadDashboard();
+  }
+
+  function applyDateRange() {
+    const from = document.getElementById('dateFrom').value;
+    let to = document.getElementById('dateTo').value;
+    if (!from) { alert('Vælg en fra-dato (eller bare én dato for den dag).'); return; }
+    // No "to" → single day. If "to" is before "from", swap.
+    if (to && to < from) { const tmp = to; to = from; document.getElementById('dateFrom').value = tmp; document.getElementById('dateTo').value = from; }
+    currentQuery = 'from=' + encodeURIComponent(from) + (to ? '&to=' + encodeURIComponent(to) : '');
+    document.getElementById('customDays').value = '';
+    highlightQuickButton(null);
+    loadDashboard();
+  }
+
+  async function loadDashboard() {
+    document.getElementById('ordersList').className = 'loading';
+    document.getElementById('ordersList').textContent = 'Henter ordrer…';
+    try {
+      const res = await fetch('/api/admin-stats?' + currentQuery);
+      if (!res.ok) {
+        if (res.status === 401) { showLogin(); return; }
+        throw new Error('API error ' + res.status);
+      }
+      const data = await res.json();
+      renderDashboard(data);
+    } catch (err) {
+      console.error(err);
+      document.getElementById('ordersList').innerHTML = '<div class="empty">Kunne ikke hente data: ' + err.message + '</div>';
+    }
+  }
+
+  async function refreshLiveStats() {
+    try {
+      const res = await fetch('/api/admin-live');
+      if (res.status === 401) { showLogin(); return; }
+      if (res.ok) {
+        const data = await res.json();
+        document.getElementById('activeNow').textContent = data.activeNow || 0;
+        document.getElementById('visitorsToday').textContent = data.visitorsToday || 0;
+        document.getElementById('visitorsYesterday').textContent = 'I går: ' + (data.visitorsYesterday || 0);
+        document.getElementById('lastUpdate').textContent = 'Opdateret kl. ' + new Date().toLocaleTimeString('da-DK');
+        // Recalc conversion rate
+        const orders = parseInt(document.getElementById('ordersToday').textContent) || 0;
+        const visitors = data.visitorsToday || 0;
+        const conv = visitors > 0 ? ((orders / visitors) * 100).toFixed(1) + '%' : '–';
+        document.getElementById('conversionRate').textContent = conv;
+      }
+    } catch (err) { /* silent */ }
+  }
+
+  function renderDashboard(data) {
+    const label = data.rangeLabel || '';
+    // Top stats
+    document.getElementById('ordersToday').textContent = data.ordersToday || 0;
+    document.getElementById('ordersWeek').textContent = (data.totalOrders || 0) + ' i ' + label;
+    document.getElementById('revenueToday').textContent = formatKr(data.revenueToday || 0);
+    document.getElementById('revenueWeek').textContent = formatKr(data.totalRevenue || 0) + ' i ' + label;
+
+    // Range summary line
+    document.getElementById('rangeNow').textContent =
+      'Viser: ' + label + ' · ' + (data.totalOrders || 0) + ' ordrer · ' + formatKr(data.totalRevenue || 0) +
+      (data.truncated ? ' (begrænset til de nyeste ordrer)' : '');
+
+    // Live stats refresh
+    refreshLiveStats();
+
+    // Orders list (kept for client-side search)
+    lastOrders = data.orders || [];
+    renderOrders();
+
+    // Top products
+    const productsEl = document.getElementById('topProducts');
+    if (!data.topProducts || data.topProducts.length === 0) {
+      productsEl.innerHTML = '<div class="empty">Ingen data.</div>';
+    } else {
+      productsEl.innerHTML = data.topProducts.map((p, i) => `
+        <div class="product-row">
+          <div class="rank">${i + 1}</div>
+          ${p.image ? `<img src="${escapeHtml(p.image)}" alt="" />` : '<div class="product-noimg"></div>'}
+          <div class="product-name">${escapeHtml(p.name)}</div>
+          <div class="qty">${p.qty}×</div>
+        </div>
+      `).join('');
+    }
+
+    // Locations
+    const locEl = document.getElementById('locations');
+    if (!data.locations || data.locations.length === 0) {
+      locEl.innerHTML = '<div class="empty">Ingen data.</div>';
+    } else {
+      locEl.innerHTML = data.locations.map(l => `
+        <div class="location-row">
+          <div>${escapeHtml(l.location)}</div>
+          <div class="count">${l.count}</div>
+        </div>
+      `).join('');
+    }
+  }
+
+  function renderOrders() {
+    const ordersEl = document.getElementById('ordersList');
+    const q = orderQuery;
+    const list = q
+      ? lastOrders.filter(o => ((o.ref || '') + ' ' + (o.customerName || '') + ' ' + (o.email || '') + ' ' + (o.city || '')).toLowerCase().includes(q))
+      : lastOrders;
+
+    if (!lastOrders.length) {
+      ordersEl.className = 'empty';
+      ordersEl.textContent = 'Ingen ordrer i denne periode.';
+      return;
+    }
+    if (!list.length) {
+      ordersEl.className = 'empty';
+      ordersEl.textContent = 'Ingen ordrer matcher “' + q + '”.';
+      return;
+    }
+    ordersEl.className = '';
+    ordersEl.innerHTML = list.map(o => `
+      <div class="order-row">
+        <div class="ref">#${escapeHtml(o.ref)}</div>
+        <div>
+          <div class="name">${escapeHtml(o.customerName)}</div>
+          <div class="city">${escapeHtml(o.city || '')}${o.country ? ', ' + escapeHtml(o.country) : ''}</div>
+        </div>
+        <div class="stk">${o.itemCount != null ? escapeHtml(o.itemCount) + ' stk.' : '–'}</div>
+        <div class="amount">${formatKr(o.amount)}</div>
+        <div class="date">${formatDate(o.date)}</div>
+      </div>
+    `).join('');
+  }
+
+  function formatKr(amount) {
+    return Math.round(amount).toLocaleString('da-DK') + ' kr.';
+  }
+  function formatDate(iso) {
+    const d = new Date(iso);
+    return d.toLocaleDateString('da-DK', { day: 'numeric', month: 'short' }) + ' ' +
+           d.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' });
+  }
+  function escapeHtml(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // If the lk_sess cookie is already valid (e.g. logged in on /locker), go
+  // straight to the dashboard; otherwise the 401 falls back to the login card.
+  (async function init() {
+    try {
+      const res = await fetch('/api/admin-stats?' + currentQuery);
+      if (res.ok) { showDashboard(); }
+    } catch (e) { /* stay on login */ }
+  })();
+
+  // Submit on Enter
+  document.getElementById('codeInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') login();
+  });
+
+  // Order search (client-side, across the loaded range)
+  const orderSearch = document.getElementById('orderSearch');
+  const orderSearchClear = document.getElementById('orderSearchClear');
+  orderSearch.addEventListener('input', () => {
+    orderQuery = orderSearch.value.trim().toLowerCase();
+    orderSearchClear.classList.toggle('show', orderQuery.length > 0);
+    renderOrders();
+  });
+  orderSearchClear.addEventListener('click', () => {
+    orderSearch.value = ''; orderQuery = ''; orderSearchClear.classList.remove('show');
+    renderOrders(); orderSearch.focus();
+  });
+
+  // Apply custom-range inputs on Enter
+  ['customDays', 'dateFrom', 'dateTo'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key !== 'Enter') return;
+      if (id === 'customDays') applyCustomDays(); else applyDateRange();
+    });
+  });
+</script>
+
+<script src="js/i18n.js"></script>
+</body>
+</html>
