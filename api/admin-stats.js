@@ -1,7 +1,10 @@
 // api/admin-stats.js — Returns dashboard data from Stripe + visitor stats from Vercel KV
 //
-// Auth: HTTP Basic Auth (username:password)
+// Auth: shares the /locker session cookie (lk_sess) — log in with the same
+//       passcode used on /locker and /fulfill.
 // Query: ?days=7 (default 7, options: 7/30/90)
+
+import { createHmac, timingSafeEqual } from 'crypto';
 
 // Map product names (from Stripe line item descriptions) to image paths in our repo
 function getProductImage(productName) {
@@ -23,17 +26,24 @@ function getProductImage(productName) {
   return null;
 }
 
-const ADMIN_USER = 'fintankeenan';
-const ADMIN_PASS = 'Laragh';
+const SESSION_SECRET = process.env.LOCKER_SESSION_SECRET || 'CHANGE_ME_IN_VERCEL_ENV';
 
+// Verify the HMAC-signed lk_sess cookie set by /api/locker (action=login) —
+// the same login used by /locker and /fulfill.
 function checkAuth(req) {
-  const auth = req.headers.authorization || '';
-  if (!auth.startsWith('Basic ')) return false;
+  const m = (req.headers.cookie || '').match(/(?:^|;\s*)lk_sess=([^;]+)/);
+  if (!m) return false;
+  const tok = decodeURIComponent(m[1]);
+  const dot = tok.lastIndexOf('.');
+  if (dot < 0) return false;
+  const data = tok.slice(0, dot), mac = tok.slice(dot + 1);
+  const expect = createHmac('sha256', SESSION_SECRET).update(data).digest('hex');
   try {
-    const decoded = Buffer.from(auth.slice(6), 'base64').toString('utf-8');
-    const [u, p] = decoded.split(':');
-    return u.toLowerCase() === ADMIN_USER.toLowerCase() && p === ADMIN_PASS;
+    if (mac.length !== expect.length) return false;
+    if (!timingSafeEqual(Buffer.from(mac, 'hex'), Buffer.from(expect, 'hex'))) return false;
   } catch { return false; }
+  const exp = parseInt(data, 10);
+  return Number.isFinite(exp) && exp > Date.now();
 }
 
 export default async function handler(req, res) {
