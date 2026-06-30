@@ -115,6 +115,19 @@ function initVideoFade() {
     }
   });
 
+  // Header (logo, language switch, cart, burger) fades away as you scroll down
+  // the homepage — just like the big hero logo scrolls off-screen — and fades
+  // back in when you return to the top.
+  const navEl = document.getElementById('nav') || document.querySelector('.nav');
+  const updateNav = () => {
+    if (!navEl) return;
+    const y = window.scrollY || window.pageYOffset || 0;
+    const fadeEnd = Math.max(1, window.innerHeight * 0.55);
+    const op = Math.max(0, Math.min(1, 1 - y / fadeEnd));
+    navEl.style.opacity = String(op);
+    navEl.style.pointerEvents = op < 0.05 ? 'none' : '';
+  };
+
   let activeSection = null;
 
   const update = () => {
@@ -145,6 +158,8 @@ function initVideoFade() {
 
     // Toggle body class so CSS can hide the fixed videos when user is past the video sections
     document.body.classList.toggle('past-videos', !anyVideoVisible);
+
+    updateNav();
   };
 
   let ticking = false;
