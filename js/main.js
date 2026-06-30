@@ -106,18 +106,14 @@ function initVideoFade() {
   const sections = Array.from(document.querySelectorAll('.video-section'));
   if (!sections.length) return;
 
-  // Only the hero video plays (and downloads) on load — the others stay
-  // deferred (preload="none") until their section becomes active, so the
-  // hero gets all the bandwidth and shows up faster.
-  function playVid(section) {
-    const vid = section && section.querySelector('.video-bg');
+  sections.forEach(section => {
+    const vid = section.querySelector('.video-bg');
     if (vid) {
       vid.muted = true;
       vid.playsInline = true;
       vid.play().catch(() => {});
     }
-  }
-  if (sections[0]) playVid(sections[0]);
+  });
 
   let activeSection = null;
 
@@ -144,7 +140,6 @@ function initVideoFade() {
     if (closest && closest !== activeSection) {
       sections.forEach(s => s.classList.remove('is-active'));
       closest.classList.add('is-active');
-      playVid(closest); // start (and lazily download) the video as it becomes active
       activeSection = closest;
     }
 
