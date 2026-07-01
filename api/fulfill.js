@@ -14,11 +14,12 @@
 import { kv } from '@vercel/kv';
 import { createHmac, timingSafeEqual } from 'crypto';
 
-const SESSION_SECRET = process.env.LOCKER_SESSION_SECRET || 'CHANGE_ME_IN_VERCEL_ENV';
+const SESSION_SECRET = process.env.LOCKER_SESSION_SECRET || ''; // fail closed: no guessable default
 const PICKUP_ADDRESS = 'Suså Landevej 101, 4160 Herlufmagle';
 
 // Verify the HMAC-signed lk_sess cookie set by /api/locker (action=login).
 function checkAuth(req) {
+  if (!SESSION_SECRET || SESSION_SECRET === 'CHANGE_ME_IN_VERCEL_ENV') return false; // not configured -> deny
   const m = (req.headers.cookie || '').match(/(?:^|;\s*)lk_sess=([^;]+)/);
   if (!m) return false;
   const tok = decodeURIComponent(m[1]);
@@ -38,6 +39,12 @@ function escapeHtml(s) {
   return String(s || '')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// Order refs are 12-char uppercase alphanumerics; bound + validate before using
+// them as KV hash fields so a crafted ref can't bloat/pollute storage.
+function validRef(r) {
+  return typeof r === 'string' && /^[A-Za-z0-9_-]{1,40}$/.test(r);
 }
 
 async function getLockerCodeForDoor(door) {
@@ -183,7 +190,7 @@ export default async function handler(req, res) {
 
     if (action === 'send') {
       const ref = (req.body && req.body.ref || '').toString().trim();
-      if (!ref) return res.status(400).json({ error: 'Mangler ordre-reference' });
+      if (!validRef(ref)) return res.status(400).json({ error: 'Ugyldig ordre-reference' });
 
       // Accept one or several doors. The frontend may send `doors` (array or
       // comma/space-separated string) or a single `door`.
@@ -219,19 +226,18 @@ export default async function handler(req, res) {
 
     if (action === 'delete') {
       const ref = (req.body && req.body.ref || '').toString().trim();
-      if (!ref) return res.status(400).json({ error: 'Mangler ordre-reference' });
+      if (!validRef(ref)) return res.status(400).json({ error: 'Ugyldig ordre-reference' });
 
-      // Rewrite the pickup list without this order, and drop any fulfilment record.
+      // Remove ONLY the matching element(s) with lrem — atomic per element — so a
+      // pickup order added concurrently by the webhook is never lost (previously a
+      // del + rpush rebuild could wipe a just-inserted order).
       let orders = [];
       try { orders = (await kv.lrange('pickup:orders', 0, -1)) || []; } catch {}
-      const remaining = orders.filter(o => o && o.ref !== ref);
-      const removed = orders.length - remaining.length;
-      try {
-        await kv.del('pickup:orders');
-        if (remaining.length) await kv.rpush('pickup:orders', ...remaining);
-      } catch (e) {
-        console.error('Failed to rewrite pickup list on delete:', e);
-        return res.status(500).json({ error: 'Kunne ikke slette ordren' });
+      const targets = orders.filter(o => o && o.ref === ref);
+      let removed = 0;
+      for (const o of targets) {
+        try { removed += (await kv.lrem('pickup:orders', 0, o)) || 0; }
+        catch (e) { console.error('lrem failed on delete:', e); }
       }
       try { await kv.hdel('pickup:fulfilled', ref); } catch {}
 
@@ -241,6 +247,6 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Ukendt handling' });
   } catch (err) {
     console.error('fulfill error', err);
-    return res.status(500).json({ error: err.message || 'Serverfejl' });
+    return res.status(500).json({ error: 'Serverfejl' });
   }
 }

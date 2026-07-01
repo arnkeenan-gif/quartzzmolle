@@ -7,14 +7,26 @@
 import { kv } from '@vercel/kv';
 import { createHmac, timingSafeEqual, randomUUID } from 'crypto';
 
-const CODE = process.env.LOCKER_CODE || '2907';
-const SECRET = process.env.LOCKER_SESSION_SECRET || 'CHANGE_ME_IN_VERCEL_ENV';
+// SECURITY: never fall back to a guessable default. If these env vars are not
+// set in Vercel the system fails closed (no login possible) instead of trusting
+// a hardcoded value that anyone can read in this repo.
+const CODE = process.env.LOCKER_CODE || '';
+const SECRET = process.env.LOCKER_SESSION_SECRET || '';
+const CONFIGURED = CODE.length > 0 && SECRET.length > 0 && SECRET !== 'CHANGE_ME_IN_VERCEL_ENV';
 const DEVICE_SECRET = process.env.LOCKER_DEVICE_SECRET || '';
 const DOORS = 22;
 const SESSION_HOURS = 8;
 const STALE_MS = 20000;
 const MAX_FAILS = 5;
+const GLOBAL_MAX_FAILS = 50; // backstop across all IPs so header-rotation can't brute force
 const LOCK_SECONDS = 900;
+
+// Constant-time string comparison (avoids timing leaks on the passcode).
+function safeEqual(a, b) {
+  const ba = Buffer.from(String(a)), bb = Buffer.from(String(b));
+  if (ba.length !== bb.length) return false;
+  try { return timingSafeEqual(ba, bb); } catch { return false; }
+}
 
 function sign(expMs) {
   const data = String(expMs);
@@ -24,6 +36,7 @@ function cookieStr(v, maxAge) {
   return `lk_sess=${v}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${maxAge}`;
 }
 function verify(req) {
+  if (!CONFIGURED) return false; // no valid session possible without configured secret
   const m = (req.headers.cookie || '').match(/(?:^|;\s*)lk_sess=([^;]+)/);
   if (!m) return false;
   const tok = decodeURIComponent(m[1]);
@@ -105,16 +118,27 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
     if (action === 'login') {
-      const ip = (req.headers['x-forwarded-for']?.split(',')[0] || req.headers['x-real-ip'] || 'unknown').trim();
+      if (!CONFIGURED) return res.status(503).json({ error: 'Login er ikke konfigureret.' });
+      // Prefer Vercel's trusted client IP (x-real-ip) over the spoofable
+      // left-most x-forwarded-for entry, and keep a GLOBAL failure backstop so
+      // rotating the header can't defeat the lockout entirely.
+      const ip = (req.headers['x-real-ip'] || req.headers['x-forwarded-for']?.split(',').pop() || 'unknown').toString().trim();
       const failKey = `locker:fails:${ip}`;
-      let fails = 0; try { fails = (await kv.get(failKey)) || 0; } catch {}
-      if (fails >= MAX_FAILS) return res.status(429).json({ error: 'For mange forsøg. Prøv igen om lidt.' });
+      const globalKey = 'locker:fails:global';
+      let fails = 0, gfails = 0;
+      try { fails = (await kv.get(failKey)) || 0; } catch {}
+      try { gfails = (await kv.get(globalKey)) || 0; } catch {}
+      if (fails >= MAX_FAILS || gfails >= GLOBAL_MAX_FAILS) {
+        return res.status(429).json({ error: 'For mange forsøg. Prøv igen om lidt.' });
+      }
       const code = (req.body?.code ?? '').toString();
-      if (code !== CODE) {
+      if (!code || code.length !== CODE.length || !safeEqual(code, CODE)) {
         try { await kv.set(failKey, fails + 1, { ex: LOCK_SECONDS }); } catch {}
+        try { await kv.set(globalKey, gfails + 1, { ex: LOCK_SECONDS }); } catch {}
         return res.status(401).json({ error: 'Forkert kode' });
       }
       try { await kv.del(failKey); } catch {}
+      try { await kv.del(globalKey); } catch {}
       res.setHeader('Set-Cookie', cookieStr(sign(Date.now() + SESSION_HOURS * 3600 * 1000), SESSION_HOURS * 3600));
       return res.status(200).json({ ok: true });
     }
@@ -207,6 +231,7 @@ export default async function handler(req, res) {
 
     return res.status(400).json({ error: 'Ukendt handling' });
   } catch (e) {
-    return res.status(500).json({ error: 'Serverfejl: ' + e.message });
+    console.error('locker error', e);
+    return res.status(500).json({ error: 'Serverfejl' });
   }
 }

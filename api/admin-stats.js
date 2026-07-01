@@ -27,11 +27,12 @@ function getProductImage(productName) {
   return null;
 }
 
-const SESSION_SECRET = process.env.LOCKER_SESSION_SECRET || 'CHANGE_ME_IN_VERCEL_ENV';
+const SESSION_SECRET = process.env.LOCKER_SESSION_SECRET || ''; // fail closed: no guessable default
 
 // Verify the HMAC-signed lk_sess cookie set by /api/locker (action=login) —
 // the same login used by /locker and /fulfill.
 function checkAuth(req) {
+  if (!SESSION_SECRET || SESSION_SECRET === 'CHANGE_ME_IN_VERCEL_ENV') return false; // not configured -> deny
   const m = (req.headers.cookie || '').match(/(?:^|;\s*)lk_sess=([^;]+)/);
   if (!m) return false;
   const tok = decodeURIComponent(m[1]);
@@ -199,9 +200,15 @@ export default async function handler(req, res) {
       for (let d = new Date(startDay); d <= endDay && days.length <= 400; d.setUTCDate(d.getUTCDate() + 1)) {
         days.push(`visitors:${d.toISOString().slice(0, 10)}`);
       }
+      // For a rolling "?days=N" window `since` is NOT midnight-aligned, so flooring
+      // both ends yields N+1 calendar days. Trim to exactly N so the visitor count
+      // matches the revenue window (explicit from/to ranges are already aligned).
+      const aligned = (since % 86400) === 0;
+      const spanDays = Math.max(1, Math.round((until - since) / 86400));
+      const dayKeys = aligned ? days : days.slice(-spanDays);
       const BATCH = 20;
-      for (let i = 0; i < days.length; i += BATCH) {
-        const counts = await Promise.all(days.slice(i, i + BATCH).map(k => kv.scard(k).catch(() => 0)));
+      for (let i = 0; i < dayKeys.length; i += BATCH) {
+        const counts = await Promise.all(dayKeys.slice(i, i + BATCH).map(k => kv.scard(k).catch(() => 0)));
         periodVisitors += counts.reduce((a, b) => a + (b || 0), 0);
       }
     } catch (e) { /* KV unavailable → leave 0 */ }
@@ -220,6 +227,6 @@ export default async function handler(req, res) {
     });
   } catch (err) {
     console.error('Admin stats error:', err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'Serverfejl' });
   }
 }

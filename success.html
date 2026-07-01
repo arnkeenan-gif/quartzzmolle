@@ -63,6 +63,12 @@
     .nav.nav-light .nav-burger span {
       background: #fff !important;
     }
+    /* Success page nav is dark blue, so the language switcher must be white (not the
+       default dark text used on light nav-light bars elsewhere). */
+    .nav.nav-light .lang-switch-btn {
+      color: #fff !important;
+      text-shadow: none;
+    }
     .nav.nav-light .nav-cta {
       color: #273071 !important;
       background: #fff !important;
@@ -435,15 +441,19 @@
         // Render items
         var itemsEl = document.getElementById('success-order-items');
         var fmt = function(n) { return Number(n).toFixed(2).replace('.', ',') + ' kr.'; };
+        // Escape all API-derived strings before inserting into innerHTML (XSS-safe).
+        var esc = function(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]; }); };
+        var safeImg = function(u) { u = String(u || ''); return /^(https?:\/\/|\/)/i.test(u) ? u : ''; };
         var html = '';
         (data.items || []).forEach(function(it) {
           var qtyParts = [];
-          if (it.weightLabel) qtyParts.push(it.weightLabel);
-          qtyParts.push('Antal: ' + it.qty);
+          if (it.weightLabel) qtyParts.push(esc(it.weightLabel));
+          qtyParts.push('Antal: ' + esc(it.qty));
+          var img = safeImg(it.image);
           html += '<div class="success-order-item">'
-            + (it.image ? '<img src="' + it.image + '" alt="" />' : '<div class="success-order-item-noimg"></div>')
+            + (img ? '<img src="' + esc(img) + '" alt="" />' : '<div class="success-order-item-noimg"></div>')
             + '<div class="success-order-item-info">'
-            +   '<div class="success-order-item-name">' + it.name + '</div>'
+            +   '<div class="success-order-item-name">' + esc(it.name) + '</div>'
             +   '<div class="success-order-item-qty">' + qtyParts.join(' · ') + '</div>'
             + '</div>'
             + '<div class="success-order-item-price">' + fmt(it.lineTotal) + '</div>'

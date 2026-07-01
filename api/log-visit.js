@@ -5,17 +5,30 @@
 
 import { kv } from '@vercel/kv';
 
+// Only allow the site's own origins to post visitor heartbeats (reduces
+// off-site abuse / metric pollution). '*' previously let anyone write.
+const ALLOWED_ORIGINS = [
+  'https://quartzmolle.dk',
+  'https://www.quartzmolle.dk',
+  'https://quartzzmolle-dusky.vercel.app',
+];
+
 export default async function handler(req, res) {
-  // Allow CORS for our own domain
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const origin = req.headers.origin || '';
+  const allowed = ALLOWED_ORIGINS.includes(origin);
+  if (allowed) res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).end();
+  // Reject cross-origin callers (requests with an Origin that isn't ours).
+  // Same-origin fetches from our own pages typically omit Origin or send ours.
+  if (origin && !allowed) return res.status(403).json({ ok: false });
 
   try {
-    // Simple visitor ID = hash of IP + user-agent (no cookies needed)
-    const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.headers['x-real-ip'] || 'unknown';
+    // Simple visitor ID = hash of trusted IP + user-agent (no cookies needed)
+    const ip = req.headers['x-real-ip'] || req.headers['x-forwarded-for']?.split(',')[0]?.trim() || 'unknown';
     const ua = (req.headers['user-agent'] || '').slice(0, 100);
     const visitorId = Buffer.from(ip + '|' + ua).toString('base64').slice(0, 24);
 

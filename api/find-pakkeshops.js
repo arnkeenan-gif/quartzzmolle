@@ -4,10 +4,16 @@
 // Otherwise falls back to all shops in the zipcode.
 
 export default async function handler(req, res) {
-  const zipcode = req.query.zipcode || '';
-  const street = req.query.street || '';
-  const country = req.query.country || 'DK';
-  const amount = parseInt(req.query.amount || '10', 10);
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+  const zipcode = (req.query.zipcode || '').toString().slice(0, 12);
+  const street = (req.query.street || '').toString().slice(0, 80);
+  const country = (req.query.country || 'DK').toString().slice(0, 2);
+  // Clamp the shop count forwarded to GLS to a sane range (was unbounded).
+  let amount = parseInt(req.query.amount || '10', 10);
+  if (!Number.isFinite(amount) || amount < 1) amount = 10;
+  if (amount > 30) amount = 30;
 
   if (!zipcode) {
     return res.status(400).json({ error: 'zipcode required' });

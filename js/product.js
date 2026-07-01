@@ -9,6 +9,18 @@ try { stripe = Stripe(STRIPE_PK); } catch(e) { console.warn('Stripe not loaded')
 let selectedWeightIndex = -1;   // -1 means no size chosen yet → show preview image
 let currentProduct = null;
 
+// Escape any product-derived value before putting it in innerHTML. Product data
+// can be merged from Supabase, so it must be treated as untrusted (prevents XSS).
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function safeUrl(u) {
+  u = String(u || '');
+  return /^(https?:\/\/|\/|images\/)/i.test(u) ? u : '';
+}
+
 function getBadgeHTML(badge) {
   // Intentionally no bestseller badge on the product page itself
   // (cards in shop/bestsellers still show it, just not the full product page)
@@ -31,14 +43,14 @@ function nutritionTableHTML(n) {
     <table class="nutrition-table">
       <caption>Næringsindhold pr. 100 g</caption>
       <tbody>
-        <tr><th>Energi</th><td>${n.energy || '—'}</td></tr>
-        <tr><th>Fedt</th><td>${n.fat || '—'}</td></tr>
-        <tr class="indent"><th>heraf mættede fedtsyrer</th><td>${n.saturated || '—'}</td></tr>
-        <tr><th>Kulhydrat</th><td>${n.carbs || '—'}</td></tr>
-        <tr class="indent"><th>heraf sukkerarter</th><td>${n.sugars || '—'}</td></tr>
-        <tr><th>Kostfibre</th><td>${n.fiber || '—'}</td></tr>
-        <tr><th>Protein</th><td>${n.protein || '—'}</td></tr>
-        <tr><th>Salt</th><td>${n.salt || '—'}</td></tr>
+        <tr><th>Energi</th><td>${esc(n.energy || '—')}</td></tr>
+        <tr><th>Fedt</th><td>${esc(n.fat || '—')}</td></tr>
+        <tr class="indent"><th>heraf mættede fedtsyrer</th><td>${esc(n.saturated || '—')}</td></tr>
+        <tr><th>Kulhydrat</th><td>${esc(n.carbs || '—')}</td></tr>
+        <tr class="indent"><th>heraf sukkerarter</th><td>${esc(n.sugars || '—')}</td></tr>
+        <tr><th>Kostfibre</th><td>${esc(n.fiber || '—')}</td></tr>
+        <tr><th>Protein</th><td>${esc(n.protein || '—')}</td></tr>
+        <tr><th>Salt</th><td>${esc(n.salt || '—')}</td></tr>
       </tbody>
     </table>
   `;
@@ -49,8 +61,8 @@ function renderProduct(product) {
   const inner = document.getElementById('productInner');
   document.title = `${product.name} – ${product.type} | Quartz Mølle`;
 
-  const certsHTML = product.certifications.map(c =>
-    `<span class="cert-tag">${c}</span>`
+  const certsHTML = (product.certifications || []).map(c =>
+    `<span class="cert-tag">${esc(c)}</span>`
   ).join('');
 
   // No weight selected yet → show branded preview image + lowest price
@@ -59,21 +71,21 @@ function renderProduct(product) {
 
   const weightBtns = product.weights.map((wt, i) => `
     <button class="weight-btn" data-weight-index="${i}">
-      ${wt.label}
+      ${esc(wt.label)}
     </button>
   `).join('');
 
   inner.innerHTML = `
     <div>
       <a href="shop.html" class="btn-back">← Tilbage til shop</a>
-      <img src="${defaultImage}" alt="${product.name}"
+      <img src="${esc(safeUrl(defaultImage))}" alt="${esc(product.name)}"
            class="product-page-img" id="productImg" />
     </div>
     <div class="product-page-info">
       ${getBadgeHTML(product.badge)}
-      <h1 class="product-page-name">${product.name}</h1>
-      <p class="product-page-type">${product.type}</p>
-      <p class="product-page-desc">${product.description}</p>
+      <h1 class="product-page-name">${esc(product.name)}</h1>
+      <p class="product-page-type">${esc(product.type)}</p>
+      <p class="product-page-desc">${esc(product.description)}</p>
 
       <div class="weight-selector">
         <h3>Vælg størrelse</h3>
@@ -104,7 +116,7 @@ function renderProduct(product) {
       <div class="certifications">${certsHTML}</div>
 
       <p style="font-size:0.82rem;color:#999;line-height:1.6;margin-top:0.25rem">
-        ${product.origin}<br>
+        ${esc(product.origin)}<br>
         Fragt beregnes ved checkout &middot; Sikker betaling via Stripe
       </p>
 
@@ -239,13 +251,13 @@ function renderSuggested(product) {
       ? `<span class="product-card-badge badge-bestseller">Bestseller</span>`
       : '';
     return `
-      <a href="product.html?id=${p.id}" class="product-card">
-        <img src="${img}" alt="${p.name} ${p.type}" class="product-card-img" loading="lazy" />
+      <a href="product.html?id=${encodeURIComponent(p.id)}" class="product-card">
+        <img src="${esc(safeUrl(img))}" alt="${esc(p.name + ' ' + p.type)}" class="product-card-img" loading="lazy" />
         <div class="product-card-body">
           ${badgeHTML}
-          <div class="product-card-name">${p.name}</div>
-          <div class="product-card-sub">${p.type}</div>
-          <div class="product-card-price">Fra ${price},00 kr.</div>
+          <div class="product-card-name">${esc(p.name)}</div>
+          <div class="product-card-sub">${esc(p.type)}</div>
+          <div class="product-card-price">Fra ${esc(price)},00 kr.</div>
         </div>
       </a>
     `;

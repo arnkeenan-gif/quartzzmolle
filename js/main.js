@@ -192,14 +192,16 @@ function renderHighlights() {
       ? `<span class="product-card-badge badge-bestseller">Bestseller</span>`
       : '';
 
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    const safeImg = /^(https?:\/\/|\/|images\/)/i.test(String(img)) ? img : '';
     return `
-      <a href="product.html?id=${p.id}" class="product-card">
-        <img src="${img}" alt="${p.name} ${p.type}" class="product-card-img" loading="lazy" />
+      <a href="product.html?id=${encodeURIComponent(p.id)}" class="product-card">
+        <img src="${esc(safeImg)}" alt="${esc(p.name + ' ' + p.type)}" class="product-card-img" loading="lazy" />
         <div class="product-card-body">
           ${badgeHTML}
-          <div class="product-card-name">${p.name}</div>
-          <div class="product-card-sub">${p.type}</div>
-          <div class="product-card-price">Fra ${price},00 kr.</div>
+          <div class="product-card-name">${esc(p.name)}</div>
+          <div class="product-card-sub">${esc(p.type)}</div>
+          <div class="product-card-price">Fra ${esc(price)},00 kr.</div>
         </div>
       </a>
     `;

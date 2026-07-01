@@ -2,9 +2,14 @@
 // Called from success.html to display the order on the confirmation page
 
 export default async function handler(req, res) {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
   const sessionId = req.query.session_id;
-  if (!sessionId) {
-    return res.status(400).json({ error: 'Missing session_id' });
+  // Stripe Checkout session ids look like cs_live_/cs_test_ + base62 — validate
+  // the shape to reject junk/probing before hitting Stripe.
+  if (!sessionId || !/^cs_[A-Za-z0-9_]{10,}$/.test(String(sessionId))) {
+    return res.status(400).json({ error: 'Missing or invalid session_id' });
   }
   try {
     const stripe = (await import('stripe')).default(process.env.STRIPE_SECRET_KEY);
@@ -38,6 +43,6 @@ export default async function handler(req, res) {
     });
   } catch (err) {
     console.error('order-summary error', err.message);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'Kunne ikke hente ordren' });
   }
 }

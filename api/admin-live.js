@@ -3,11 +3,12 @@
 import { kv } from '@vercel/kv';
 import { createHmac, timingSafeEqual } from 'crypto';
 
-const SESSION_SECRET = process.env.LOCKER_SESSION_SECRET || 'CHANGE_ME_IN_VERCEL_ENV';
+const SESSION_SECRET = process.env.LOCKER_SESSION_SECRET || ''; // fail closed: no guessable default
 
 // Verify the HMAC-signed lk_sess cookie set by /api/locker (action=login) —
 // the same login used by /locker and /fulfill.
 function checkAuth(req) {
+  if (!SESSION_SECRET || SESSION_SECRET === 'CHANGE_ME_IN_VERCEL_ENV') return false; // not configured -> deny
   const m = (req.headers.cookie || '').match(/(?:^|;\s*)lk_sess=([^;]+)/);
   if (!m) return false;
   const tok = decodeURIComponent(m[1]);
