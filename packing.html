@@ -61,6 +61,18 @@
   .sec-h{margin:14px 2px 12px;font-size:15px;font-weight:700;color:var(--blue)}
   .empty{color:var(--muted);font-size:14px;padding:8px 2px}
 
+  /* total-to-pick summary */
+  .pick-total{background:var(--blue);color:#fff;border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);margin-bottom:8px}
+  .pick-total .pt-hint{font-size:13px;opacity:.85;margin-bottom:10px}
+  .pt-row{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.16);font-size:15px}
+  .pt-row:last-child{border-bottom:none}
+  .pt-row .nm{flex:1;font-weight:600}
+  .pt-row .wl{opacity:.8;font-weight:400}
+  .pt-badge{background:#fff;color:var(--blue);font-weight:800;border-radius:9px;padding:4px 10px;font-size:15px;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .pack-hint{font-size:13px;color:var(--muted);margin:2px 2px 10px}
+
+  .qtybadge{background:var(--blue-soft);color:var(--blue);font-weight:800;border-radius:8px;padding:3px 9px;font-size:14px;white-space:nowrap;font-variant-numeric:tabular-nums;flex-shrink:0}
+
   .pack{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:0 1px 3px rgba(39,48,113,.05);margin-bottom:12px}
   .pack-top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
   .pack-who{font-weight:700;font-size:15px}
@@ -119,7 +131,12 @@
     </div>
 
     <div class="summary" id="summary"></div>
+
+    <div class="sec-h" data-i18n="pickTotal">Samlet plukkeliste</div>
+    <div id="pickTotal"></div>
+
     <div class="sec-h" data-i18n="toPack">Ordrer at pakke</div>
+    <div class="pack-hint" data-i18n="packHint">Kryds af efterhånden som du pakker hver ordre.</div>
     <div id="list"></div>
   </div>
 </div>
@@ -128,17 +145,20 @@
 (function(){
   var I18N = {
     da:{ title:'Pakkeliste', enterCode:'Indtast adgangskode', unlock:'Lås op', logout:'Log ud',
-         back:'← Fulfillment', refresh:'↻ Opdatér', printList:'🖨 Print liste', toPack:'Ordrer at pakke',
+         back:'← Fulfillment', refresh:'↻ Opdatér', printList:'🖨 Print', toPack:'Ordrer at pakke',
          none:'Ingen ordrer at pakke.', order:'Ordre', items:'varer', pcs:'stk.', wrongCode:'Forkert kode',
-         netErr:'Netværksfejl', enterCodeShort:'Indtast kode', ordersWord:'ordrer', itemsTotal:'varer i alt' },
+         netErr:'Netværksfejl', enterCodeShort:'Indtast kode', ordersWord:'ordrer', itemsTotal:'varer i alt',
+         pickTotal:'Samlet plukkeliste', pickHint:'Tag i alt dette fra lageret:', packHint:'Kryds af efterhånden som du pakker hver ordre.' },
     en:{ title:'Packing list', enterCode:'Enter passcode', unlock:'Unlock', logout:'Log out',
-         back:'← Fulfillment', refresh:'↻ Refresh', printList:'🖨 Print list', toPack:'Orders to pack',
+         back:'← Fulfillment', refresh:'↻ Refresh', printList:'🖨 Print', toPack:'Orders to pack',
          none:'No orders to pack.', order:'Order', items:'items', pcs:'pcs.', wrongCode:'Wrong code',
-         netErr:'Network error', enterCodeShort:'Enter code', ordersWord:'orders', itemsTotal:'items total' },
+         netErr:'Network error', enterCodeShort:'Enter code', ordersWord:'orders', itemsTotal:'items total',
+         pickTotal:'Total to pick', pickHint:'Take this much from stock in total:', packHint:'Tick off as you pack each order.' },
     es:{ title:'Lista de embalaje', enterCode:'Introduzca el código', unlock:'Desbloquear', logout:'Cerrar sesión',
-         back:'← Preparación', refresh:'↻ Actualizar', printList:'🖨 Imprimir lista', toPack:'Pedidos para embalar',
+         back:'← Preparación', refresh:'↻ Actualizar', printList:'🖨 Print', toPack:'Pedidos para embalar',
          none:'No hay pedidos para embalar.', order:'Pedido', items:'artículos', pcs:'uds.', wrongCode:'Código incorrecto',
-         netErr:'Error de red', enterCodeShort:'Introduzca el código', ordersWord:'pedidos', itemsTotal:'artículos en total' }
+         netErr:'Error de red', enterCodeShort:'Introduzca el código', ordersWord:'pedidos', itemsTotal:'artículos en total',
+         pickTotal:'Total a recoger', pickHint:'Coge esto del almacén en total:', packHint:'Marca a medida que preparas cada pedido.' }
   };
   var lang = localStorage.getItem('qm_pack_lang') || 'da';
   if(!I18N[lang]) lang = 'da';
@@ -202,6 +222,10 @@
 
   function itemCount(o){ return (o.items||[]).reduce(function(n,it){ return n + (it.qty||1); }, 0); }
 
+  function itemLabel(it){
+    return esc(it.name) + (it.weightLabel ? ' <span class="wl">'+esc(it.weightLabel)+'</span>' : '');
+  }
+
   function render(d){
     lastData = d;
     var fulfilled = d.fulfilled || {};
@@ -211,17 +235,42 @@
     document.getElementById('summary').textContent =
       orders.length + ' ' + T('ordersWord') + ' · ' + totalItems + ' ' + T('itemsTotal');
 
+    var pickTotalEl = document.getElementById('pickTotal');
     var list = document.getElementById('list');
-    if(!orders.length){ list.innerHTML = '<div class="empty">'+T('none')+'</div>'; return; }
 
+    if(!orders.length){
+      pickTotalEl.innerHTML = '';
+      list.innerHTML = '<div class="empty">'+T('none')+'</div>';
+      return;
+    }
+
+    // ---- Aggregate every item across all orders: what flour + weight, how many ----
+    var agg = {};       // key -> { name, weightLabel, qty }
+    var order = [];      // preserve first-seen order
+    orders.forEach(function(o){
+      (o.items||[]).forEach(function(it){
+        var key = (it.name||'') + '||' + (it.weightLabel||'');
+        if(!agg[key]){ agg[key] = { name:it.name, weightLabel:it.weightLabel, qty:0 }; order.push(key); }
+        agg[key].qty += (it.qty||1);
+      });
+    });
+    order.sort(function(a,b){ return agg[a].name.localeCompare(agg[b].name); });
+    var ptRows = order.map(function(k){
+      var it = agg[k];
+      return '<div class="pt-row"><span class="nm">'+itemLabel(it)+'</span>'
+           + '<span class="pt-badge">'+it.qty+' '+T('pcs')+'</span></div>';
+    }).join('');
+    pickTotalEl.innerHTML = '<div class="pick-total"><div class="pt-hint">'+T('pickHint')+'</div>'+ptRows+'</div>';
+
+    // ---- Per-order packing cards (which order gets what) ----
     list.innerHTML = '';
     orders.forEach(function(o){
       var el = document.createElement('div');
       el.className = 'pack';
       var lis = (o.items||[]).map(function(it){
-        return '<li><input type="checkbox" class="chk"><span class="nm">'+esc(it.name)
-          + (it.weightLabel?' <span class="wl">('+esc(it.weightLabel)+')</span>':'')
-          + '</span><span class="qty">'+(it.qty||1)+' '+T('pcs')+'</span></li>';
+        return '<li><input type="checkbox" class="chk">'
+          + '<span class="qtybadge">'+(it.qty||1)+'×</span>'
+          + '<span class="nm">'+itemLabel(it)+'</span></li>';
       }).join('');
       el.innerHTML =
         '<div class="pack-top"><div class="pack-who">'+esc(o.name||'—')+'</div>'
