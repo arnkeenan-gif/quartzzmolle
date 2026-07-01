@@ -119,11 +119,13 @@ function initVideoFade() {
   // the homepage — just like the big hero logo scrolls off-screen — and fades
   // back in when you return to the top.
   const navEl = document.getElementById('nav') || document.querySelector('.nav');
-  if (navEl) navEl.style.transition = 'transform .3s ease, opacity .3s ease';
+  // Smooth opacity fade only (no slide/"launch") — fades out on scroll-down,
+  // fades back in on scroll-up.
+  if (navEl) navEl.style.transition = 'opacity .45s ease';
   let lastY = window.scrollY || window.pageYOffset || 0;
   let navHidden = false;
-  const showNav = () => { navEl.style.transform = ''; navEl.style.opacity = '1'; navEl.style.pointerEvents = ''; navHidden = false; };
-  const hideNav = () => { navEl.style.transform = 'translateY(-115%)'; navEl.style.opacity = '0'; navEl.style.pointerEvents = 'none'; navHidden = true; };
+  const showNav = () => { navEl.style.opacity = '1'; navEl.style.pointerEvents = ''; navHidden = false; };
+  const hideNav = () => { navEl.style.opacity = '0'; navEl.style.pointerEvents = 'none'; navHidden = true; };
   const updateNav = () => {
     if (!navEl) return;
     const y = window.scrollY || window.pageYOffset || 0;
