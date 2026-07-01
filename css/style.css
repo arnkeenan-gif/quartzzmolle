@@ -213,17 +213,15 @@ body {
 }
 
 .video-bg {
+  /* Bulletproof "cover": scale the video so it always fills the whole viewport
+     (both dimensions >= 100%), centered, cropping the overflow. This works even
+     on iOS where object-fit:cover on a fixed <video> can letterbox (black bars). */
   position: fixed;
-  top: 0; left: 0;
-  width: 100vw;
-  height: 100vh;
-  height: 100lvh; /* largest viewport height - fills under iOS bottom bar entirely */
-  object-fit: cover;
-  object-position: center;
-  /* Force GPU compositing so iOS actually applies object-fit:cover instead of
-     letterboxing the video (which left black bars top & bottom). */
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
+  top: 50%; left: 50%;
+  width: auto; height: auto;
+  min-width: 100%; min-height: 100%;
+  transform: translate(-50%, -50%);
+  -webkit-transform: translate(-50%, -50%);
   z-index: 0;
   opacity: 0;
   will-change: opacity;
