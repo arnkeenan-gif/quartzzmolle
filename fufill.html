@@ -333,55 +333,66 @@
     return el;
   }
 
-  // Build a clean, printable order confirmation and open the browser print dialog.
+  // A super-simple, clean order confirmation. Prints via a hidden frame so the
+  // print dialog opens on top of this page — no separate tab to get stuck on.
   function printConfirmation(o, sent){
     var total = Number(o.total||0).toFixed(2).replace('.', ',');
     var rows = (o.items||[]).map(function(it){
-      return '<tr><td>'+esc(it.name)+(it.weightLabel?' <span class="wl">('+esc(it.weightLabel)+')</span>':'')+'</td>'
-           + '<td class="q">'+(it.qty||1)+'</td></tr>';
-    }).join('') || '<tr><td colspan="2" class="muted">—</td></tr>';
-    var printed = new Date().toLocaleString('da-DK', { day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' });
-    var sentInfo = sent ? '<p class="pickline">'+esc(sentText(sent).replace(/^✓\s*/,''))+'</p>' : '';
+      return '<div class="it"><span class="n">'+esc(it.name)
+        + (it.weightLabel?' <span class="wl">'+esc(it.weightLabel)+'</span>':'')
+        + '</span><span class="q">'+(it.qty||1)+'×</span></div>';
+    }).join('') || '<div class="it"><span class="n">—</span></div>';
 
-    var doc = '<!doctype html><html lang="da"><head><meta charset="utf-8">'
-      + '<meta name="viewport" content="width=device-width, initial-scale=1">'
-      + '<title>Ordrebekræftelse #'+esc(o.ref)+'</title><style>'
-      + '*{box-sizing:border-box;margin:0;padding:0}'
-      + 'body{font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1a1611;padding:34px 30px;max-width:640px;margin:0 auto}'
-      + '.head{display:flex;align-items:center;gap:14px;border-bottom:3px solid #273071;padding-bottom:16px;margin-bottom:20px}'
-      + '.head img{width:60px;height:60px;object-fit:contain}'
-      + '.head h1{font-size:20px;color:#273071;letter-spacing:.3px}'
-      + '.head .sub{font-size:12px;color:#6b6256;margin-top:2px}'
-      + '.meta{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:13px;color:#6b6256;margin-bottom:18px}'
-      + '.meta b{color:#1a1611}'
-      + 'h2{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:#6b6256;margin:18px 0 8px}'
-      + '.who{font-size:15px;font-weight:600}'
-      + '.who small{display:block;font-weight:400;color:#6b6256;font-size:13px;margin-top:2px}'
-      + 'table{width:100%;border-collapse:collapse;margin-top:6px}'
-      + 'td{padding:9px 4px;border-bottom:1px solid #e7e1d6;font-size:14px;vertical-align:top}'
-      + '.q{text-align:right;white-space:nowrap;font-weight:600;width:60px}'
-      + '.wl{color:#6b6256;font-weight:400}'
-      + '.total{display:flex;justify-content:space-between;font-size:17px;font-weight:800;color:#273071;margin-top:14px;padding-top:12px;border-top:2px solid #273071}'
-      + '.pickup{background:#f5f0e8;border-radius:12px;padding:14px 16px;font-size:13px;margin-top:20px;line-height:1.6}'
-      + '.pickline{color:#2e8b57;font-weight:700;font-size:14px;margin-top:8px}'
-      + '.foot{margin-top:26px;font-size:12px;color:#9b9488;text-align:center;line-height:1.7}'
-      + '.muted{color:#9b9488}'
-      + '@media print{body{padding:0}button{display:none}}'
-      + '</style></head><body>'
-      + '<div class="head"><img src="/images/logopng.png" alt="" onerror="this.style.display=\'none\'">'
-      +   '<div><h1>Ordrebekræftelse</h1><div class="sub">Quartz Mølle · Click &amp; Collect</div></div></div>'
-      + '<div class="meta"><span>Ordre <b>#'+esc(o.ref)+'</b></span><span>Udskrevet: <b>'+esc(printed)+'</b></span></div>'
-      + '<h2>Kunde</h2><div class="who">'+esc(o.name||'—')+'<small>'+esc(o.email||'')+'</small></div>'
-      + '<h2>Varer</h2><table>'+rows+'</table>'
-      + '<div class="total"><span>I alt</span><span>'+total+' kr.</span></div>'
-      + '<div class="pickup"><b>Afhentning (Click &amp; Collect)</b><br>Suså Landevej 101, 4160 Herlufmagle'+sentInfo+'</div>'
-      + '<div class="foot">Tak for din ordre!<br>Quartz Mølle · CVR 42117188 · hello@quartzmolle.dk</div>'
-      + '<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},200);};<\/scr'+'ipt>'
-      + '</body></html>';
+    var css =
+      '*{box-sizing:border-box;margin:0;padding:0}'
+      + 'body{font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1a1611;background:#fff}'
+      + '.card{max-width:400px;margin:0 auto;padding:44px 34px;text-align:center}'
+      + '.logo{width:66px;height:66px;object-fit:cover;border-radius:50%;margin:0 auto 14px;display:block}'
+      + 'h1{font-size:20px;color:#273071;font-weight:800;letter-spacing:.2px}'
+      + '.ref{font-size:13px;color:#9b9488;margin-top:4px}'
+      + '.who{font-size:16px;font-weight:600;margin-top:14px}'
+      + '.rule{height:1px;background:#e7e1d6;margin:22px 0}'
+      + '.items{text-align:left}'
+      + '.it{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #f0ece3;font-size:15px}'
+      + '.it:last-child{border-bottom:none}'
+      + '.it .n{font-weight:500}.it .wl{color:#9b9488;font-weight:400}'
+      + '.it .q{font-weight:800;color:#273071;white-space:nowrap}'
+      + '.total{display:flex;justify-content:space-between;font-size:18px;font-weight:800;color:#273071;margin-top:14px;padding-top:14px;border-top:2px solid #273071;text-align:left}'
+      + '.pickup{font-size:13px;color:#6b6256;margin-top:22px;line-height:1.6}'
+      + '.pickup b{color:#1a1611}'
+      + '.thanks{font-size:15px;font-weight:600;color:#2e8b57;margin-top:20px}';
 
-    var w = window.open('', '_blank', 'width=520,height=720');
-    if(!w){ alert('Tillad pop-ups for at printe ordrebekræftelsen.'); return; }
-    w.document.open(); w.document.write(doc); w.document.close();
+    var docHtml = '<!doctype html><html lang="da"><head><meta charset="utf-8">'
+      + '<title>Ordrebekræftelse #'+esc(o.ref)+'</title><style>'+css+'</style></head><body>'
+      + '<div class="card">'
+      +   '<img class="logo" src="/images/favicon.png" alt="" onerror="this.style.display=\'none\'">'
+      +   '<h1>Ordrebekræftelse</h1>'
+      +   '<div class="ref">Ordre #'+esc(o.ref)+'</div>'
+      +   '<div class="who">'+esc(o.name||'—')+'</div>'
+      +   '<div class="rule"></div>'
+      +   '<div class="items">'+rows+'</div>'
+      +   '<div class="total"><span>I alt</span><span>'+total+' kr.</span></div>'
+      +   '<div class="pickup"><b>Afhentning</b><br>Suså Landevej 101, 4160 Herlufmagle</div>'
+      +   '<div class="thanks">Tak for din ordre 🌾</div>'
+      + '</div></body></html>';
+
+    printViaFrame(docHtml);
+  }
+
+  // Print any HTML document via a hidden iframe (keeps you on the current page).
+  function printViaFrame(docHtml){
+    var old = document.getElementById('printFrame');
+    if(old) old.parentNode.removeChild(old);
+    var f = document.createElement('iframe');
+    f.id = 'printFrame';
+    f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+    var done = false;
+    function go(){ if(done) return; done = true; try{ f.contentWindow.focus(); f.contentWindow.print(); }catch(e){} }
+    f.onload = function(){ setTimeout(go, 350); };
+    document.body.appendChild(f);
+    var idoc = f.contentWindow.document;
+    idoc.open(); idoc.write(docHtml); idoc.close();
+    setTimeout(go, 800); // fallback if onload doesn't fire for written docs
   }
 
   // Delete button that must be confirmed twice before it actually deletes.
