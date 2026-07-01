@@ -58,7 +58,7 @@
     display:flex;align-items:center;gap:12px;padding:14px 18px;
     padding-top:calc(14px + env(safe-area-inset-top));
   }
-  .top img{width:34px;height:34px;object-fit:contain;border-radius:8px;background:#fff;padding:3px}
+  .top img{width:36px;height:36px;object-fit:cover;border-radius:50%;background:transparent;padding:0}
   .top .ttl{font-weight:700;font-size:16px;line-height:1.15}
   .top .ttl small{display:block;font-weight:500;font-size:11px;opacity:.8}
   .top .spacer{flex:1}
@@ -125,8 +125,10 @@
   .order-status{font-size:13.5px;font-weight:600}
   .order-status.ok{color:var(--green)} .order-status.err{color:var(--red)}
   .sent-line{margin-top:12px;font-weight:700;color:var(--green);font-size:14px}
-  .order-foot{margin-top:12px}
+  .order-foot{margin-top:12px;display:flex;gap:9px;flex-wrap:wrap}
   .btn-print{font-size:13.5px;padding:11px 14px}
+  .btn-del{font-size:13.5px;padding:11px 14px;color:var(--red);border-color:#e9cfcf}
+  .btn-del.arm{background:var(--red);color:#fff;border-color:var(--red)}
 </style>
 </head>
 <body>
@@ -301,11 +303,15 @@
         + '</div>';
     }
 
-    // Order-confirmation print button on every order
-    html += '<div class="order-foot"><button class="btn btn-ghost btn-print">🖨 Ordrebekræftelse</button></div>';
+    // Order-confirmation print + delete buttons on every order
+    html += '<div class="order-foot">'
+      + '<button class="btn btn-ghost btn-print">🖨 Ordrebekræftelse</button>'
+      + '<button class="btn btn-ghost btn-del">🗑 Slet</button>'
+      + '</div>';
     el.innerHTML = html;
 
     el.querySelector('.btn-print').addEventListener('click', function(){ printConfirmation(o, sent); });
+    wireDelete(el.querySelector('.btn-del'), o.ref);
 
     if(!sent){
       var input = el.querySelector('.door-in');
@@ -376,6 +382,27 @@
     var w = window.open('', '_blank', 'width=520,height=720');
     if(!w){ alert('Tillad pop-ups for at printe ordrebekræftelsen.'); return; }
     w.document.open(); w.document.write(doc); w.document.close();
+  }
+
+  // Delete button that must be confirmed twice before it actually deletes.
+  function wireDelete(btn, ref){
+    if(!btn) return;
+    var stage = 0, timer = null, orig = btn.textContent;
+    function reset(){ stage = 0; btn.textContent = orig; btn.classList.remove('arm'); if(timer){ clearTimeout(timer); timer = null; } }
+    btn.addEventListener('click', async function(){
+      stage++;
+      if(timer) clearTimeout(timer);
+      if(stage === 1){ btn.classList.add('arm'); btn.textContent = 'Bekræft slet (1/2)'; timer = setTimeout(reset, 4000); return; }
+      if(stage === 2){ btn.textContent = 'Bekræft slet (2/2)'; timer = setTimeout(reset, 4000); return; }
+      reset();
+      btn.disabled = true; btn.textContent = 'Sletter…';
+      try{
+        var r = await fetch('/api/fulfill', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'delete', ref: ref }) });
+        var d = await r.json().catch(function(){ return {}; });
+        if(r.ok && d.ok){ load(); }
+        else { alert(d.error || 'Kunne ikke slette'); btn.disabled = false; btn.textContent = orig; }
+      }catch(e){ alert('Netværksfejl'); btn.disabled = false; btn.textContent = orig; }
+    });
   }
 
   // If already logged in on /locker, the cookie is set — go straight in.

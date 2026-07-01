@@ -217,6 +217,27 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, ref, slots });
     }
 
+    if (action === 'delete') {
+      const ref = (req.body && req.body.ref || '').toString().trim();
+      if (!ref) return res.status(400).json({ error: 'Mangler ordre-reference' });
+
+      // Rewrite the pickup list without this order, and drop any fulfilment record.
+      let orders = [];
+      try { orders = (await kv.lrange('pickup:orders', 0, -1)) || []; } catch {}
+      const remaining = orders.filter(o => o && o.ref !== ref);
+      const removed = orders.length - remaining.length;
+      try {
+        await kv.del('pickup:orders');
+        if (remaining.length) await kv.rpush('pickup:orders', ...remaining);
+      } catch (e) {
+        console.error('Failed to rewrite pickup list on delete:', e);
+        return res.status(500).json({ error: 'Kunne ikke slette ordren' });
+      }
+      try { await kv.hdel('pickup:fulfilled', ref); } catch {}
+
+      return res.status(200).json({ ok: true, ref, removed });
+    }
+
     return res.status(400).json({ error: 'Ukendt handling' });
   } catch (err) {
     console.error('fulfill error', err);

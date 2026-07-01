@@ -86,6 +86,9 @@
   .pack-items .qty{font-weight:800;color:var(--blue);white-space:nowrap;font-variant-numeric:tabular-nums}
   .pack-items li.done .nm{text-decoration:line-through;color:var(--grey)}
   .pack-count{margin-top:10px;font-size:12.5px;color:var(--muted);font-weight:600}
+  .pack-foot{margin-top:12px}
+  .btn-del{font-size:13.5px;padding:10px 14px;color:var(--red);border-color:#e9cfcf}
+  .btn-del.arm{background:var(--red);color:#fff;border-color:var(--red)}
 
   @media print{
     .top,.row,.langsw,.logout,.no-print{display:none!important}
@@ -149,19 +152,22 @@
          none:'Ingen ordrer at pakke.', order:'Ordre', items:'varer', pcs:'stk.', wrongCode:'Forkert kode',
          netErr:'Netværksfejl', enterCodeShort:'Indtast kode', ordersWord:'ordrer', itemsTotal:'varer i alt',
          pickTotal:'Samlet plukkeliste', pickHint:'Tag i alt dette fra lageret:', packHint:'Kryds af efterhånden som du pakker hver ordre.',
-         confTitle:'Ordrebekræftelse', confCustomer:'Kunde', confItems:'Varer', confTotal:'I alt', confPickup:'Afhentning (Click & Collect)', confThanks:'Tak for din ordre!', confPrinted:'Udskrevet', noPopup:'Tillad pop-ups for at printe ordrebekræftelserne.' },
+         confTitle:'Ordrebekræftelse', confCustomer:'Kunde', confItems:'Varer', confTotal:'I alt', confPickup:'Afhentning (Click & Collect)', confThanks:'Tak for din ordre!', confPrinted:'Udskrevet', noPopup:'Tillad pop-ups for at printe ordrebekræftelserne.',
+         del:'🗑 Slet', delArm1:'Bekræft slet (1/2)', delArm2:'Bekræft slet (2/2)', deleting:'Sletter…', delFail:'Kunne ikke slette' },
     en:{ title:'Packing list', enterCode:'Enter passcode', unlock:'Unlock', logout:'Log out',
          back:'← Fulfillment', refresh:'↻ Refresh', printList:'🖨 Print', toPack:'Orders to pack',
          none:'No orders to pack.', order:'Order', items:'items', pcs:'pcs.', wrongCode:'Wrong code',
          netErr:'Network error', enterCodeShort:'Enter code', ordersWord:'orders', itemsTotal:'items total',
          pickTotal:'Total to pick', pickHint:'Take this much from stock in total:', packHint:'Tick off as you pack each order.',
-         confTitle:'Order confirmation', confCustomer:'Customer', confItems:'Items', confTotal:'Total', confPickup:'Pickup (Click & Collect)', confThanks:'Thank you for your order!', confPrinted:'Printed', noPopup:'Allow pop-ups to print the order confirmations.' },
+         confTitle:'Order confirmation', confCustomer:'Customer', confItems:'Items', confTotal:'Total', confPickup:'Pickup (Click & Collect)', confThanks:'Thank you for your order!', confPrinted:'Printed', noPopup:'Allow pop-ups to print the order confirmations.',
+         del:'🗑 Delete', delArm1:'Confirm delete (1/2)', delArm2:'Confirm delete (2/2)', deleting:'Deleting…', delFail:'Could not delete' },
     es:{ title:'Lista de embalaje', enterCode:'Introduzca el código', unlock:'Desbloquear', logout:'Cerrar sesión',
          back:'← Preparación', refresh:'↻ Actualizar', printList:'🖨 Imprimir', toPack:'Pedidos para embalar',
          none:'No hay pedidos para embalar.', order:'Pedido', items:'artículos', pcs:'uds.', wrongCode:'Código incorrecto',
          netErr:'Error de red', enterCodeShort:'Introduzca el código', ordersWord:'pedidos', itemsTotal:'artículos en total',
          pickTotal:'Total a recoger', pickHint:'Coge esto del almacén en total:', packHint:'Marca a medida que preparas cada pedido.',
-         confTitle:'Confirmación de pedido', confCustomer:'Cliente', confItems:'Artículos', confTotal:'Total', confPickup:'Recogida (Click & Collect)', confThanks:'¡Gracias por tu pedido!', confPrinted:'Impreso', noPopup:'Permita las ventanas emergentes para imprimir las confirmaciones.' }
+         confTitle:'Confirmación de pedido', confCustomer:'Cliente', confItems:'Artículos', confTotal:'Total', confPickup:'Recogida (Click & Collect)', confThanks:'¡Gracias por tu pedido!', confPrinted:'Impreso', noPopup:'Permita las ventanas emergentes para imprimir las confirmaciones.',
+         del:'🗑 Eliminar', delArm1:'Confirmar (1/2)', delArm2:'Confirmar (2/2)', deleting:'Eliminando…', delFail:'No se pudo eliminar' }
   };
   var lang = localStorage.getItem('qm_pack_lang') || 'da';
   if(!I18N[lang]) lang = 'da';
@@ -279,13 +285,36 @@
         '<div class="pack-top"><div class="pack-who">'+esc(o.name||'—')+'</div>'
         + '<div class="pack-ref">'+T('order')+' #'+esc(o.ref)+'</div></div>'
         + '<ul class="pack-items">'+lis+'</ul>'
-        + '<div class="pack-count">'+itemCount(o)+' '+T('items')+'</div>';
+        + '<div class="pack-count">'+itemCount(o)+' '+T('items')+'</div>'
+        + '<div class="pack-foot"><button class="btn btn-ghost btn-del">'+T('del')+'</button></div>';
       // Tick-off packing (visual)
       el.querySelectorAll('.pack-items li').forEach(function(li){
         var chk = li.querySelector('.chk');
         chk.addEventListener('change', function(){ li.classList.toggle('done', chk.checked); });
       });
+      wireDelete(el.querySelector('.btn-del'), o.ref);
       list.appendChild(el);
+    });
+  }
+
+  // Delete button that must be confirmed twice before it actually deletes.
+  function wireDelete(btn, ref){
+    if(!btn) return;
+    var stage = 0, timer = null, orig = T('del');
+    function reset(){ stage = 0; btn.textContent = orig; btn.classList.remove('arm'); if(timer){ clearTimeout(timer); timer = null; } }
+    btn.addEventListener('click', async function(){
+      stage++;
+      if(timer) clearTimeout(timer);
+      if(stage === 1){ btn.classList.add('arm'); btn.textContent = T('delArm1'); timer = setTimeout(reset, 4000); return; }
+      if(stage === 2){ btn.textContent = T('delArm2'); timer = setTimeout(reset, 4000); return; }
+      reset();
+      btn.disabled = true; btn.textContent = T('deleting');
+      try{
+        var r = await fetch('/api/fulfill', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'delete', ref: ref }) });
+        var d = await r.json().catch(function(){ return {}; });
+        if(r.ok && d.ok){ load(); }
+        else { alert(d.error || T('delFail')); btn.disabled = false; btn.textContent = orig; }
+      }catch(e){ alert(T('delFail')); btn.disabled = false; btn.textContent = orig; }
     });
   }
 
@@ -313,41 +342,58 @@
     + '.foot{margin-top:28px;font-size:12px;color:#9b9488;text-align:center;line-height:1.7}'
     + '@media print{.paper{padding:24px 8mm}}';
 
+  // The printed confirmation is always in Danish — it's a customer document for
+  // the Danish pickup shop (the DA/EN/ES switch only changes the staff screen).
   function buildConfirmation(o){
     var total = Number(o.total||0).toFixed(2).replace('.', ',');
     var rows = (o.items||[]).map(function(it){
       return '<tr><td>'+esc(it.name)+(it.weightLabel?' <span class="wl">('+esc(it.weightLabel)+')</span>':'')
-        + '</td><td class="q">'+(it.qty||1)+' '+T('pcs')+'</td></tr>';
+        + '</td><td class="q">'+(it.qty||1)+' stk.</td></tr>';
     }).join('') || '<tr><td colspan="2">—</td></tr>';
-    var printed = new Date().toLocaleString(lang==='da'?'da-DK':(lang==='es'?'es-ES':'en-GB'),
+    var printed = new Date().toLocaleString('da-DK',
       { day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' });
     return '<div class="paper">'
       + '<div class="head"><img src="/images/logopng.png" alt="" onerror="this.style.display=\'none\'">'
-      +   '<div><h1>'+T('confTitle')+'</h1><div class="sub">Quartz Mølle · Click &amp; Collect</div></div></div>'
-      + '<div class="meta"><span>'+T('order')+' <b>#'+esc(o.ref)+'</b></span><span>'+T('confPrinted')+': <b>'+esc(printed)+'</b></span></div>'
-      + '<h2>'+T('confCustomer')+'</h2><div class="who">'+esc(o.name||'—')+'<small>'+esc(o.email||'')+'</small></div>'
-      + '<h2>'+T('confItems')+'</h2><table>'+rows+'</table>'
-      + '<div class="total"><span>'+T('confTotal')+'</span><span>'+total+' kr.</span></div>'
-      + '<div class="pickup"><b>'+T('confPickup')+'</b><br>Suså Landevej 101, 4160 Herlufmagle</div>'
-      + '<div class="foot">'+T('confThanks')+'<br>Quartz Mølle · CVR 42117188 · hello@quartzmolle.dk</div>'
+      +   '<div><h1>Ordrebekræftelse</h1><div class="sub">Quartz Mølle · Click &amp; Collect</div></div></div>'
+      + '<div class="meta"><span>Ordre <b>#'+esc(o.ref)+'</b></span><span>Udskrevet: <b>'+esc(printed)+'</b></span></div>'
+      + '<h2>Kunde</h2><div class="who">'+esc(o.name||'—')+'<small>'+esc(o.email||'')+'</small></div>'
+      + '<h2>Varer</h2><table>'+rows+'</table>'
+      + '<div class="total"><span>I alt</span><span>'+total+' kr.</span></div>'
+      + '<div class="pickup"><b>Afhentning (Click &amp; Collect)</b><br>Suså Landevej 101, 4160 Herlufmagle</div>'
+      + '<div class="foot">Tak for din ordre!<br>Quartz Mølle · CVR 42117188 · hello@quartzmolle.dk</div>'
       + '</div>';
   }
 
+  // Print every pending confirmation in ONE job (one order per page) using a
+  // hidden frame — the print dialog opens over the packing list, so there's no
+  // separate page to get stuck on and no "way back" needed. Sent orders are
+  // already excluded, so you only print what still needs to go out.
   function printAll(){
     if(!lastData) return;
     var fulfilled = lastData.fulfilled || {};
     var orders = (lastData.orders||[]).filter(function(o){ return o && !fulfilled[o.ref]; });
     if(!orders.length){ alert(T('none')); return; }
+
     var pages = orders.map(buildConfirmation).join('');
-    var doc = '<!doctype html><html lang="'+lang+'"><head><meta charset="utf-8">'
-      + '<meta name="viewport" content="width=device-width, initial-scale=1">'
-      + '<title>'+T('confTitle')+' · Quartz Mølle</title><style>'+CONF_CSS+'</style></head><body>'
-      + pages
-      + '<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},300);};<\/scr'+'ipt>'
-      + '</body></html>';
-    var w = window.open('', '_blank');
-    if(!w){ alert(T('noPopup')); return; }
-    w.document.open(); w.document.write(doc); w.document.close();
+    var docHtml = '<!doctype html><html lang="da"><head><meta charset="utf-8">'
+      + '<title>Ordrebekræftelse · Quartz Mølle</title><style>'+CONF_CSS+'</style></head><body>'
+      + pages + '</body></html>';
+
+    var old = document.getElementById('printFrame');
+    if(old) old.parentNode.removeChild(old);
+    var f = document.createElement('iframe');
+    f.id = 'printFrame';
+    f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+    var printed = false;
+    function doPrint(){
+      if(printed) return; printed = true;
+      try { f.contentWindow.focus(); f.contentWindow.print(); } catch(e){}
+    }
+    f.onload = function(){ setTimeout(doPrint, 350); };
+    document.body.appendChild(f);
+    var idoc = f.contentWindow.document;
+    idoc.open(); idoc.write(docHtml); idoc.close();
+    setTimeout(doPrint, 800); // fallback in case onload doesn't fire for written docs
   }
 
   applyLang();
