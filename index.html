@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#000000" />
+  <meta name="theme-color" content="#faf7f2" />
   <title>Quartz Mølle – Økologisk Mel fra Stenkværn</title>
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" href="/images/favicon.png">
@@ -30,30 +30,9 @@
     #mobileMenu { display: none !important; }
     #mobileMenu.open { display: flex !important; }
     #vid1 { opacity: 1; }
-
-    /* Black bar at bottom of mobile viewport - masks text scrolling under address bar */
-    @media (max-width: 768px) {
-      .bottom-mask {
-        position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        height: 4px;
-        background: #000;
-        pointer-events: none;
-        z-index: 9999;
-        transform: translate3d(0, 0, 0);
-        -webkit-transform: translate3d(0, 0, 0);
-        will-change: transform;
-      }
-    }
-    @media (min-width: 769px) {
-      .bottom-mask { display: none; }
-    }
   </style>
 </head>
 <body>
-  <div class="bottom-mask" aria-hidden="true"></div>
   <nav class="nav" id="nav">
     <a href="index.html" class="nav-logo" onclick="event.preventDefault(); window.scrollTo(0, 0); window.location.replace('index.html?r=' + Date.now());">
       <img src="images/logopng.png" alt="Quartz Mølle" class="brand-mark" />

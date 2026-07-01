@@ -22,7 +22,7 @@
 
 /* html brand blue only for initial paint flash before body covers it */
 html {
-  background: #000000;
+  background: var(--cream);
   scroll-behavior: smooth;
   overscroll-behavior: none;
 }
@@ -31,7 +31,7 @@ html {
 
 body {
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  background: #000000;
+  background: var(--cream);
   color: var(--text);
   overflow-x: hidden;
   overscroll-behavior: none;
@@ -219,6 +219,11 @@ body {
   height: 100vh;
   height: 100lvh; /* largest viewport height - fills under iOS bottom bar entirely */
   object-fit: cover;
+  object-position: center;
+  /* Force GPU compositing so iOS actually applies object-fit:cover instead of
+     letterboxing the video (which left black bars top & bottom). */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
   z-index: 0;
   opacity: 0;
   will-change: opacity;
