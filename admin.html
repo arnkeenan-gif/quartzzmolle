@@ -243,12 +243,13 @@
         <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
         <div class="label">Konvertering</div>
         <div class="value" id="conversionRate">–</div>
-        <div class="delta">Ordrer / besøgende</div>
+        <div class="delta" id="conversionDelta">Ordrer / besøgende</div>
       </div>
     </div>
 
     <!-- Time range filter -->
     <div class="filter-bar">
+      <button id="btnToday" onclick="setToday()">I dag</button>
       <button class="active" data-range="7" onclick="setRange(7)">7 dage</button>
       <button data-range="30" onclick="setRange(30)">30 dage</button>
       <button data-range="90" onclick="setRange(90)">90 dage</button>
@@ -349,9 +350,29 @@
   }
 
   function highlightQuickButton(days) {
-    document.querySelectorAll('.filter-bar button').forEach(b => {
+    document.querySelectorAll('.filter-bar button[data-range]').forEach(b => {
       b.classList.toggle('active', days != null && Number(b.dataset.range) === days);
     });
+    const bt = document.getElementById('btnToday');
+    if (bt) bt.classList.remove('active');
+  }
+
+  function localDateStr(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+  }
+
+  function setToday() {
+    const t = localDateStr(new Date());
+    currentQuery = 'from=' + t + '&to=' + t;
+    document.getElementById('customDays').value = '';
+    document.getElementById('dateFrom').value = '';
+    document.getElementById('dateTo').value = '';
+    highlightQuickButton(null);
+    document.getElementById('btnToday').classList.add('active');
+    loadDashboard();
   }
 
   function setRange(days) {
@@ -414,11 +435,8 @@
         document.getElementById('visitorsToday').textContent = data.visitorsToday || 0;
         document.getElementById('visitorsYesterday').textContent = 'I går: ' + (data.visitorsYesterday || 0);
         document.getElementById('lastUpdate').textContent = 'Opdateret kl. ' + new Date().toLocaleTimeString('da-DK');
-        // Recalc conversion rate
-        const orders = parseInt(document.getElementById('ordersToday').textContent) || 0;
-        const visitors = data.visitorsToday || 0;
-        const conv = visitors > 0 ? ((orders / visitors) * 100).toFixed(1) + '%' : '–';
-        document.getElementById('conversionRate').textContent = conv;
+        // Conversion rate is shown for the selected period (set in renderDashboard),
+        // so we don't overwrite it here with today's live numbers.
       }
     } catch (err) { /* silent */ }
   }
@@ -430,6 +448,13 @@
     document.getElementById('ordersWeek').textContent = (data.totalOrders || 0) + ' i ' + label;
     document.getElementById('revenueToday').textContent = formatKr(data.revenueToday || 0);
     document.getElementById('revenueWeek').textContent = formatKr(data.totalRevenue || 0) + ' i ' + label;
+
+    // Conversion rate for the SELECTED period (orders in period / visitors in period)
+    const pv = data.periodVisitors || 0;
+    const conv = pv > 0 ? (((data.totalOrders || 0) / pv) * 100).toFixed(1) + '%' : '–';
+    document.getElementById('conversionRate').textContent = conv;
+    document.getElementById('conversionDelta').textContent =
+      (data.totalOrders || 0) + ' ordrer / ' + pv + ' besøg · ' + label;
 
     // Range summary line
     document.getElementById('rangeNow').textContent =

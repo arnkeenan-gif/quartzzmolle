@@ -125,6 +125,8 @@
   .order-status{font-size:13.5px;font-weight:600}
   .order-status.ok{color:var(--green)} .order-status.err{color:var(--red)}
   .sent-line{margin-top:12px;font-weight:700;color:var(--green);font-size:14px}
+  .order-foot{margin-top:12px}
+  .btn-print{font-size:13.5px;padding:11px 14px}
 </style>
 </head>
 <body>
@@ -154,6 +156,7 @@
   <div class="wrap">
     <div class="row">
       <a class="btn btn-ghost" href="/locker">← Skabsstyring</a>
+      <a class="btn btn-ghost" href="/packing">📋 Pakkeliste</a>
       <button class="btn btn-ghost btn-grow" id="refreshBtn">↻ Opdatér</button>
     </div>
 
@@ -290,32 +293,89 @@
 
     if(sent){
       html += '<div class="sent-line">'+sentText(sent)+'</div>';
-      el.innerHTML = html; return el;
+    } else {
+      html += '<div class="order-act">'
+        + '<input class="door-in" type="text" inputmode="numeric" placeholder="Dør-nr. (fx 7, 8)" />'
+        + '<button class="btn btn-blue send-btn">Send kode</button>'
+        + '<span class="order-status"></span>'
+        + '</div>';
     }
 
-    html += '<div class="order-act">'
-      + '<input class="door-in" type="text" inputmode="numeric" placeholder="Dør-nr. (fx 7, 8)" />'
-      + '<button class="btn btn-blue">Send kode</button>'
-      + '<span class="order-status"></span>'
-      + '</div>';
+    // Order-confirmation print button on every order
+    html += '<div class="order-foot"><button class="btn btn-ghost btn-print">🖨 Ordrebekræftelse</button></div>';
     el.innerHTML = html;
 
-    var input = el.querySelector('.door-in');
-    var btn = el.querySelector('button');
-    var status = el.querySelector('.order-status');
-    btn.addEventListener('click', async function(){
-      var doorsVal = input.value.trim();
-      status.className='order-status';
-      if(!doorsVal){ status.classList.add('err'); status.textContent='Skriv et dør-nummer'; return; }
-      btn.disabled=true; var t=btn.textContent; btn.textContent='Sender…';
-      try{
-        var r = await fetch('/api/fulfill', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'send', ref:o.ref, doors:doorsVal}) });
-        var d = await r.json();
-        if(r.ok && d.ok){ status.classList.add('ok'); status.textContent='Sendt!'; setTimeout(load, 600); }
-        else { status.classList.add('err'); status.textContent = d.error || 'Kunne ikke sende'; btn.disabled=false; btn.textContent=t; }
-      }catch(e){ status.classList.add('err'); status.textContent='Kunne ikke sende'; btn.disabled=false; btn.textContent=t; }
-    });
+    el.querySelector('.btn-print').addEventListener('click', function(){ printConfirmation(o, sent); });
+
+    if(!sent){
+      var input = el.querySelector('.door-in');
+      var btn = el.querySelector('.send-btn');
+      var status = el.querySelector('.order-status');
+      btn.addEventListener('click', async function(){
+        var doorsVal = input.value.trim();
+        status.className='order-status';
+        if(!doorsVal){ status.classList.add('err'); status.textContent='Skriv et dør-nummer'; return; }
+        btn.disabled=true; var t=btn.textContent; btn.textContent='Sender…';
+        try{
+          var r = await fetch('/api/fulfill', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'send', ref:o.ref, doors:doorsVal}) });
+          var d = await r.json();
+          if(r.ok && d.ok){ status.classList.add('ok'); status.textContent='Sendt!'; setTimeout(load, 600); }
+          else { status.classList.add('err'); status.textContent = d.error || 'Kunne ikke sende'; btn.disabled=false; btn.textContent=t; }
+        }catch(e){ status.classList.add('err'); status.textContent='Kunne ikke sende'; btn.disabled=false; btn.textContent=t; }
+      });
+    }
     return el;
+  }
+
+  // Build a clean, printable order confirmation and open the browser print dialog.
+  function printConfirmation(o, sent){
+    var total = Number(o.total||0).toFixed(2).replace('.', ',');
+    var rows = (o.items||[]).map(function(it){
+      return '<tr><td>'+esc(it.name)+(it.weightLabel?' <span class="wl">('+esc(it.weightLabel)+')</span>':'')+'</td>'
+           + '<td class="q">'+(it.qty||1)+'</td></tr>';
+    }).join('') || '<tr><td colspan="2" class="muted">—</td></tr>';
+    var printed = new Date().toLocaleString('da-DK', { day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    var sentInfo = sent ? '<p class="pickline">'+esc(sentText(sent).replace(/^✓\s*/,''))+'</p>' : '';
+
+    var doc = '<!doctype html><html lang="da"><head><meta charset="utf-8">'
+      + '<meta name="viewport" content="width=device-width, initial-scale=1">'
+      + '<title>Ordrebekræftelse #'+esc(o.ref)+'</title><style>'
+      + '*{box-sizing:border-box;margin:0;padding:0}'
+      + 'body{font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1a1611;padding:34px 30px;max-width:640px;margin:0 auto}'
+      + '.head{display:flex;align-items:center;gap:14px;border-bottom:3px solid #273071;padding-bottom:16px;margin-bottom:20px}'
+      + '.head img{width:60px;height:60px;object-fit:contain}'
+      + '.head h1{font-size:20px;color:#273071;letter-spacing:.3px}'
+      + '.head .sub{font-size:12px;color:#6b6256;margin-top:2px}'
+      + '.meta{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:13px;color:#6b6256;margin-bottom:18px}'
+      + '.meta b{color:#1a1611}'
+      + 'h2{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:#6b6256;margin:18px 0 8px}'
+      + '.who{font-size:15px;font-weight:600}'
+      + '.who small{display:block;font-weight:400;color:#6b6256;font-size:13px;margin-top:2px}'
+      + 'table{width:100%;border-collapse:collapse;margin-top:6px}'
+      + 'td{padding:9px 4px;border-bottom:1px solid #e7e1d6;font-size:14px;vertical-align:top}'
+      + '.q{text-align:right;white-space:nowrap;font-weight:600;width:60px}'
+      + '.wl{color:#6b6256;font-weight:400}'
+      + '.total{display:flex;justify-content:space-between;font-size:17px;font-weight:800;color:#273071;margin-top:14px;padding-top:12px;border-top:2px solid #273071}'
+      + '.pickup{background:#f5f0e8;border-radius:12px;padding:14px 16px;font-size:13px;margin-top:20px;line-height:1.6}'
+      + '.pickline{color:#2e8b57;font-weight:700;font-size:14px;margin-top:8px}'
+      + '.foot{margin-top:26px;font-size:12px;color:#9b9488;text-align:center;line-height:1.7}'
+      + '.muted{color:#9b9488}'
+      + '@media print{body{padding:0}button{display:none}}'
+      + '</style></head><body>'
+      + '<div class="head"><img src="/images/logopng.png" alt="" onerror="this.style.display=\'none\'">'
+      +   '<div><h1>Ordrebekræftelse</h1><div class="sub">Quartz Mølle · Click &amp; Collect</div></div></div>'
+      + '<div class="meta"><span>Ordre <b>#'+esc(o.ref)+'</b></span><span>Udskrevet: <b>'+esc(printed)+'</b></span></div>'
+      + '<h2>Kunde</h2><div class="who">'+esc(o.name||'—')+'<small>'+esc(o.email||'')+'</small></div>'
+      + '<h2>Varer</h2><table>'+rows+'</table>'
+      + '<div class="total"><span>I alt</span><span>'+total+' kr.</span></div>'
+      + '<div class="pickup"><b>Afhentning (Click &amp; Collect)</b><br>Suså Landevej 101, 4160 Herlufmagle'+sentInfo+'</div>'
+      + '<div class="foot">Tak for din ordre!<br>Quartz Mølle · CVR 42117188 · hello@quartzmolle.dk</div>'
+      + '<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},200);};<\/scr'+'ipt>'
+      + '</body></html>';
+
+    var w = window.open('', '_blank', 'width=520,height=720');
+    if(!w){ alert('Tillad pop-ups for at printe ordrebekræftelsen.'); return; }
+    w.document.open(); w.document.write(doc); w.document.close();
   }
 
   // If already logged in on /locker, the cookie is set — go straight in.

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Pakkeliste · Quartz Mølle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#273071; --blue-dark:#1b2252; --blue-light:#3a4599;
+    --blue-soft:rgba(39,48,113,.08);
+    --cream:#faf7f2; --warm:#f5f0e8; --line:#e7e1d6;
+    --text:#1a1611; --muted:#6b6256; --white:#fff;
+    --green:#2e8b57; --green-soft:#e6f1ea;
+    --red:#b23b3b; --grey:#9b9488; --grey-soft:#ece8e0;
+    --shadow:0 4px 18px rgba(39,48,113,.10);
+    --radius:18px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--cream);color:var(--text);-webkit-font-smoothing:antialiased;line-height:1.5}
+  button{font-family:inherit;cursor:pointer;border:none}
+  a{color:inherit}
+  .hide{display:none!important}
+
+  /* login */
+  #login{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .login-card{background:var(--white);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow);padding:38px 30px;width:100%;max-width:380px;text-align:center}
+  .login-card img{width:96px;height:96px;object-fit:contain;margin-bottom:10px}
+  .login-card h1{font-size:20px;font-weight:700;color:var(--blue)}
+  .login-card p{color:var(--muted);font-size:14px;margin-top:4px;margin-bottom:24px}
+  .code-input{width:100%;text-align:center;font-size:30px;font-weight:700;letter-spacing:10px;color:var(--blue);padding:16px;border:2px solid var(--line);border-radius:14px;background:var(--cream);outline:none}
+  .code-input:focus{border-color:var(--blue-light)}
+  .login-btn{width:100%;margin-top:16px;background:var(--blue);color:#fff;font-size:17px;font-weight:600;padding:16px;border-radius:14px}
+  .login-btn:active{background:var(--blue-dark)}
+  .login-err{color:var(--red);font-size:14px;font-weight:500;margin-top:14px;min-height:18px}
+
+  /* topbar */
+  .top{position:sticky;top:0;z-index:30;background:var(--blue);color:#fff;display:flex;align-items:center;gap:12px;padding:14px 18px;padding-top:calc(14px + env(safe-area-inset-top));flex-wrap:wrap}
+  .top img{width:34px;height:34px;object-fit:contain;border-radius:8px;background:#fff;padding:3px}
+  .top .ttl{font-weight:700;font-size:16px;line-height:1.15}
+  .top .ttl small{display:block;font-weight:500;font-size:11px;opacity:.8}
+  .top .spacer{flex:1}
+  .langsw{display:flex;gap:3px;background:rgba(255,255,255,.14);border-radius:10px;padding:3px}
+  .langsw button{background:transparent;color:#fff;font-size:12px;font-weight:700;padding:6px 9px;border-radius:8px;opacity:.7}
+  .langsw button.on{background:#fff;color:var(--blue);opacity:1}
+  .logout{background:rgba(255,255,255,.14);color:#fff;font-size:13px;font-weight:600;padding:8px 12px;border-radius:10px}
+
+  .wrap{max-width:860px;margin:0 auto;padding:18px 16px 60px}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .btn{border-radius:13px;font-size:15px;font-weight:600;padding:14px 18px;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none}
+  .btn:active{transform:translateY(1px)}
+  .btn-ghost{background:var(--white);color:var(--blue);border:1.5px solid var(--line)}
+  .btn-blue{background:var(--blue);color:#fff}
+  .btn-grow{flex:1}
+
+  .summary{margin:20px 2px 6px;font-size:14px;color:var(--muted);font-weight:600}
+  .sec-h{margin:14px 2px 12px;font-size:15px;font-weight:700;color:var(--blue)}
+  .empty{color:var(--muted);font-size:14px;padding:8px 2px}
+
+  .pack{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:0 1px 3px rgba(39,48,113,.05);margin-bottom:12px}
+  .pack-top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
+  .pack-who{font-weight:700;font-size:15px}
+  .pack-ref{font-size:11.5px;color:var(--grey);letter-spacing:.04em}
+  .pack-items{list-style:none;margin-top:12px}
+  .pack-items li{display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+  .pack-items li:last-child{border-bottom:none}
+  .pack-items .chk{width:20px;height:20px;flex-shrink:0;accent-color:var(--green)}
+  .pack-items .nm{flex:1}
+  .pack-items .wl{color:var(--muted);font-weight:400}
+  .pack-items .qty{font-weight:800;color:var(--blue);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .pack-items li.done .nm{text-decoration:line-through;color:var(--grey)}
+  .pack-count{margin-top:10px;font-size:12.5px;color:var(--muted);font-weight:600}
+
+  @media print{
+    .top,.row,.langsw,.logout,.no-print{display:none!important}
+    body{background:#fff}
+    .pack{box-shadow:none;border:1px solid #ccc;break-inside:avoid}
+    .wrap{max-width:none;padding:0}
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="login-card">
+    <img src="/images/logopng.png" alt="Quartz Mølle" onerror="this.style.display='none'">
+    <h1 data-i18n="title">Pakkeliste</h1>
+    <p data-i18n="enterCode">Indtast adgangskode</p>
+    <input id="codeInput" class="code-input" type="password" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="••••">
+    <button id="loginBtn" class="login-btn" data-i18n="unlock">Lås op</button>
+    <div id="loginErr" class="login-err"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="hide">
+  <div class="top">
+    <img src="/images/logopng.png" alt="" onerror="this.style.display='none'">
+    <div class="ttl"><span data-i18n="title">Pakkeliste</span><small>Click &amp; Collect · Quartz Mølle</small></div>
+    <div class="spacer"></div>
+    <div class="langsw" id="langsw">
+      <button data-lang="da">DA</button>
+      <button data-lang="en">EN</button>
+      <button data-lang="es">ES</button>
+    </div>
+    <button class="logout" id="logoutBtn" data-i18n="logout">Log ud</button>
+  </div>
+
+  <div class="wrap">
+    <div class="row no-print">
+      <a class="btn btn-ghost" href="/fufill" data-i18n="back">← Fulfillment</a>
+      <button class="btn btn-ghost" id="refreshBtn" data-i18n="refresh">↻ Opdatér</button>
+      <button class="btn btn-blue btn-grow" id="printBtn" data-i18n="printList">🖨 Print liste</button>
+    </div>
+
+    <div class="summary" id="summary"></div>
+    <div class="sec-h" data-i18n="toPack">Ordrer at pakke</div>
+    <div id="list"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var I18N = {
+    da:{ title:'Pakkeliste', enterCode:'Indtast adgangskode', unlock:'Lås op', logout:'Log ud',
+         back:'← Fulfillment', refresh:'↻ Opdatér', printList:'🖨 Print liste', toPack:'Ordrer at pakke',
+         none:'Ingen ordrer at pakke.', order:'Ordre', items:'varer', pcs:'stk.', wrongCode:'Forkert kode',
+         netErr:'Netværksfejl', enterCodeShort:'Indtast kode', ordersWord:'ordrer', itemsTotal:'varer i alt' },
+    en:{ title:'Packing list', enterCode:'Enter passcode', unlock:'Unlock', logout:'Log out',
+         back:'← Fulfillment', refresh:'↻ Refresh', printList:'🖨 Print list', toPack:'Orders to pack',
+         none:'No orders to pack.', order:'Order', items:'items', pcs:'pcs.', wrongCode:'Wrong code',
+         netErr:'Network error', enterCodeShort:'Enter code', ordersWord:'orders', itemsTotal:'items total' },
+    es:{ title:'Lista de embalaje', enterCode:'Introduzca el código', unlock:'Desbloquear', logout:'Cerrar sesión',
+         back:'← Preparación', refresh:'↻ Actualizar', printList:'🖨 Imprimir lista', toPack:'Pedidos para embalar',
+         none:'No hay pedidos para embalar.', order:'Pedido', items:'artículos', pcs:'uds.', wrongCode:'Código incorrecto',
+         netErr:'Error de red', enterCodeShort:'Introduzca el código', ordersWord:'pedidos', itemsTotal:'artículos en total' }
+  };
+  var lang = localStorage.getItem('qm_pack_lang') || 'da';
+  if(!I18N[lang]) lang = 'da';
+  var lastData = null;
+
+  function T(k){ return (I18N[lang] && I18N[lang][k]) || I18N.da[k] || k; }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+
+  function applyLang(){
+    document.documentElement.lang = lang;
+    document.querySelectorAll('[data-i18n]').forEach(function(el){ el.textContent = T(el.getAttribute('data-i18n')); });
+    document.querySelectorAll('#langsw button').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-lang')===lang); });
+    if(lastData) render(lastData);
+  }
+
+  document.getElementById('langsw').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-lang]'); if(!b) return;
+    lang = b.getAttribute('data-lang'); localStorage.setItem('qm_pack_lang', lang); applyLang();
+  });
+
+  // ----- login (shares the /locker cookie) -----
+  var loginEl = document.getElementById('login');
+  var appEl = document.getElementById('app');
+  var codeInput = document.getElementById('codeInput');
+  var loginErr = document.getElementById('loginErr');
+
+  document.getElementById('loginBtn').addEventListener('click', doLogin);
+  codeInput.addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
+  document.getElementById('refreshBtn').addEventListener('click', load);
+  document.getElementById('printBtn').addEventListener('click', function(){ window.print(); });
+  document.getElementById('logoutBtn').addEventListener('click', logout);
+
+  async function doLogin(){
+    loginErr.textContent='';
+    var code = codeInput.value.trim();
+    if(!code){ loginErr.textContent=T('enterCodeShort'); return; }
+    try{
+      var r = await fetch('/api/locker',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'login',code:code})});
+      var d = await r.json().catch(function(){return {};});
+      if(r.ok && d.ok){ codeInput.value=''; showApp(); load(); }
+      else { loginErr.textContent = d.error || T('wrongCode'); }
+    }catch(e){ loginErr.textContent=T('netErr'); }
+  }
+
+  async function logout(){
+    try{ await fetch('/api/locker',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'logout'})}); }catch(e){}
+    appEl.classList.add('hide'); loginEl.classList.remove('hide');
+  }
+
+  function showApp(){ loginEl.classList.add('hide'); appEl.classList.remove('hide'); }
+
+  async function load(){
+    try{
+      var r = await fetch('/api/fulfill?action=list');
+      if(r.status===401){ appEl.classList.add('hide'); loginEl.classList.remove('hide'); return; }
+      var d = await r.json();
+      if(!d.ok) return;
+      showApp(); render(d);
+    }catch(e){}
+  }
+
+  function itemCount(o){ return (o.items||[]).reduce(function(n,it){ return n + (it.qty||1); }, 0); }
+
+  function render(d){
+    lastData = d;
+    var fulfilled = d.fulfilled || {};
+    var orders = (d.orders || []).filter(function(o){ return o && !fulfilled[o.ref]; });
+
+    var totalItems = orders.reduce(function(n,o){ return n + itemCount(o); }, 0);
+    document.getElementById('summary').textContent =
+      orders.length + ' ' + T('ordersWord') + ' · ' + totalItems + ' ' + T('itemsTotal');
+
+    var list = document.getElementById('list');
+    if(!orders.length){ list.innerHTML = '<div class="empty">'+T('none')+'</div>'; return; }
+
+    list.innerHTML = '';
+    orders.forEach(function(o){
+      var el = document.createElement('div');
+      el.className = 'pack';
+      var lis = (o.items||[]).map(function(it){
+        return '<li><input type="checkbox" class="chk"><span class="nm">'+esc(it.name)
+          + (it.weightLabel?' <span class="wl">('+esc(it.weightLabel)+')</span>':'')
+          + '</span><span class="qty">'+(it.qty||1)+' '+T('pcs')+'</span></li>';
+      }).join('');
+      el.innerHTML =
+        '<div class="pack-top"><div class="pack-who">'+esc(o.name||'—')+'</div>'
+        + '<div class="pack-ref">'+T('order')+' #'+esc(o.ref)+'</div></div>'
+        + '<ul class="pack-items">'+lis+'</ul>'
+        + '<div class="pack-count">'+itemCount(o)+' '+T('items')+'</div>';
+      // Tick-off packing (visual)
+      el.querySelectorAll('.pack-items li').forEach(function(li){
+        var chk = li.querySelector('.chk');
+        chk.addEventListener('change', function(){ li.classList.toggle('done', chk.checked); });
+      });
+      list.appendChild(el);
+    });
+  }
+
+  applyLang();
+  load();
+})();
+</script>
+</body>
+</html>

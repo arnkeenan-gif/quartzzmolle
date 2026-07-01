@@ -5,6 +5,7 @@
 // Query: ?days=7 (default 7, options: 7/30/90)
 
 import { createHmac, timingSafeEqual } from 'crypto';
+import { kv } from '@vercel/kv';
 
 // Map product names (from Stripe line item descriptions) to image paths in our repo
 function getProductImage(productName) {
@@ -187,11 +188,30 @@ export default async function handler(req, res) {
 
     recentOrders.sort((a, b) => new Date(b.date) - new Date(a.date));
 
+    // Unique visitors across the selected period, for the period conversion rate.
+    // Daily sets are keyed visitors:YYYY-MM-DD (UTC). We sum each day in range;
+    // days that have expired simply count as 0.
+    let periodVisitors = 0;
+    try {
+      const days = [];
+      const startDay = new Date(since * 1000); startDay.setUTCHours(0, 0, 0, 0);
+      const endDay = new Date(until * 1000); endDay.setUTCHours(0, 0, 0, 0);
+      for (let d = new Date(startDay); d <= endDay && days.length <= 400; d.setUTCDate(d.getUTCDate() + 1)) {
+        days.push(`visitors:${d.toISOString().slice(0, 10)}`);
+      }
+      const BATCH = 20;
+      for (let i = 0; i < days.length; i += BATCH) {
+        const counts = await Promise.all(days.slice(i, i + BATCH).map(k => kv.scard(k).catch(() => 0)));
+        periodVisitors += counts.reduce((a, b) => a + (b || 0), 0);
+      }
+    } catch (e) { /* KV unavailable → leave 0 */ }
+
     return res.status(200).json({
       totalOrders,
       totalRevenue,
       ordersToday,
       revenueToday,
+      periodVisitors,
       rangeLabel,
       truncated: scanned > MAX_SESSIONS,
       orders: recentOrders.slice(0, 300), // enough to search across; UI filters by name/number

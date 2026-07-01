@@ -28,8 +28,9 @@ export default async function handler(req, res) {
     // Daily unique visitor counter using a date-stamped set
     const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
     await kv.sadd(`visitors:${today}`, visitorId);
-    // Expire daily sets after 7 days to keep storage small
-    await kv.expire(`visitors:${today}`, 7 * 86400);
+    // Keep daily sets ~100 days so the admin can show accurate conversion rates
+    // for 7/30/90-day periods (not just the last week).
+    await kv.expire(`visitors:${today}`, 100 * 86400);
 
     return res.status(200).json({ ok: true });
   } catch (err) {

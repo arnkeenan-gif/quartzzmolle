@@ -9,25 +9,25 @@
 
 const PRODUCTS = [
   {
-    id: 'dalarna-fuldkorn',
-    name: 'Dalarna',
-    type: 'Fuldkornshvedemel',
-    badge: 'gammel',
-    color: '#c0392b',
-    previewImage: 'images/dalarna_type85.png',
-    description: 'Dalarna er en klassisk dansk hvedesort med en rig smag og god bageevne. Perfekt til rugbrød, boller og grovbrød. Dyrket og malet i Danmark.',
+    id: 'mariagertoba-type70',
+    name: 'Mariagertoba',
+    type: 'Fintsigtet hvedemel – Type 70',
+    badge: 'bestseller',
+    color: '#d4890a',
+    previewImage: 'images/mariagertoba.png',
+    description: 'Mariagertoba er et fintsigtet hvedemel med fremragende bageegenskaber. Det giver luftige og velsmagende brød og boller. En af vores mest elskede sorter.',
     certifications: ['DK-ØKO-100', 'Dansk jordbrug', 'EU-jordbrug', 'Statskontrolleret Økologisk'],
     origin: 'Dyrket i Norden & malet på stenkværn',
     nutrition: {
-      energy: '1440 kJ / 343 kcal',
-      fat: '2,3 g', saturated: '0,4 g',
-      carbs: '62 g', sugars: '1,0 g',
-      fiber: '11 g', protein: '13 g',
+      energy: '1460 kJ / 348 kcal',
+      fat: '1,5 g', saturated: '0,3 g',
+      carbs: '70 g', sugars: '1,0 g',
+      fiber: '5 g', protein: '12 g',
       salt: '0,01 g'
     },
     weights: [
-      { label: '3 kg', price: 99, image: 'images/Dalarna-3Kg-fuldkorn-96x139mm-outlined_copy.jpg' },
-      { label: '12,5 kg', price: 315, image: 'images/Dalarna-12_5Kg-fuldkorn-96x139mm-outlined_copy.jpg' }
+      { label: '3 kg', price: 99, image: 'images/Mariagertoba-type70-3Kg-96x139mm-outlined_copy.jpg' },
+      { label: '12,5 kg', price: 315, image: 'images/Mariagertoba-type70-12_5Kg-148x214_29mm-outlined_copy.jpg' }
     ]
   },
   {
@@ -53,25 +53,25 @@ const PRODUCTS = [
     ]
   },
   {
-    id: 'mariagertoba-type70',
-    name: 'Mariagertoba',
-    type: 'Fintsigtet hvedemel – Type 70',
-    badge: 'bestseller',
-    color: '#d4890a',
-    previewImage: 'images/mariagertoba.png',
-    description: 'Mariagertoba er et fintsigtet hvedemel med fremragende bageegenskaber. Det giver luftige og velsmagende brød og boller. En af vores mest elskede sorter.',
+    id: 'dalarna-fuldkorn',
+    name: 'Dalarna',
+    type: 'Fuldkornshvedemel',
+    badge: 'gammel',
+    color: '#c0392b',
+    previewImage: 'images/dalarna_type85.png',
+    description: 'Dalarna er en klassisk dansk hvedesort med en rig smag og god bageevne. Perfekt til rugbrød, boller og grovbrød. Dyrket og malet i Danmark.',
     certifications: ['DK-ØKO-100', 'Dansk jordbrug', 'EU-jordbrug', 'Statskontrolleret Økologisk'],
     origin: 'Dyrket i Norden & malet på stenkværn',
     nutrition: {
-      energy: '1460 kJ / 348 kcal',
-      fat: '1,5 g', saturated: '0,3 g',
-      carbs: '70 g', sugars: '1,0 g',
-      fiber: '5 g', protein: '12 g',
+      energy: '1440 kJ / 343 kcal',
+      fat: '2,3 g', saturated: '0,4 g',
+      carbs: '62 g', sugars: '1,0 g',
+      fiber: '11 g', protein: '13 g',
       salt: '0,01 g'
     },
     weights: [
-      { label: '3 kg', price: 99, image: 'images/Mariagertoba-type70-3Kg-96x139mm-outlined_copy.jpg' },
-      { label: '12,5 kg', price: 315, image: 'images/Mariagertoba-type70-12_5Kg-148x214_29mm-outlined_copy.jpg' }
+      { label: '3 kg', price: 99, image: 'images/Dalarna-3Kg-fuldkorn-96x139mm-outlined_copy.jpg' },
+      { label: '12,5 kg', price: 315, image: 'images/Dalarna-12_5Kg-fuldkorn-96x139mm-outlined_copy.jpg' }
     ]
   },
   {
