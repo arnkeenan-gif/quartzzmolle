@@ -1,5 +1,11 @@
 // api/checkout.js — Vercel Serverless Function
 // Creates a Stripe-hosted Checkout Session for the cart and returns the redirect URL.
+//
+// SECURITY: prices, weights and quantities are validated server-side against the
+// authoritative catalog (api/_catalog.js, merged with Supabase). Client-supplied
+// prices are NEVER trusted — a manipulated price/weight is rejected.
+
+import { CATALOG, buildPriceMap, weightKgFromLabel } from './_catalog.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -17,12 +23,36 @@ export default async function handler(req, res) {
     // Use known production URL since req.headers.origin may be missing on POST from cross-origin
     const origin = 'https://quartzzmolle-dusky.vercel.app';
 
-    const line_items = items.map(it => {
+    // ── SERVER-SIDE VALIDATION: authoritative price + weight per line ──
+    const priceMap = buildPriceMap();
+    const validated = [];
+    for (const it of items) {
+      const id = String(it.productId || '');
+      const label = String(it.weightLabel || '');
+      const key = `${id}|${label}`;
+      const price = priceMap[key];
+      if (price == null) {
+        return res.status(400).json({ error: 'Ugyldig vare i kurven' });
+      }
+      let qty = parseInt(it.qty, 10);
+      if (!Number.isFinite(qty) || qty < 1) qty = 1;
+      if (qty > 99) qty = 99; // sane cap
+      validated.push({
+        id, label, qty,
+        price,                              // authoritative kr price
+        kg: weightKgFromLabel(label),       // authoritative weight
+        productName: String(it.productName || ''),
+        productType: String(it.productType || ''),
+        image: typeof it.image === 'string' ? it.image : '',
+      });
+    }
+
+    const line_items = validated.map(it => {
       // Build name: "Rød hvede – Type 70" so it shows in Stripe AND Shipmondo
       const typeStr = it.productType ? ` – ${it.productType}` : '';
       const product_data = {
         name: `${it.productName}${typeStr}`,
-        description: `${it.weightLabel} · Malet på stenkværn i Danmark · Certificeret Økologisk`,
+        description: `${it.label} · Malet på stenkværn i Danmark · Certificeret Økologisk`,
       };
       if (it.image) {
         let imgUrl;
@@ -32,32 +62,20 @@ export default async function handler(req, res) {
           const path = it.image.replace(/^\//, '').split('/').map(encodeURIComponent).join('/');
           imgUrl = `${origin}/${path}`;
         }
-        console.log('Stripe product image URL:', imgUrl);
         product_data.images = [imgUrl];
-      } else {
-        console.log('No image for item:', it.productName);
       }
       return {
         price_data: {
           currency: 'dkk',
           product_data,
-          unit_amount: Math.round(it.price * 100),
+          unit_amount: Math.round(it.price * 100), // authoritative price
         },
         quantity: it.qty,
       };
     });
 
-    // Calculate total cart weight (kg) by parsing each item's weightLabel
-    function parseWeightKg(label) {
-      if (!label) return 0;
-      const m = String(label).match(/(\d+(?:[.,]\d+)?)\s*kg/i);
-      if (!m) return 0;
-      return parseFloat(m[1].replace(',', '.')) || 0;
-    }
-    const totalWeightKg = items.reduce((sum, it) => {
-      return sum + (parseWeightKg(it.weightLabel) * (it.qty || 1));
-    }, 0);
-    console.log('Total cart weight:', totalWeightKg, 'kg');
+    // Total cart weight (kg) from the AUTHORITATIVE per-line weight
+    const totalWeightKg = validated.reduce((sum, it) => sum + it.kg * it.qty, 0);
 
     // GLS shipping limits. Orders heavier than GLS can carry are NOT blocked
     // anymore — they can still be completed with Click & Collect (pickup), which
@@ -130,8 +148,8 @@ export default async function handler(req, res) {
 
     // Embed items in metadata (format: name|type|weight|qty|price) so the webhook
     // can always recover productType even if the Stripe product name parsing fails.
-    const itemsSummary = items.map(it =>
-      `${it.productName}|${it.productType || ''}|${it.weightLabel}|${it.qty}|${it.price}`
+    const itemsSummary = validated.map(it =>
+      `${it.productName}|${it.productType}|${it.label}|${it.qty}|${it.price}`
     ).join(';').slice(0, 490);
 
     const session = await stripe.checkout.sessions.create({
@@ -152,6 +170,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ url: session.url });
   } catch (err) {
     console.error('Stripe Checkout session error:', err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'Kunne ikke oprette betaling. Prøv igen.' });
   }
 }
