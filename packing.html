@@ -40,7 +40,7 @@
 
   /* topbar */
   .top{position:sticky;top:0;z-index:30;background:var(--blue);color:#fff;display:flex;align-items:center;gap:12px;padding:14px 18px;padding-top:calc(14px + env(safe-area-inset-top));flex-wrap:wrap}
-  .top img{width:34px;height:34px;object-fit:contain;border-radius:8px;background:#fff;padding:3px}
+  .top img{width:36px;height:36px;object-fit:cover;border-radius:50%;background:transparent;padding:0}
   .top .ttl{font-weight:700;font-size:16px;line-height:1.15}
   .top .ttl small{display:block;font-weight:500;font-size:11px;opacity:.8}
   .top .spacer{flex:1}
@@ -145,20 +145,23 @@
 (function(){
   var I18N = {
     da:{ title:'Pakkeliste', enterCode:'Indtast adgangskode', unlock:'Lås op', logout:'Log ud',
-         back:'← Fulfillment', refresh:'↻ Opdatér', printList:'🖨 Print', toPack:'Ordrer at pakke',
+         back:'← Fulfillment', refresh:'↻ Opdatér', printList:'🖨 Udskriv', toPack:'Ordrer at pakke',
          none:'Ingen ordrer at pakke.', order:'Ordre', items:'varer', pcs:'stk.', wrongCode:'Forkert kode',
          netErr:'Netværksfejl', enterCodeShort:'Indtast kode', ordersWord:'ordrer', itemsTotal:'varer i alt',
-         pickTotal:'Samlet plukkeliste', pickHint:'Tag i alt dette fra lageret:', packHint:'Kryds af efterhånden som du pakker hver ordre.' },
+         pickTotal:'Samlet plukkeliste', pickHint:'Tag i alt dette fra lageret:', packHint:'Kryds af efterhånden som du pakker hver ordre.',
+         confTitle:'Ordrebekræftelse', confCustomer:'Kunde', confItems:'Varer', confTotal:'I alt', confPickup:'Afhentning (Click & Collect)', confThanks:'Tak for din ordre!', confPrinted:'Udskrevet', noPopup:'Tillad pop-ups for at printe ordrebekræftelserne.' },
     en:{ title:'Packing list', enterCode:'Enter passcode', unlock:'Unlock', logout:'Log out',
          back:'← Fulfillment', refresh:'↻ Refresh', printList:'🖨 Print', toPack:'Orders to pack',
          none:'No orders to pack.', order:'Order', items:'items', pcs:'pcs.', wrongCode:'Wrong code',
          netErr:'Network error', enterCodeShort:'Enter code', ordersWord:'orders', itemsTotal:'items total',
-         pickTotal:'Total to pick', pickHint:'Take this much from stock in total:', packHint:'Tick off as you pack each order.' },
+         pickTotal:'Total to pick', pickHint:'Take this much from stock in total:', packHint:'Tick off as you pack each order.',
+         confTitle:'Order confirmation', confCustomer:'Customer', confItems:'Items', confTotal:'Total', confPickup:'Pickup (Click & Collect)', confThanks:'Thank you for your order!', confPrinted:'Printed', noPopup:'Allow pop-ups to print the order confirmations.' },
     es:{ title:'Lista de embalaje', enterCode:'Introduzca el código', unlock:'Desbloquear', logout:'Cerrar sesión',
-         back:'← Preparación', refresh:'↻ Actualizar', printList:'🖨 Print', toPack:'Pedidos para embalar',
+         back:'← Preparación', refresh:'↻ Actualizar', printList:'🖨 Imprimir', toPack:'Pedidos para embalar',
          none:'No hay pedidos para embalar.', order:'Pedido', items:'artículos', pcs:'uds.', wrongCode:'Código incorrecto',
          netErr:'Error de red', enterCodeShort:'Introduzca el código', ordersWord:'pedidos', itemsTotal:'artículos en total',
-         pickTotal:'Total a recoger', pickHint:'Coge esto del almacén en total:', packHint:'Marca a medida que preparas cada pedido.' }
+         pickTotal:'Total a recoger', pickHint:'Coge esto del almacén en total:', packHint:'Marca a medida que preparas cada pedido.',
+         confTitle:'Confirmación de pedido', confCustomer:'Cliente', confItems:'Artículos', confTotal:'Total', confPickup:'Recogida (Click & Collect)', confThanks:'¡Gracias por tu pedido!', confPrinted:'Impreso', noPopup:'Permita las ventanas emergentes para imprimir las confirmaciones.' }
   };
   var lang = localStorage.getItem('qm_pack_lang') || 'da';
   if(!I18N[lang]) lang = 'da';
@@ -188,7 +191,7 @@
   document.getElementById('loginBtn').addEventListener('click', doLogin);
   codeInput.addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
   document.getElementById('refreshBtn').addEventListener('click', load);
-  document.getElementById('printBtn').addEventListener('click', function(){ window.print(); });
+  document.getElementById('printBtn').addEventListener('click', printAll);
   document.getElementById('logoutBtn').addEventListener('click', logout);
 
   async function doLogin(){
@@ -286,8 +289,76 @@
     });
   }
 
+  // ---- Printable, branded Quartz Mølle order confirmations (one per order) ----
+  var CONF_CSS =
+    '*{box-sizing:border-box;margin:0;padding:0}'
+    + 'body{font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1a1611;background:#fff}'
+    + '.paper{max-width:720px;margin:0 auto;padding:40px 44px;page-break-after:always}'
+    + '.paper:last-child{page-break-after:auto}'
+    + '.head{display:flex;align-items:center;gap:16px;border-bottom:3px solid #273071;padding-bottom:18px;margin-bottom:22px}'
+    + '.head img{width:66px;height:66px;object-fit:cover;border-radius:50%}'
+    + '.head h1{font-size:22px;color:#273071;letter-spacing:.3px}'
+    + '.head .sub{font-size:12.5px;color:#6b6256;margin-top:3px}'
+    + '.meta{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:13px;color:#6b6256;margin-bottom:20px}'
+    + '.meta b{color:#1a1611}'
+    + 'h2{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:#6b6256;margin:20px 0 8px}'
+    + '.who{font-size:15px;font-weight:600}'
+    + '.who small{display:block;font-weight:400;color:#6b6256;font-size:13px;margin-top:2px}'
+    + 'table{width:100%;border-collapse:collapse;margin-top:6px}'
+    + 'td{padding:10px 4px;border-bottom:1px solid #e7e1d6;font-size:14.5px;vertical-align:top}'
+    + '.q{text-align:right;white-space:nowrap;font-weight:700;color:#273071;width:80px}'
+    + '.wl{color:#6b6256;font-weight:400}'
+    + '.total{display:flex;justify-content:space-between;font-size:18px;font-weight:800;color:#273071;margin-top:16px;padding-top:14px;border-top:2px solid #273071}'
+    + '.pickup{background:#faf7f2;border:1px solid #e7e1d6;border-radius:12px;padding:14px 16px;font-size:13.5px;margin-top:22px;line-height:1.6}'
+    + '.foot{margin-top:28px;font-size:12px;color:#9b9488;text-align:center;line-height:1.7}'
+    + '@media print{.paper{padding:24px 8mm}}';
+
+  function buildConfirmation(o){
+    var total = Number(o.total||0).toFixed(2).replace('.', ',');
+    var rows = (o.items||[]).map(function(it){
+      return '<tr><td>'+esc(it.name)+(it.weightLabel?' <span class="wl">('+esc(it.weightLabel)+')</span>':'')
+        + '</td><td class="q">'+(it.qty||1)+' '+T('pcs')+'</td></tr>';
+    }).join('') || '<tr><td colspan="2">—</td></tr>';
+    var printed = new Date().toLocaleString(lang==='da'?'da-DK':(lang==='es'?'es-ES':'en-GB'),
+      { day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    return '<div class="paper">'
+      + '<div class="head"><img src="/images/logopng.png" alt="" onerror="this.style.display=\'none\'">'
+      +   '<div><h1>'+T('confTitle')+'</h1><div class="sub">Quartz Mølle · Click &amp; Collect</div></div></div>'
+      + '<div class="meta"><span>'+T('order')+' <b>#'+esc(o.ref)+'</b></span><span>'+T('confPrinted')+': <b>'+esc(printed)+'</b></span></div>'
+      + '<h2>'+T('confCustomer')+'</h2><div class="who">'+esc(o.name||'—')+'<small>'+esc(o.email||'')+'</small></div>'
+      + '<h2>'+T('confItems')+'</h2><table>'+rows+'</table>'
+      + '<div class="total"><span>'+T('confTotal')+'</span><span>'+total+' kr.</span></div>'
+      + '<div class="pickup"><b>'+T('confPickup')+'</b><br>Suså Landevej 101, 4160 Herlufmagle</div>'
+      + '<div class="foot">'+T('confThanks')+'<br>Quartz Mølle · CVR 42117188 · hello@quartzmolle.dk</div>'
+      + '</div>';
+  }
+
+  function printAll(){
+    if(!lastData) return;
+    var fulfilled = lastData.fulfilled || {};
+    var orders = (lastData.orders||[]).filter(function(o){ return o && !fulfilled[o.ref]; });
+    if(!orders.length){ alert(T('none')); return; }
+    var pages = orders.map(buildConfirmation).join('');
+    var doc = '<!doctype html><html lang="'+lang+'"><head><meta charset="utf-8">'
+      + '<meta name="viewport" content="width=device-width, initial-scale=1">'
+      + '<title>'+T('confTitle')+' · Quartz Mølle</title><style>'+CONF_CSS+'</style></head><body>'
+      + pages
+      + '<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},300);};<\/scr'+'ipt>'
+      + '</body></html>';
+    var w = window.open('', '_blank');
+    if(!w){ alert(T('noPopup')); return; }
+    w.document.open(); w.document.write(doc); w.document.close();
+  }
+
   applyLang();
   load();
+
+  // Keep the packing list in sync: once an order is sent (fulfilled) in /fufill
+  // it drops off here automatically. Refresh when the tab regains focus and on a
+  // light interval so it stays current without a manual reload.
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden) load(); });
+  window.addEventListener('focus', load);
+  setInterval(function(){ if(!document.hidden) load(); }, 20000);
 })();
 </script>
 </body>
