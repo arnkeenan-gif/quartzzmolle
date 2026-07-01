@@ -22,9 +22,13 @@
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   html,body{min-height:100%}
+  /* Blue behind the sticky topbar so a fast scroll-up (iOS overscroll bounce)
+     shows blue at the very top — never a white strip. */
+  html{background:var(--blue);overscroll-behavior-y:none}
   body{
     font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
     background:var(--cream); color:var(--text); -webkit-font-smoothing:antialiased; line-height:1.5;
+    overscroll-behavior-y:none;
   }
   button{font-family:inherit;cursor:pointer;border:none}
   a{color:inherit}
@@ -36,7 +40,7 @@
     background:var(--white);border:1px solid var(--line);border-radius:24px;
     box-shadow:var(--shadow);padding:38px 30px;width:100%;max-width:380px;text-align:center
   }
-  .login-card img{width:96px;height:96px;object-fit:contain;margin-bottom:10px}
+  .login-card img{width:96px;height:96px;object-fit:cover;border-radius:50%;margin-bottom:10px}
   .login-card h1{font-size:20px;font-weight:700;color:var(--blue);letter-spacing:.2px}
   .login-card p{color:var(--muted);font-size:14px;margin-top:4px;margin-bottom:24px}
   .code-input{
@@ -58,7 +62,7 @@
     display:flex;align-items:center;gap:12px;padding:14px 18px;
     padding-top:calc(14px + env(safe-area-inset-top));
   }
-  .topbar img{width:34px;height:34px;object-fit:contain;border-radius:8px;background:#fff;padding:3px}
+  .topbar img{width:36px;height:36px;object-fit:cover;border-radius:50%;background:transparent;padding:0}
   .topbar .ttl{font-weight:700;font-size:16px;line-height:1.15}
   .topbar .ttl small{display:block;font-weight:500;font-size:11px;opacity:.8}
   .topbar .spacer{flex:1}
@@ -191,7 +195,7 @@
 <!-- ===== LOGIN ===== -->
 <div class="login-wrap" id="loginWrap">
   <div class="login-card">
-    <img src="/images/logopng.png" alt="Quartz Mølle" onerror="this.style.display='none'" />
+    <img src="/images/favicon.png" alt="Quartz Mølle" onerror="this.style.display='none'" />
     <h1>Quartz Mølle Admin</h1>
     <p>Indtast adgangskode</p>
     <input id="codeInput" class="code-input" type="password" inputmode="numeric"
@@ -204,7 +208,7 @@
 <!-- ===== DASHBOARD ===== -->
 <div class="dashboard hide" id="dashboard">
   <div class="topbar">
-    <img src="/images/logopng.png" alt="" onerror="this.style.display='none'" />
+    <img src="/images/favicon.png" alt="" onerror="this.style.display='none'" />
     <div class="ttl">Admin<small>Statistik · Quartz Mølle</small></div>
     <div class="spacer"></div>
     <span class="upd" id="lastUpdate"></span>
