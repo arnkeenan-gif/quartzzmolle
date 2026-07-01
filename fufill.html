@@ -360,7 +360,8 @@
       + '.total{display:flex;justify-content:space-between;font-size:18px;font-weight:800;color:#273071;margin-top:14px;padding-top:14px;border-top:2px solid #273071;text-align:left}'
       + '.pickup{font-size:13px;color:#6b6256;margin-top:22px;line-height:1.6}'
       + '.pickup b{color:#1a1611}'
-      + '.thanks{font-size:15px;font-weight:600;color:#2e8b57;margin-top:20px}';
+      + '.thanks{font-size:14px;font-weight:600;color:#273071;margin-top:22px}'
+      + '.foot{font-size:11px;color:#9b9488;margin-top:10px;letter-spacing:.02em;line-height:1.6}';
 
     var docHtml = '<!doctype html><html lang="da"><head><meta charset="utf-8">'
       + '<title>Ordrebekræftelse #'+esc(o.ref)+'</title><style>'+css+'</style></head><body>'
@@ -373,7 +374,8 @@
       +   '<div class="items">'+rows+'</div>'
       +   '<div class="total"><span>I alt</span><span>'+total+' kr.</span></div>'
       +   '<div class="pickup"><b>Afhentning</b><br>Suså Landevej 101, 4160 Herlufmagle</div>'
-      +   '<div class="thanks">Tak for din ordre 🌾</div>'
+      +   '<div class="thanks">Tak for din ordre</div>'
+      +   '<div class="foot">Quartz Mølle · CVR 42117188 · hello@quartzmolle.dk</div>'
       + '</div></body></html>';
 
     printViaFrame(docHtml);
