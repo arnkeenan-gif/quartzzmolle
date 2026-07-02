@@ -30,9 +30,30 @@
     #mobileMenu { display: none !important; }
     #mobileMenu.open { display: flex !important; }
     #vid1 { opacity: 1; }
+
+    /* Solid black bar pinned to the bottom of the screen, behind the Safari
+       search field. It sits ON TOP of the page (above videos and text), so
+       everything scrolls in underneath it and only becomes visible above it.
+       Looks like part of the phone, not the website. */
+    @media (max-width: 768px) {
+      .bottom-shield {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: calc(env(safe-area-inset-bottom, 0px) + 85px);
+        background: #000;
+        z-index: 50; /* above videos/overlays/sections, below nav (100), menu (99) and cart (300) */
+        pointer-events: none;
+      }
+    }
+    @media (min-width: 769px) {
+      .bottom-shield { display: none; }
+    }
   </style>
 </head>
 <body>
+  <div class="bottom-shield" aria-hidden="true"></div>
   <nav class="nav" id="nav">
     <a href="index.html" class="nav-logo" onclick="event.preventDefault(); window.scrollTo(0, 0); window.location.replace('index.html?r=' + Date.now());">
       <img src="images/logopng.png" alt="Quartz Mølle" class="brand-mark" />
