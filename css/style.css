@@ -210,16 +210,14 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Keep the centered content (title, text, buttons) inside the small viewport
-     so nothing ever sits on top of the black area at the bottom of the section. */
-  padding-bottom: calc(100lvh - 100svh);
 }
 
 .video-bg {
   position: fixed;
-  inset: 0; /* pin to all four edges so the video fills the current viewport */
-  width: 100%;
-  height: 100%;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100lvh; /* largest viewport height - fills under iOS bottom bar entirely */
   object-fit: cover;
   z-index: 0;
   opacity: 0;
@@ -230,9 +228,10 @@ body {
 
 .video-overlay {
   position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100lvh;
   z-index: 1;
   background: rgba(0,0,0,0.55);
   opacity: 0;
