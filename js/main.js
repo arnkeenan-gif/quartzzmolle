@@ -157,8 +157,17 @@ function initVideoFade() {
     });
 
     if (closest && closest !== activeSection) {
-      sections.forEach(s => s.classList.remove('is-active'));
-      closest.classList.add('is-active');
+      const idx = sections.indexOf(closest);
+      sections.forEach((s, i) => {
+        s.classList.toggle('is-active', i === idx);
+        const vid = s.querySelector('.video-bg');
+        const ov = s.querySelector('.video-overlay');
+        // Earlier videos stay visible UNDER the active one (later sections sit
+        // on top in stacking order). If the incoming video hasn't finished
+        // loading yet, the previous video shows through instead of black.
+        if (vid) vid.style.opacity = i <= idx ? '1' : '0';
+        if (ov) ov.style.opacity = i === idx ? '1' : '0';
+      });
       activeSection = closest;
     }
 
