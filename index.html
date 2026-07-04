@@ -47,43 +47,9 @@
       min-height: 100lvh;
     }
 
-    /* Solid black bar pinned to the bottom of the screen, behind the Safari
-       search field. It sits ON TOP of the page (above videos and text), so
-       everything scrolls in underneath it and only becomes visible above it.
-       Looks like part of the phone, not the website. */
-    @media (max-width: 768px) {
-      .bottom-shield {
-        position: fixed;
-        left: 0;
-        right: 0;
-        bottom: -300px; /* a hidden 300px solid tail hangs below the screen edge */
-        height: 320px;  /* only 20px visible: a small, discreet fade into the
-                           black behind the Safari bar. A JS tracker (bottom of
-                           this file) pins it to the real visible screen edge
-                           frame by frame, so it needs no bulk - the soft 20px
-                           just absorbs the last 1-2 frames of lag that used to
-                           draw the line. */
-        background: linear-gradient(to bottom,
-          rgba(0,0,0,0)    0px,
-          rgba(0,0,0,0.35) 8px,
-          rgba(0,0,0,0.75) 14px,
-          #000             20px,
-          #000             100%);
-        /* Like nike.com: only visible while the page sits at the top (Safari
-           bar expanded). The moment you scroll, it fades away completely and
-           the video runs edge to edge. */
-        transition: opacity 0.35s ease;
-        z-index: 50; /* above videos/overlays/sections, below nav (100), menu (99) and cart (300) */
-        pointer-events: none;
-      }
-    }
-    @media (min-width: 769px) {
-      .bottom-shield { display: none; }
-    }
   </style>
 </head>
 <body>
-  <div class="bottom-shield" aria-hidden="true"></div>
   <nav class="nav" id="nav">
     <a href="index.html" class="nav-logo" onclick="event.preventDefault(); window.scrollTo(0, 0); window.location.replace('index.html?r=' + Date.now());">
       <img src="images/logopng.png" alt="Quartz Mølle" class="brand-mark" />
@@ -284,44 +250,5 @@
     })();
   </script>
 
-  <script>
-    /* Pin the small bottom fade to the REAL visible screen edge, frame by
-       frame, via the visualViewport API. Fixed elements are only moved by
-       Safari AFTER its toolbar animation, so without this they lag behind
-       and expose a sliver of video. The tracker removes almost all of that
-       lag; the fade's soft 20px absorbs the last frame or two. */
-    (function () {
-      var shield = document.querySelector('.bottom-shield');
-      var vv = window.visualViewport;
-      if (!shield || !vv) return;
-      var raf = null;
-      var until = 0;
-      function place() {
-        shield.style.bottom = 'auto';
-        shield.style.top = (vv.offsetTop + vv.height - 20) + 'px';
-        // Nike-style: shown only at the very top of the page; hidden as soon
-        // as the user scrolls (and back again when they return to the top).
-        var y = window.scrollY || window.pageYOffset || 0;
-        shield.style.opacity = y <= 10 ? '1' : '0';
-      }
-      function tick(now) {
-        place();
-        if (now < until) {
-          raf = requestAnimationFrame(tick);
-        } else {
-          raf = null;
-        }
-      }
-      function kick() {
-        until = performance.now() + 800;
-        if (!raf) raf = requestAnimationFrame(tick);
-      }
-      vv.addEventListener('resize', kick);
-      vv.addEventListener('scroll', kick);
-      window.addEventListener('scroll', kick, { passive: true });
-      window.addEventListener('orientationchange', kick);
-      place();
-    })();
-  </script>
 </body>
 </html>
