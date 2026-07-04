@@ -1,9 +1,7 @@
 /* ============================================================
    QUARTZ MØLLE — CSS
    Blue #273071 accent, readable Inter typography
-   Headings: Fraunces (artisan serif) — see override block at the end
    ============================================================ */
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap');
 
 :root {
   --cream: #faf7f2;
@@ -1902,31 +1900,3 @@ body.past-videos .video-overlay {
   .suggested-grid { gap: 1.25rem; }
 }
 
-/* ============================================================
-   HEADINGS — Fraunces (artisan serif with bakery/craft character)
-   Body text stays Inter for readability; only display text changes.
-   ============================================================ */
-.hero-title,
-.text-block h2,
-.highlights-header h2.dark,
-.why-text h2,
-.contact-info h2,
-.shop-hero h1,
-.product-hero-band h1,
-.product-page-name,
-.forhandlere-hero h1,
-.suggested-header h2,
-.modal-content h2,
-.cart-head h2,
-.product-card-name {
-  font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
-}
-
-.hero-title {
-  font-weight: 600;
-  letter-spacing: 0.04em;
-}
-
-.product-card-name {
-  font-weight: 600;
-}
