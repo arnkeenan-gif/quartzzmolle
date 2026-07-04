@@ -31,6 +31,19 @@
     #mobileMenu.open { display: flex !important; }
     #vid1 { opacity: 1; }
 
+    /* Fixed elements get a viewport that stops just above Safari's minimized
+       address pill - normal in-flow content (like the shop's product cards)
+       runs all the way down behind the pill. Extend the fixed videos ~110px
+       past their viewport so they too fill the strip behind the pill, and
+       the black band at the bottom disappears completely. */
+    @media (max-width: 768px) {
+      .video-bg,
+      .video-overlay {
+        height: calc(100vh + 110px);
+        height: calc(100lvh + 110px);
+      }
+    }
+
     /* Force every video/hero section to span the LARGE viewport height (100lvh)
        so the section and its video always extend down behind the Safari bar.
        The section can then never end at the small viewport (100svh/100vh) and
