@@ -61,9 +61,16 @@ function renderProduct(product) {
   const inner = document.getElementById('productInner');
   document.title = `${product.name} – ${product.type} | Quartz Mølle`;
 
-  const certsHTML = (product.certifications || []).map(c =>
-    `<span class="cert-tag">${esc(c)}</span>`
-  ).join('');
+  // Show the REAL certification logos (EU organic leaf + red Statskontrolleret
+  // økologisk mark) instead of text pills. The EU logo already carries the
+  // "DK-ØKO-100 / EU-jordbrug" text, so no extra pills are needed.
+  const certsArr = product.certifications || [];
+  const hasEU = certsArr.some(c => /eu|øko/i.test(String(c)));
+  const hasStats = certsArr.some(c => /stats/i.test(String(c)));
+  let certsHTML = '';
+  if (hasEU) certsHTML += `<img src="images/eu-organic.jpg" alt="EU Økologi – DK-ØKO-100" loading="lazy" style="height:46px;width:auto;border-radius:6px;display:block" />`;
+  if (hasStats) certsHTML += `<img src="images/statskontrolleret.png" alt="Statskontrolleret Økologisk" loading="lazy" style="height:46px;width:auto;border-radius:6px;display:block;background:#fff" />`;
+  if (!certsHTML) certsHTML = certsArr.map(c => `<span class="cert-tag">${esc(c)}</span>`).join('');
 
   // No weight selected yet → show branded preview image + lowest price
   const defaultImage = product.previewImage || product.weights[0].image;
