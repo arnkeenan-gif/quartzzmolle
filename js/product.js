@@ -68,8 +68,8 @@ function renderProduct(product) {
   const hasEU = certsArr.some(c => /eu|øko/i.test(String(c)));
   const hasStats = certsArr.some(c => /stats/i.test(String(c)));
   let certsHTML = '';
-  if (hasEU) certsHTML += `<img src="images/eu-organic.jpg" alt="EU Økologi – DK-ØKO-100" loading="lazy" style="height:46px;width:auto;border-radius:6px;display:block" />`;
-  if (hasStats) certsHTML += `<img src="images/statskontrolleret.png" alt="Statskontrolleret Økologisk" loading="lazy" style="height:46px;width:auto;border-radius:6px;display:block;background:#fff" />`;
+  if (hasEU) certsHTML += `<img src="images/eu-organic-clean.png" alt="EU Økologi – DK-ØKO-100" loading="lazy" style="height:44px;width:auto;border-radius:5px;display:block" />`;
+  if (hasStats) certsHTML += `<img src="images/statskontrolleret-clean.png" alt="Statskontrolleret Økologisk" loading="lazy" style="height:48px;width:auto;display:block" />`;
   if (!certsHTML) certsHTML = certsArr.map(c => `<span class="cert-tag">${esc(c)}</span>`).join('');
 
   // No weight selected yet → show branded preview image + lowest price
