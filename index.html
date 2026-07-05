@@ -67,6 +67,13 @@
       will-change: transform;
     }
 
+    /* The sections are 80px taller than the screen, which pushed the centred
+       hero content ~40px too far down. Pull it back up so logo, title and
+       button sit in the middle of the VISIBLE screen. */
+    .hero-content {
+      margin-top: -80px;
+    }
+
   </style>
 </head>
 <body>
