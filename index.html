@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#000000" />
+  <meta name="theme-color" content="#273071" />
   <title>Quartz Mølle – Økologisk Mel fra Stenkværn</title>
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" href="/images/favicon.png">
@@ -14,6 +14,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
+    /* Blue at the top of the canvas so the iPhone status-bar strip matches
+       the blue nav bar; black at the bottom behind the footer/videos. */
+    html {
+      background-color: #273071 !important;
+      background-image: linear-gradient(to bottom, #273071 0%, #273071 35%, #000 65%, #000 100%) !important;
+      background-attachment: fixed !important;
+    }
+
     .video-bg { pointer-events: none; }
     /* Hide the native play/pause control overlay on the background videos (looks unprofessional) */
     .video-bg::-webkit-media-controls,
