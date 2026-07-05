@@ -17,7 +17,7 @@
 
   --text: #1a1611;
   --text-light: rgba(255,255,255,0.9);
-  --nav-h: 72px;
+  --nav-h: 54px;
 }
 
 /* html brand blue only for initial paint flash before body covers it */
@@ -1928,7 +1928,7 @@ body:has(.product-hero-band) .nav {
   gap: 0;
   background: var(--cream);
   border: none;
-  padding: 0 1.8rem;
+  padding: 0 1.5rem;
   border-radius: 0;
   cursor: pointer;
 }
@@ -1936,7 +1936,7 @@ body:has(.product-hero-band) .nav {
 .nav-burger::before {
   content: 'MENU';
   font-family: 'Inter', sans-serif;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   font-weight: 800;
   letter-spacing: 0.06em;
   color: var(--dark);
@@ -1944,7 +1944,7 @@ body:has(.product-hero-band) .nav {
 
 /* logo becomes the big wordmark on the right */
 .nav-logo { order: 5; margin-left: 0.9rem; }
-.nav-logo img.brand-mark { height: 54px; }
+.nav-logo img.brand-mark { height: 42px; }
 .nav-logo img.eco-mark { display: none; }
 
 /* cart + language buttons sit between the auto-gap and the logo */
