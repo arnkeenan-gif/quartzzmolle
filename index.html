@@ -39,9 +39,16 @@
        fixed-element seam/lag artefact we fought at the screen edges. */
     .video-section {
       position: relative;
-      height: 100vh;        /* fallback for older browsers */
-      height: 100lvh;
-      min-height: 100lvh;
+      /* 80px taller than the screen so the NEXT section's video never peeks
+         out behind Safari's bottom pill before you actually scroll to it */
+      height: calc(100vh + 80px);   /* fallback for older browsers */
+      height: calc(100lvh + 80px);
+      min-height: calc(100lvh + 80px);
+    }
+    /* Pull the first section up behind the iOS status bar so the video also
+       fills the top of the screen (only sky is lost above the fold) */
+    .video-section:first-of-type {
+      margin-top: -80px;
     }
     .video-bg,
     .video-overlay {
