@@ -76,6 +76,20 @@ function renderProduct(product) {
   const defaultImage = product.previewImage || product.weights[0].image;
   const defaultPrice = product.weights[0].price;
 
+  // Small gallery under the main image: picture 1 is the new pack photo
+  // (previewImage), picture 2 is the classic branded artwork (altImage)
+  const galleryImages = [product.previewImage, product.altImage]
+    .filter(Boolean).map(safeUrl).filter(Boolean);
+  const thumbsHTML = galleryImages.length > 1 ? `
+    <div id="productThumbs" style="display:flex;gap:10px;margin-top:12px;justify-content:center">
+      ${galleryImages.map((src, i) => `
+        <button type="button" class="product-thumb" data-src="${esc(src)}"
+                style="width:72px;height:72px;padding:0;border:2px solid ${i === 0 ? '#273071' : 'transparent'};border-radius:10px;overflow:hidden;background:#fff;cursor:pointer">
+          <img src="${esc(src)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block" />
+        </button>
+      `).join('')}
+    </div>` : '';
+
   const weightBtns = product.weights.map((wt, i) => `
     <button class="weight-btn" data-weight-index="${i}">
       ${esc(wt.label)}
@@ -87,6 +101,7 @@ function renderProduct(product) {
       <a href="shop.html" class="btn-back">← Tilbage til shop</a>
       <img src="${esc(safeUrl(defaultImage))}" alt="${esc(product.name)}"
            class="product-page-img" id="productImg" />
+      ${thumbsHTML}
     </div>
     <div class="product-page-info">
       ${getBadgeHTML(product.badge)}
@@ -154,6 +169,23 @@ function renderProduct(product) {
   inner.querySelectorAll('.weight-btn').forEach(btn => {
     btn.addEventListener('click', () => selectWeight(parseInt(btn.dataset.weightIndex, 10)));
   });
+
+  // Wire up gallery thumbnails (fade-swap the main image, highlight active)
+  inner.querySelectorAll('.product-thumb').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const img = document.getElementById('productImg');
+      if (!img) return;
+      img.style.transition = 'opacity 0.25s';
+      img.style.opacity = '0';
+      setTimeout(() => {
+        img.src = btn.dataset.src;
+        img.style.opacity = '1';
+      }, 200);
+      inner.querySelectorAll('.product-thumb').forEach(b => {
+        b.style.borderColor = b === btn ? '#273071' : 'transparent';
+      });
+    });
+  });
   document.getElementById('buyBtn').addEventListener('click', handleBuy);
 
   // Wire up quantity stepper
@@ -198,6 +230,11 @@ function selectWeight(index) {
 
   document.querySelectorAll('.weight-btn').forEach((btn, i) => {
     btn.classList.toggle('active', i === index);
+  });
+
+  // The main image now shows the size's pack shot, so no gallery thumb is active
+  document.querySelectorAll('.product-thumb').forEach(b => {
+    b.style.borderColor = 'transparent';
   });
 }
 
