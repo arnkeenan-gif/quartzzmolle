@@ -14,12 +14,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
-    /* Blue at the top of the canvas so the iPhone status-bar strip matches
-       the blue nav bar; black at the bottom behind the footer/videos. */
+    /* Blue at the very top of the canvas so the iPhone status-bar strip is
+       blue when the page opens - but the gradient scrolls WITH the page
+       (no fixed attachment), so the blue strip slides away as you scroll
+       instead of following you down. Everything below is black. */
     html {
-      background-color: #273071 !important;
-      background-image: linear-gradient(to bottom, #273071 0%, #273071 35%, #000 65%, #000 100%) !important;
-      background-attachment: fixed !important;
+      background-color: #000 !important;
+      background-image: linear-gradient(to bottom, #273071 0px, #273071 160px, #000 560px) !important;
+      background-repeat: no-repeat !important;
     }
 
     .video-bg { pointer-events: none; }
