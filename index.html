@@ -54,17 +54,15 @@
       opacity: 1 !important; /* each section always shows its own video */
     }
 
-    /* Fade-through-dark transitions: each video darkens softly towards its
-       own top and bottom edge, so where one section ends and the next begins
-       the two meet in a soft dark zone instead of a hard cut - the closest
-       thing to the old crossfade that works with scrolling (glass-friendly)
-       videos. */
-    .video-overlay {
-      background: linear-gradient(to bottom,
-        rgba(0,0,0,0.92) 0%,
-        rgba(0,0,0,0.55) 14%,
-        rgba(0,0,0,0.55) 84%,
-        rgba(0,0,0,0.92) 100%) !important;
+    /* PARALLAX: each video is 34% taller than its section and gets shifted
+       by the script at the bottom of this file, so it moves slower than the
+       page while you scroll - the premium depth effect. The section clips it
+       (overflow hidden), and it stays normal scrolling content, so the glass
+       bars keep working. */
+    .video-bg {
+      height: 134% !important;
+      top: -17% !important;
+      will-change: transform;
     }
 
   </style>
@@ -267,6 +265,36 @@
         initAll();
         document.removeEventListener('touchstart', handler);
       });
+    })();
+  </script>
+
+  <script>
+    /* PARALLAX: shift each section's video slightly against the scroll
+       direction, so it glides slower than the page (depth effect). Runs on
+       requestAnimationFrame while scrolling - cheap and smooth. */
+    (function () {
+      var sections = Array.prototype.slice.call(document.querySelectorAll('.video-section'));
+      if (!sections.length) return;
+      var ticking = false;
+      function apply() {
+        ticking = false;
+        var vh = window.innerHeight;
+        sections.forEach(function (sec) {
+          var vid = sec.querySelector('.video-bg');
+          if (!vid) return;
+          var r = sec.getBoundingClientRect();
+          if (r.bottom < 0 || r.top > vh) return; // off screen
+          // -1 (section below view) ... 0 (centered) ... +1 (section above)
+          var p = (vh / 2 - (r.top + r.height / 2)) / vh;
+          vid.style.transform = 'translateY(' + (p * vh * 0.14).toFixed(1) + 'px)';
+        });
+      }
+      function onScroll() {
+        if (!ticking) { ticking = true; requestAnimationFrame(apply); }
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onScroll);
+      apply();
     })();
   </script>
 
