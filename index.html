@@ -74,6 +74,41 @@
       margin-top: -120px;
     }
 
+    /* SORTIMENT section: the group photo's background is the exact same
+       cream (#faf7f2) as the section, so the bags float directly on the
+       page - no visible photo edges. */
+    .sortiment {
+      position: relative;
+      z-index: 2;
+      background: #faf7f2;
+      padding: 5rem 1.25rem 4.5rem;
+      text-align: center;
+    }
+    .sortiment h2 {
+      font-family: 'Inter', sans-serif;
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 700;
+      color: var(--dark);
+      letter-spacing: -0.01em;
+      margin: 0.45rem 0 0.55rem;
+    }
+    .sortiment .season-note {
+      font-size: 0.88rem;
+      color: #8a8378;
+      font-style: italic;
+      margin: 0 0 0.9rem;
+    }
+    .sortiment-lead {
+      color: #4a463f;
+      max-width: 560px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+    .sortiment-img {
+      display: block;
+      width: min(1150px, 100%);
+      margin: 2.4rem auto 2.5rem;
+    }
   </style>
 </head>
 <body>
@@ -135,19 +170,15 @@
     </div>
   </section>
 
-  <!-- VIDEO 3 - PRODUCTS -->
-  <section class="video-section" id="vs3">
-    <video class="video-bg" id="vid3" autoplay muted loop playsinline webkit-playsinline preload="auto" disablepictureinpicture disableremoteplayback controlslist="nodownload nofullscreen noremoteplayback noplaybackrate" tabindex="-1">
-      <source src="https://pub-a9fcbb930b0c4014b8286f9c245143a9.r2.dev/0602%281%29.mp4" type="video/mp4" />
-    </video>
-    <div class="video-overlay overlay-medium"></div>
-    <div class="text-block text-right">
-      <span class="eyebrow">Vores sortiment</span>
-      <h2>9 varianter af enestående mel</h2>
-      <p class="season-note">Varianterne skifter naturligvis efter sæsonen</p>
-      <p>Fra Dalarna til Purpurhvede – hvert mel har sin egen karakter, smag og bagningsegenskaber.</p>
-      <a href="shop.html" class="btn-primary">Se alle produkter</a>
-    </div>
+  <!-- SORTIMENT - all flour bags on the exact site cream, so image and
+       section melt together as one clean block -->
+  <section class="sortiment" id="vs3">
+    <span class="eyebrow eyebrow-dark">Vores sortiment</span>
+    <h2>9 varianter af enestående mel</h2>
+    <p class="season-note">Varianterne skifter naturligvis efter sæsonen</p>
+    <p class="sortiment-lead">Fra Dalarna til Purpurhvede – hvert mel har sin egen karakter, smag og bagningsegenskaber.</p>
+    <img src="images/sortiment-poser.jpg" alt="Alle Quartz Mølle meltyper side om side" class="sortiment-img" loading="lazy" />
+    <a href="shop.html" class="btn-dark">Se alle produkter</a>
   </section>
 
   <!-- BESTSELLERS -->
