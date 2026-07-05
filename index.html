@@ -54,6 +54,20 @@
       opacity: 1 !important; /* each section always shows its own video */
     }
 
+    /* CURTAIN TRANSITIONS: every video section sticks to the top of the
+       screen, so the previous video STAYS STILL while the next one slides up
+       over it - like cards laid on top of each other (Apple uses the same
+       effect). Much closer to the old crossfade feel, and it works with the
+       glass bars because sticky content is normal scrolling content. */
+    .video-section {
+      position: sticky;
+      top: 0;
+    }
+    /* Soft shadow on the incoming section's top edge for depth */
+    .video-section + .video-section {
+      box-shadow: 0 -28px 56px rgba(0, 0, 0, 0.5);
+    }
+
   </style>
 </head>
 <body>
