@@ -1900,3 +1900,54 @@ body.past-videos .video-overlay {
   .suggested-grid { gap: 1.25rem; }
 }
 
+
+/* ── MEYERS-STYLE HEADER ──
+   Solid brand-blue bar on every page. The MENU button is a cream block
+   flush in the left corner (like meyers.dk), and the logo sits big on the
+   right so it fills the blue bar. Nav links/CTA live in the fullscreen
+   menu overlay instead - on all screen sizes. */
+.nav,
+.nav.nav-light,
+body:has(.product-hero-band) .nav {
+  background: var(--brand-blue);
+  padding: 0 1.1rem 0 0;
+  /* keep the bar's content below the iPhone notch; the strip above shows
+     the page canvas colour, which the pages set to the same blue */
+  padding-top: env(safe-area-inset-top, 0px);
+  height: calc(var(--nav-h) + env(safe-area-inset-top, 0px));
+}
+
+.nav-links, .nav-cta { display: none !important; }
+
+.nav-burger {
+  display: flex !important;
+  order: -1;
+  align-self: stretch;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  background: var(--cream);
+  border: none;
+  padding: 0 1.8rem;
+  border-radius: 0;
+  cursor: pointer;
+}
+.nav-burger span { display: none; }
+.nav-burger::before {
+  content: 'MENU';
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--dark);
+}
+
+/* logo becomes the big wordmark on the right */
+.nav-logo { order: 5; margin-left: 0.9rem; }
+.nav-logo img.brand-mark { height: 54px; }
+.nav-logo img.eco-mark { display: none; }
+
+/* cart + language buttons sit between the auto-gap and the logo */
+.cart-btn { margin-left: auto; }
+.nav.nav-light .cart-btn { color: #fff; }
+.nav.nav-light .cart-count { background: #fff; color: var(--dark); }
