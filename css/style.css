@@ -1314,12 +1314,9 @@ body.past-videos .video-overlay {
 
 /* ── RESPONSIVE ── */
 @media (max-width: 768px) {
-  /* The nav scrolls away WITH the page - a fixed nav sits behind Apple's
-     status bar and tints it blue permanently ("follows" while scrolling).
-     Exception: the single product page keeps its pinned nav (behaves
-     exactly as before). */
-  .nav { position: absolute; }
-  body:has(.product-hero-band) .nav { position: fixed; }
+  /* The nav is pinned on every page (same behaviour as the product page):
+     the bar follows along and fades out/in with the scroll direction. */
+  .nav { position: fixed; }
   .nav-links, .nav-cta { display: none; }
   .nav-burger { display: flex; }
   .nav-logo img.eco-mark { display: none; }
