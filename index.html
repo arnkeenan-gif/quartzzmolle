@@ -14,19 +14,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
-    /* Canvas: blue at the very top (status-bar strip), CREAM below - the
-       strip Safari reserves at the bottom shows the canvas colour, so the
-       bar is cream. */
-    /* background-COLOR is what iOS paints in the tiny sliver at the very
-       bottom edge (home indicator) - pure black melts into the phone edge.
-       The gradient IMAGE handles the rest of the canvas: blue top strip,
-       light in the video zone, dark below. */
+    /* Canvas: blue at the very top (status-bar strip), cream below - plain
+       px stops only (calc()/lvh inside gradients can fail on iOS and kill
+       the whole gradient). background-COLOR black so the home-indicator
+       sliver melts into the screen edge. */
     html {
       background-color: #000 !important;
-      background-image: linear-gradient(to bottom,
-        #273071 0px, #273071 160px,
-        #faf7f2 480px, #faf7f2 calc(245 * 1lvh),
-        #000 calc(280 * 1lvh)) !important;
+      background-image: linear-gradient(to bottom, #273071 0px, #273071 160px, #faf7f2 480px) !important;
       background-repeat: no-repeat !important;
     }
     body { background: transparent !important; }
@@ -38,7 +32,11 @@
        its glass bars, so the bottom bar is completely transparent. The
        empty spacer section (#vs2b) is where "Fra mark til mel" stays
        pinned while Bestsellers slides up over it (curtain). */
-    #videoStage { position: relative; }
+    /* overflow:hidden = the videos are CLIPPED scrolling content. This is
+       the exact mechanism from the proven glass version: clipped, non-fixed
+       layers get rendered all the way into the bottom safe-area, so the
+       strip becomes real glass instead of showing the canvas colour. */
+    #videoStage { position: relative; overflow: hidden; }
     #videoStage .video-section { position: static; }
     #videoStage .video-bg,
     #videoStage .video-overlay {
