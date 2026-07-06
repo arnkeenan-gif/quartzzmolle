@@ -18,8 +18,11 @@
        strip Safari reserves at the bottom shows the canvas colour, so the
        bar is cream. */
     html {
-      background-color: #faf7f2 !important;
-      background-image: linear-gradient(to bottom, #273071 0px, #273071 160px, #faf7f2 480px) !important;
+      background-color: #101014 !important;
+      background-image: linear-gradient(to bottom,
+        #273071 0px, #273071 160px,
+        #faf7f2 480px, #faf7f2 calc(245 * 1lvh),
+        #101014 calc(280 * 1lvh)) !important;
       background-repeat: no-repeat !important;
     }
     body { background: transparent !important; }
@@ -47,6 +50,24 @@
       height: 112lvh !important;
       will-change: transform;
     }
+    /* Modern browsers: the pin runs as a CSS scroll-driven animation on
+       the compositor - perfectly in sync with the scroll, no JS lag, no
+       jumping. (The JS below only runs as fallback on older browsers.)
+       The stage is 100+100+45 = 245lvh tall, and the pin follows the
+       scroll 1:1 through it. */
+    @supports (animation-timeline: scroll()) {
+      #videoStage .video-bg,
+      #videoStage .video-overlay {
+        animation: qm-pin linear both;
+        animation-timeline: scroll(root);
+        animation-range: 0px calc(245 * 1lvh);
+      }
+      @keyframes qm-pin {
+        from { transform: translateY(0); }
+        to   { transform: translateY(calc(245 * 1lvh)); }
+      }
+    }
+
     /* shorter curtain zone - video 2 doesn't scroll on forever */
     #vs2b {
       height: 45vh;
@@ -321,6 +342,8 @@
     (function () {
       var stage = document.getElementById('videoStage');
       if (!stage) return;
+      // modern browsers pin via the CSS scroll-driven animation instead
+      if (window.CSS && CSS.supports && CSS.supports('animation-timeline: scroll()')) return;
       var els = stage.querySelectorAll('.video-bg, .video-overlay');
       var ticking = false;
       function apply() {
