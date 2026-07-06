@@ -11,27 +11,6 @@
   document.head.appendChild(s);
 })();
 
-// ── DYNAMIC STATUS-BAR COLOUR (iOS) ──
-// Apple's status-bar strip can only be coloured via theme-color, and a fixed
-// theme-color follows you while scrolling. So we switch it live: brand blue
-// while you are at the top of the page, dark once you scroll down - blue at
-// the top, "anchored to the page". Pages that declare their own static
-// theme-color meta (product, checkout) are left alone.
-(function () {
-  if (document.querySelector('meta[name="theme-color"]')) return;
-  var meta = document.createElement('meta');
-  meta.name = 'theme-color';
-  document.head.appendChild(meta);
-  var current = '';
-  function apply() {
-    var color = (window.scrollY || window.pageYOffset || 0) < 240 ? '#273071' : '#000000';
-    if (color !== current) { current = color; meta.setAttribute('content', color); }
-  }
-  window.addEventListener('scroll', apply, { passive: true });
-  window.addEventListener('resize', apply);
-  apply();
-})();
-
 // ── MOBILE MENU ──
 const burger = document.getElementById('burger');
 const mobileMenu = document.getElementById('mobileMenu');
