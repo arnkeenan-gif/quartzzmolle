@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;800&display=swap");
 /* ============================================================
    QUARTZ MØLLE — CSS
    Blue #273071 accent, readable Inter typography
@@ -1981,6 +1982,10 @@ body:has(.product-hero-band) .nav {
   unicode-range: U+00D8, U+00F8;
 }
 
+/* ── MEYERS-STYLE HEADINGS + PRODUCT DISPLAY TEXT ──
+   Barlow Semi Condensed 800 is the closest free match to meyers.dk's custom
+   "Meyer Grand" (72% letterform overlap). 'Meyers Oe' stays first so the Ø/ø
+   keep the slash-inside-the-ring look; Barlow renders every other letter. */
 .hero-title,
 .text-block h2,
 .highlights-header h2.dark,
@@ -1991,5 +1996,20 @@ body:has(.product-hero-band) .nav {
 .product-page-name,
 .forhandlere-hero h1,
 .om-hero h1 {
-  font-family: 'Meyers Oe', 'Inter', system-ui, sans-serif;
+  font-family: 'Meyers Oe', 'Barlow Semi Condensed', 'Inter', system-ui, sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
 }
+
+/* product display boxes: the cards (shop + bestsellers + suggested) and the
+   product page title/type — same Meyers font, kept in normal case so names
+   like "Mariagertoba" read cleanly */
+.product-card-name,
+.product-card-sub,
+.product-page-type {
+  font-family: 'Meyers Oe', 'Barlow Semi Condensed', 'Inter', sans-serif;
+  font-weight: 800;
+}
+.product-card-sub,
+.product-page-type { font-weight: 600; }
