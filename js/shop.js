@@ -55,9 +55,17 @@ function lowestPrice(p) {
   return ws.length ? Math.min(...ws) : Infinity;
 }
 
-// Whole-grain vs sifted classification from the product type text.
-function isFuldkorn(p) { return /fuldkorn/i.test(p.type || ''); }
-function isFintsigtet(p) { return /fintsigtet/i.test(p.type || ''); }
+// Flour-type classification from the product type text. The site has three:
+// Fintsigtet (Type 70), Mellemsigtet (Type 85) and Fuldkorn (all "fuldkorn").
+function isFintsigtet(p)   { return /fintsigtet/i.test(p.type || ''); }
+function isMellemsigtet(p) { return /mellemsigtet/i.test(p.type || ''); }
+function isFuldkorn(p)     { return /fuldkorn/i.test(p.type || ''); }
+
+// Sort: bring the chosen flour type to the top, keeping catalogue order
+// within each group (stable), so the shop reads as "grouped by type".
+function bringToTop(arr, test) {
+  return arr.slice().sort((a, b) => (test(b) ? 1 : 0) - (test(a) ? 1 : 0));
+}
 
 function sortProducts(list) {
   const arr = [...list];
@@ -65,10 +73,9 @@ function sortProducts(list) {
     case 'bestseller':
       return arr.sort((a, b) =>
         (b.badge === 'bestseller') - (a.badge === 'bestseller'));
-    case 'fuldkorn':
-      return arr.sort((a, b) => isFuldkorn(b) - isFuldkorn(a));
-    case 'fintsigtet':
-      return arr.sort((a, b) => isFintsigtet(b) - isFintsigtet(a));
+    case 'fintsigtet':   return bringToTop(arr, isFintsigtet);
+    case 'mellemsigtet': return bringToTop(arr, isMellemsigtet);
+    case 'fuldkorn':     return bringToTop(arr, isFuldkorn);
     case 'price-asc':
       return arr.sort((a, b) => lowestPrice(a) - lowestPrice(b));
     case 'price-desc':
