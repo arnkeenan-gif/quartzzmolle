@@ -53,20 +53,21 @@
       will-change: transform;
     }
     /* Modern browsers: the pin runs as a CSS scroll-driven animation on
-       the compositor - perfectly in sync with the scroll, no JS lag, no
-       jumping. (The JS below only runs as fallback on older browsers.)
-       The stage is 100+100+45 = 245lvh tall, and the pin follows the
-       scroll 1:1 through it. */
+       the compositor - perfectly in sync with the scroll, no JS lag. The
+       stage height is measured by JS and provided as a plain pixel value
+       (--qm-stage-h) because iOS rejects calc()/lvh in these spots. A JS
+       self-test below switches to the script pin if the animation is not
+       actually driving the transform. */
     @supports (animation-timeline: scroll()) {
       #videoStage .video-bg,
       #videoStage .video-overlay {
         animation: qm-pin linear both;
         animation-timeline: scroll(root);
-        animation-range: 0px calc(245 * 1lvh);
+        animation-range: 0px var(--qm-stage-h, 245vh);
       }
       @keyframes qm-pin {
         from { transform: translateY(0); }
-        to   { transform: translateY(calc(245 * 1lvh)); }
+        to   { transform: translateY(var(--qm-stage-h, 245vh)); }
       }
     }
 
@@ -339,28 +340,74 @@
   </script>
 
   <script>
-    /* Pin the videos to the screen with transforms (no fixed elements, so
-       no Safari bar). Runs on requestAnimationFrame - cheap and smooth. */
+    /* Video pinning. Preferred: the CSS scroll-driven animation above
+       (compositor = perfectly smooth). This script (1) measures the stage
+       height into --qm-stage-h, (2) runs a JS pin on browsers without the
+       CSS feature, and (3) SELF-TESTS the CSS path while you scroll - if
+       the browser claims support but the animation isn't really moving the
+       videos, it switches to the JS pin automatically. */
     (function () {
       var stage = document.getElementById('videoStage');
       if (!stage) return;
-      // modern browsers pin via the CSS scroll-driven animation instead
-      if (window.CSS && CSS.supports && CSS.supports('animation-timeline: scroll()')) return;
       var els = stage.querySelectorAll('.video-bg, .video-overlay');
-      var ticking = false;
-      function apply() {
-        ticking = false;
+      if (!els.length) return;
+
+      function setStageVar() {
+        document.documentElement.style.setProperty('--qm-stage-h', stage.offsetHeight + 'px');
+      }
+      setStageVar();
+      window.addEventListener('resize', setStageVar);
+
+      function currentPin() {
         var r = stage.getBoundingClientRect();
-        var vh = window.innerHeight;
-        var pin = Math.min(Math.max(-r.top, 0), stage.offsetHeight);
+        return Math.min(Math.max(-r.top, 0), stage.offsetHeight);
+      }
+      function transformY(el) {
+        var t = getComputedStyle(el).transform;
+        if (!t || t === 'none') return 0;
+        var m = t.match(/matrix\(([^)]+)\)/);
+        return m ? parseFloat(m[1].split(',')[5]) : 0;
+      }
+
+      var jsActive = false;
+      var ticking = false;
+      function applyJs() {
+        ticking = false;
+        var pin = currentPin();
         for (var i = 0; i < els.length; i++) {
           els[i].style.transform = 'translateY(' + pin.toFixed(1) + 'px)';
         }
       }
-      function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(apply); } }
-      window.addEventListener('scroll', onScroll, { passive: true });
-      window.addEventListener('resize', onScroll);
-      apply();
+      function onScrollJs() {
+        if (!ticking) { ticking = true; requestAnimationFrame(applyJs); }
+      }
+      function enableJs() {
+        if (jsActive) return;
+        jsActive = true;
+        window.addEventListener('scroll', onScrollJs, { passive: true });
+        window.addEventListener('resize', onScrollJs);
+        applyJs();
+      }
+
+      var cssPin = window.CSS && CSS.supports && CSS.supports('animation-timeline: scroll()');
+      if (!cssPin) { enableJs(); return; }
+
+      /* CSS path claimed - verify it actually works once there is real
+         scroll to judge by. */
+      var checks = 0, settle = null;
+      function selfTest() {
+        if (jsActive) { window.removeEventListener('scroll', onScrollTest); return; }
+        var pin = currentPin();
+        if (pin < 80) return;                    // not enough scroll yet
+        var actual = transformY(els[0]);
+        if (Math.abs(actual - pin) > 100) {
+          enableJs();                            // CSS pin is broken here
+        } else if (++checks >= 2) {
+          window.removeEventListener('scroll', onScrollTest); // CSS pin verified
+        }
+      }
+      function onScrollTest() { clearTimeout(settle); settle = setTimeout(selfTest, 150); }
+      window.addEventListener('scroll', onScrollTest, { passive: true });
     })();
   </script>
 
