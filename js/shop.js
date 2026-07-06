@@ -19,27 +19,63 @@ function renderShopGrid(products) {
   }
 
   grid.innerHTML = products.map(p => {
-    // Use branded preview image for cards — avoids the 3kg vs 12,5kg confusion.
+    // Use branded preview image for cards.
     // Guard weights defensively in case a merged Supabase row lacks them.
-    const w = (p.weights && p.weights[0]) || {};
+    const weights = (p.weights && p.weights.length) ? p.weights : [];
+    const w = weights[0] || {};
     const img = p.previewImage || w.image || '';
     const price = w.price;
-    const badgeHTML = p.badge === 'bestseller'
-      ? `<span class="product-card-badge badge-bestseller">Bestseller</span>`
+
+    // Show every available pack size as a chip so it's clear both the 3 kg
+    // and the 12,5 kg (or 11 kg) bag exist. No bestseller badge in the shop.
+    const sizesHTML = weights.length
+      ? `<div class="product-card-sizes">${weights.map(wt =>
+          `<span class="size-chip">${escapeHTML(wt.label)}</span>`).join('')}</div>`
       : '';
 
     return `
       <a href="product.html?id=${encodeURIComponent(p.id)}" class="product-card">
         <img src="${escapeHTML(safeUrl(img))}" alt="${escapeHTML(p.name + ' ' + p.type)}" class="product-card-img" loading="lazy" />
         <div class="product-card-body">
-          ${badgeHTML}
           <div class="product-card-name">${escapeHTML(p.name)}</div>
           <div class="product-card-sub">${escapeHTML(p.type)}</div>
+          ${sizesHTML}
           <div class="product-card-price">Fra ${escapeHTML(price)},00 kr.</div>
         </div>
       </a>
     `;
   }).join('');
+}
+
+// ── SORTERING ──
+let SHOP_SORT = 'default';
+
+function lowestPrice(p) {
+  const ws = (p.weights || []).map(w => w.price).filter(n => typeof n === 'number');
+  return ws.length ? Math.min(...ws) : Infinity;
+}
+
+// Whole-grain vs sifted classification from the product type text.
+function isFuldkorn(p) { return /fuldkorn/i.test(p.type || ''); }
+function isFintsigtet(p) { return /fintsigtet/i.test(p.type || ''); }
+
+function sortProducts(list) {
+  const arr = [...list];
+  switch (SHOP_SORT) {
+    case 'bestseller':
+      return arr.sort((a, b) =>
+        (b.badge === 'bestseller') - (a.badge === 'bestseller'));
+    case 'fuldkorn':
+      return arr.sort((a, b) => isFuldkorn(b) - isFuldkorn(a));
+    case 'fintsigtet':
+      return arr.sort((a, b) => isFintsigtet(b) - isFintsigtet(a));
+    case 'price-asc':
+      return arr.sort((a, b) => lowestPrice(a) - lowestPrice(b));
+    case 'price-desc':
+      return arr.sort((a, b) => lowestPrice(b) - lowestPrice(a));
+    default:
+      return arr; // catalogue order
+  }
 }
 
 // Only allow http(s)/site-relative image URLs (blocks javascript: etc. in src).
@@ -73,7 +109,7 @@ function applySearch() {
   const query = input ? input.value : '';
   // Vis kun ryd-knappen når der reelt er søgt (ikke ved blanktegn alene).
   if (clearBtn) clearBtn.hidden = !query.trim();
-  renderShopGrid(filterProducts(query));
+  renderShopGrid(sortProducts(filterProducts(query)));
 }
 
 function initShopSearch() {
@@ -83,6 +119,15 @@ function initShopSearch() {
   if (clearBtn) {
     clearBtn.addEventListener('click', () => {
       if (input) { input.value = ''; input.focus(); }
+      applySearch();
+    });
+  }
+  const sort = document.getElementById('shopSort');
+  if (sort) {
+    try { SHOP_SORT = localStorage.getItem('qm_shop_sort') || 'default'; sort.value = SHOP_SORT; } catch (e) {}
+    sort.addEventListener('change', () => {
+      SHOP_SORT = sort.value;
+      try { localStorage.setItem('qm_shop_sort', SHOP_SORT); } catch (e) {}
       applySearch();
     });
   }
