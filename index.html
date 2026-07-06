@@ -14,19 +14,23 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
-    /* Canvas: blue at the very top (status-bar strip), then a deep video-
-       dark tone. Apple decides the SIZE of the strip its bottom bar
-       reserves - it cannot be shrunk - so instead the canvas matches the
-       dark videos and the strip melts invisibly into them (the smallest it
-       can possibly appear). From Bestsellers onward the page content is
-       normal in-flow content, which shines through Safari's glass bar by
-       itself - so the cream sections need no bar colour at all. */
+    /* Canvas: blue at the very top (status-bar strip), CREAM below - the
+       strip Safari reserves at the bottom shows the canvas colour, so the
+       bar is cream. */
     html {
-      background-color: #0b0b0d !important;
-      background-image: linear-gradient(to bottom, #273071 0px, #273071 160px, #0b0b0d 480px) !important;
+      background-color: #faf7f2 !important;
+      background-image: linear-gradient(to bottom, #273071 0px, #273071 160px, #faf7f2 480px) !important;
       background-repeat: no-repeat !important;
     }
     body { background: transparent !important; }
+
+    /* CURTAIN: "Fra mark til mel" pins to the screen when it reaches the
+       top, and Bestsellers slides UP OVER it instead of the page scrolling
+       down to it - the classic pinned-section reveal. */
+    #vs2 {
+      position: sticky;
+      top: 0;
+    }
 
     .video-bg { pointer-events: none; }
     /* Hide the native play/pause control overlay on the background videos (looks unprofessional) */
