@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#273071" />
+  <!-- No theme-color on purpose: a fixed theme-color makes Safari paint the
+       status-bar strip that colour permanently, so it "follows" while you
+       scroll. Without it, Safari samples the page: blue at the top (blue nav
+       + hero + canvas), and it scrolls away with the page. -->
   <title>Shop – Quartz Mølle</title>
   <link rel="icon" href="/favicon.ico" sizes="any" />
   <link rel="icon" type="image/png" href="/images/favicon.png" />
@@ -13,16 +16,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
-    /* iOS Safari colours the area behind the status bar by sampling the page
-       canvas background COLOUR - make that brand blue so the strip above the
-       hero matches. The canvas IMAGE is a gradient: blue at the top (status
-       bar / top bounce) and black at the bottom (bottom bounce behind the
-       footer), so each end of the page meets its own colour - without any
-       extra element that could add scroll height. */
+    /* Blue at the very top of the canvas so the status-bar strip is blue
+       when the shop opens - the gradient scrolls WITH the page (no fixed
+       attachment), so the blue slides away as you scroll instead of
+       following. Black at the very bottom behind the footer overscroll. */
     html {
-      background-color: #273071 !important;
-      background-image: linear-gradient(to bottom, #273071 0%, #273071 45%, #000 75%, #000 100%) !important;
-      background-attachment: fixed !important;
+      background-color: #000 !important;
+      background-image: linear-gradient(to bottom, #273071 0px, #273071 620px, #000 1100px) !important;
+      background-repeat: no-repeat !important;
     }
 
     /* View toggle: several products per row vs. one big product at a time */
