@@ -50,6 +50,13 @@
     /* first video visible immediately (no black flash before JS runs) */
     #vid1, #vs1 .video-overlay { opacity: 1; }
 
+    /* The section is 100lvh tall but Safari's bars cover part of it, so the
+       flex-centred hero lands visually low. Pull it up so logo + title sit
+       in the middle of the VISIBLE screen. */
+    .hero-content {
+      margin-top: -70px;
+    }
+
     /* SORTIMENT section: the group photo's background is the exact same
        cream (#faf7f2) as the section, so the bags float directly on the
        page - no visible photo edges. */
