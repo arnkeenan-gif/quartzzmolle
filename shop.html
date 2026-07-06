@@ -23,39 +23,60 @@
       background-repeat: no-repeat !important;
     }
 
-    /* View toggle: several products per row vs. one big product at a time */
-    .view-toggle { display: flex; justify-content: center; gap: 8px; margin: 14px auto 0; }
+    /* ── COMPACT TOOLBAR: search + sort + view on ONE tight row ── */
+    .shop-main { padding-top: 1.75rem !important; }
+    .shop-search {
+      display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px;
+      max-width: 1000px; margin: 0 auto 1.4rem !important;
+    }
+    /* search box full width, view toggle centered on the row below */
+    .shop-search-box { flex: 1 1 100%; max-width: none !important; margin: 0 !important; }
+    .view-toggle { margin: 0 auto !important; justify-content: center; }
+    /* centre the product grid itself */
+    .shop-grid { justify-content: center; margin-left: auto; margin-right: auto; }
+    .shop-sort-label { font-size: 0.82rem; color: #666; font-weight: 500; white-space: nowrap; }
+    .shop-sort-select {
+      appearance: none; -webkit-appearance: none;
+      font-family: inherit; font-size: 0.86rem; color: #273071; font-weight: 600;
+      background: #fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23273071' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>") no-repeat right 10px center;
+      border: 1px solid #e0d9c8; border-radius: 10px;
+      padding: 8px 30px 8px 12px; cursor: pointer;
+    }
+    .shop-sort-select:focus { outline: none; border-color: #273071; }
+
+    /* view toggle inline, compact */
+    .view-toggle { display: flex; gap: 6px; margin: 0 !important; }
     .view-btn {
-      width: 44px; height: 38px; border-radius: 10px;
+      width: 38px; height: 36px; border-radius: 9px;
       border: 1px solid #e0d9c8; background: #fff; color: #666;
       display: flex; align-items: center; justify-content: center;
       cursor: pointer; transition: background .15s, color .15s, border-color .15s;
     }
     .view-btn.active { background: #273071; border-color: #273071; color: #fff; }
-    .shop-grid.view-compact { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+
+    /* tighter product grid */
+    .shop-grid.view-compact { grid-template-columns: repeat(2, 1fr); gap: 0.8rem; }
     @media (min-width: 700px) {
-      .shop-grid.view-compact { grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+      .shop-grid.view-compact { grid-template-columns: repeat(3, 1fr); gap: 1.1rem; }
     }
-    .shop-grid.view-single { grid-template-columns: 1fr; max-width: 520px; }
-
-    /* Sort dropdown */
-    .shop-sort { display: flex; align-items: center; gap: 8px; margin: 14px auto 0; }
-    .shop-sort-label { font-size: 0.9rem; color: #555; font-weight: 500; }
-    .shop-sort-select {
-      appearance: none; -webkit-appearance: none;
-      font-family: inherit; font-size: 0.92rem; color: #273071; font-weight: 600;
-      background: #fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23273071' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>") no-repeat right 12px center;
-      border: 1px solid #e0d9c8; border-radius: 10px;
-      padding: 9px 38px 9px 14px; cursor: pointer;
+    @media (min-width: 1000px) {
+      .shop-grid.view-compact { grid-template-columns: repeat(4, 1fr); }
     }
-    .shop-sort-select:focus { outline: none; border-color: #273071; }
+    .shop-grid.view-single { grid-template-columns: 1fr; max-width: 460px; }
 
-    /* Pack-size chips on each card — makes it clear 3 kg AND 12,5 kg exist */
-    .product-card-sizes { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 0.7rem; }
+    /* tighter cards */
+    .product-card-img { aspect-ratio: 3/4; }
+    .product-card-body { padding: 0.85rem 0.95rem 1rem; }
+    .product-card-name { font-size: 1.02rem; margin-bottom: 0.15rem; }
+    .product-card-sub { font-size: 0.8rem; margin-bottom: 0.55rem; }
+    .product-card-price { font-size: 0.92rem; }
+
+    /* pack-size chips (3 kg + 12,5 kg) — inline, small */
+    .product-card-sizes { display: flex; flex-wrap: wrap; gap: 5px; margin: 0 0 0.5rem; }
     .size-chip {
-      font-size: 0.74rem; font-weight: 600; color: #4a463f;
+      font-size: 0.7rem; font-weight: 600; color: #4a463f;
       background: #f0ece3; border: 1px solid #e0d9c8; border-radius: 999px;
-      padding: 3px 10px; letter-spacing: 0.01em;
+      padding: 2px 8px; letter-spacing: 0.01em;
     }
   </style>
   <!-- from-resolver -->
@@ -129,18 +150,6 @@
         <button type="button" id="shopSearchClear" class="shop-search-clear" aria-label="Ryd søgning" hidden>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
-      </div>
-      <div class="shop-sort">
-        <label for="shopSort" class="shop-sort-label">Sortér efter</label>
-        <select id="shopSort" class="shop-sort-select">
-          <option value="default">Anbefalede</option>
-          <option value="bestseller">Bestsellers</option>
-          <option value="fintsigtet">Fintsigtet · Type 70</option>
-          <option value="mellemsigtet">Mellemsigtet · Type 85</option>
-          <option value="fuldkorn">Fuldkorn</option>
-          <option value="price-asc">Pris: lav til høj</option>
-          <option value="price-desc">Pris: høj til lav</option>
-        </select>
       </div>
       <div class="view-toggle" role="group" aria-label="Visning">
         <button type="button" id="viewGridBtn" class="view-btn" aria-label="Flere produkter pr. række" title="Flere pr. række">
