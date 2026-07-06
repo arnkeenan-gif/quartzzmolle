@@ -14,13 +14,16 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
-    /* Canvas: blue at the very top (status-bar strip), CREAM below. The
-       videos are fixed for the crossfade/curtain effect, and fixed elements
-       never render behind Safari's bottom bar - so that strip shows the
-       canvas colour, which is now cream instead of black. */
+    /* Canvas: blue at the very top (status-bar strip), then a deep video-
+       dark tone. Apple decides the SIZE of the strip its bottom bar
+       reserves - it cannot be shrunk - so instead the canvas matches the
+       dark videos and the strip melts invisibly into them (the smallest it
+       can possibly appear). From Bestsellers onward the page content is
+       normal in-flow content, which shines through Safari's glass bar by
+       itself - so the cream sections need no bar colour at all. */
     html {
-      background-color: #faf7f2 !important;
-      background-image: linear-gradient(to bottom, #273071 0px, #273071 160px, #faf7f2 480px) !important;
+      background-color: #0b0b0d !important;
+      background-image: linear-gradient(to bottom, #273071 0px, #273071 160px, #0b0b0d 480px) !important;
       background-repeat: no-repeat !important;
     }
     body { background: transparent !important; }
