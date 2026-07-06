@@ -27,11 +27,11 @@
       transition: background-color 0.35s ease;
     }
     html.qm-light-canvas {
-      /* base colour stays dark (matches the footer) so the bottom overscroll
-         area is dark, not a white strip. The cream content sections paint
-         their own colour, so only the empty overscroll below the footer is
-         affected. */
-      background-color: #0b0b0d;
+      /* base colour = the footer's exact black (#000000) so the bottom
+         overscroll area is identical to the footer - no visible seam, no
+         white strip. Cream content sections paint their own colour, so only
+         the empty overscroll below the footer is affected. */
+      background-color: #000000;
       background-image: linear-gradient(to bottom, #273071 0px, #273071 160px, #faf7f2 480px) !important;
     }
     body { background: transparent !important; }
