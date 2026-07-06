@@ -14,15 +14,16 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
-    /* Blue at the very top of the canvas so the iPhone status-bar strip is
-       blue when the page opens - but the gradient scrolls WITH the page
-       (no fixed attachment), so the blue strip slides away as you scroll
-       instead of following you down. Everything below is black. */
+    /* Canvas: blue at the very top (status-bar strip), CREAM below. The
+       videos are fixed for the crossfade/curtain effect, and fixed elements
+       never render behind Safari's bottom bar - so that strip shows the
+       canvas colour, which is now cream instead of black. */
     html {
-      background-color: #000 !important;
-      background-image: linear-gradient(to bottom, #273071 0px, #273071 160px, #000 560px) !important;
+      background-color: #faf7f2 !important;
+      background-image: linear-gradient(to bottom, #273071 0px, #273071 160px, #faf7f2 480px) !important;
       background-repeat: no-repeat !important;
     }
+    body { background: transparent !important; }
 
     .video-bg { pointer-events: none; }
     /* Hide the native play/pause control overlay on the background videos (looks unprofessional) */
@@ -39,50 +40,8 @@
     }
     #mobileMenu { display: none !important; }
     #mobileMenu.open { display: flex !important; }
-    #vid1 { opacity: 1; }
-
-    /* GLASS MODE: the videos are normal scrolling content (absolute inside
-       their own section) instead of fixed to the screen. Safari only lets
-       normal content shine through its translucent "glass" bars - so with
-       this, the bottom bar becomes see-through like on nike.com, both when
-       the page opens and while scrolling. It also permanently removes every
-       fixed-element seam/lag artefact we fought at the screen edges. */
-    .video-section {
-      position: relative;
-      /* 80px taller than the screen so the NEXT section's video never peeks
-         out behind Safari's bottom pill before you actually scroll to it */
-      height: calc(100vh + 80px);   /* fallback for older browsers */
-      height: calc(100lvh + 80px);
-      min-height: calc(100lvh + 80px);
-    }
-    .video-bg,
-    .video-overlay {
-      position: absolute !important;
-      top: 0 !important;
-      left: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-      min-height: 0 !important;
-      opacity: 1 !important; /* each section always shows its own video */
-    }
-
-    /* PARALLAX: each video is 34% taller than its section and gets shifted
-       by the script at the bottom of this file, so it moves slower than the
-       page while you scroll - the premium depth effect. The section clips it
-       (overflow hidden), and it stays normal scrolling content, so the glass
-       bars keep working. */
-    .video-bg {
-      height: 134% !important;
-      top: -17% !important;
-      will-change: transform;
-    }
-
-    /* The sections are 80px taller than the screen, which pushed the centred
-       hero content ~40px too far down. Pull it back up so logo, title and
-       button sit in the middle of the VISIBLE screen. */
-    .hero-content {
-      margin-top: -120px;
-    }
+    /* first video visible immediately (no black flash before JS runs) */
+    #vid1, #vs1 .video-overlay { opacity: 1; }
 
     /* SORTIMENT section: the group photo's background is the exact same
        cream (#faf7f2) as the section, so the bags float directly on the
@@ -314,36 +273,6 @@
         initAll();
         document.removeEventListener('touchstart', handler);
       });
-    })();
-  </script>
-
-  <script>
-    /* PARALLAX: shift each section's video slightly against the scroll
-       direction, so it glides slower than the page (depth effect). Runs on
-       requestAnimationFrame while scrolling - cheap and smooth. */
-    (function () {
-      var sections = Array.prototype.slice.call(document.querySelectorAll('.video-section'));
-      if (!sections.length) return;
-      var ticking = false;
-      function apply() {
-        ticking = false;
-        var vh = window.innerHeight;
-        sections.forEach(function (sec) {
-          var vid = sec.querySelector('.video-bg');
-          if (!vid) return;
-          var r = sec.getBoundingClientRect();
-          if (r.bottom < 0 || r.top > vh) return; // off screen
-          // -1 (section below view) ... 0 (centered) ... +1 (section above)
-          var p = (vh / 2 - (r.top + r.height / 2)) / vh;
-          vid.style.transform = 'translateY(' + (p * vh * 0.14).toFixed(1) + 'px)';
-        });
-      }
-      function onScroll() {
-        if (!ticking) { ticking = true; requestAnimationFrame(apply); }
-      }
-      window.addEventListener('scroll', onScroll, { passive: true });
-      window.addEventListener('resize', onScroll);
-      apply();
     })();
   </script>
 
