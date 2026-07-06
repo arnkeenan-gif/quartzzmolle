@@ -1,5 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@800&display=swap");
-
 /* ============================================================
    QUARTZ MØLLE — CSS
    Blue #273071 accent, readable Inter typography
@@ -1969,11 +1967,20 @@ body:has(.product-hero-band) .nav {
 .nav.nav-light .cart-btn { color: #fff; }
 .nav.nav-light .cart-count { background: #fff; color: var(--dark); }
 
+/* ── MEYERS-STYLE Ø ──
+   A tiny custom webfont (892 bytes) that ONLY contains the letters Ø and ø
+   (unicode-range). The glyph is Inter's own bold O with the slash drawn
+   INSIDE the ring, exactly like meyers.dk's Ø. Every other letter stays
+   untouched Inter. */
+@font-face {
+  font-family: 'Meyers Oe';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(data:font/woff2;base64,d09GMgABAAAAAAN8ABAAAAAABrgAAAMgAAQAQgAAAAAAAAAAAAAAAAAAAAAAAAAAGhYbgSIcKgZgP1NUQVRaADwRCAqBfIF3ATYCJAMMCwgABCAFhA4HIAwHG5EFUVRMBhF8dcAbUp/cEANGGM4o9cYjLInVq1O+neowdQk6423EJp7///3+N9e+576PaVNtlkh4lS7mlWpZtCTSH4RCVwvJ5Mju/dkLpKtC+ckbSCXYxWWqlJI++5ASNlZOqeb3/0Fv4Zwdkhg4py4S6+Fru/hRMrUKJJoqwG6WqaWj3y54k4PYzRt1kwSlyXmTzHn/P1IwBhBRIoJRVkslvi44MhF0d5cJ2WC8X0hhgfGRPMwFY+LwnwhrpA5ThFxQHA+AOhBQIJqRRoipUxihTCOOeSwROgAQVfAkS4lyC5givIpyuPYzALQ+iVjQ0y9vW7i5K+qJ4br37/QdUBoKALZsjUqAMU/hR4//BUa8KhFo2yT2MYu8iBE6TCGGZYjjfFE5cgXn99MxQpCDOI+NfIEwMIkhhIobRUTIylpAp1T8ABBQJHgDpbhFwCASpZgD5P4vNmp43Vf+ZzzKwMDfsAm4DEADdLqUsnKrV5W135+juosHuY67M6g9vU3vODnhsuNj2fbDw8ajo9yKpFJO+3EUOIGOjB0mT7WLVV9yN5/05+988q5fWnYT+vvHTKhdUsQz/JzL0XFvgh6LZgX6sdGci/wf1xdX28r6FBBpTPy/0UjMzJnJwhOT/xgxNwP82/oRy0p1GsgrcOpnpcTGMlMQKsjj9czUbj8nT/ro+fPdAIJmzZhYJUaOkudX6UgDvC+mFz7zv9xfU5L+IjoFwp+Hpp4JkV8fZ1Gv631RqKS57PZqM4TOFWOcICUAwE+N9VAnTQa4ARNilBtCGeFmsrPkTGim2BR6q9zyA1OiWYYQjIk5BCfSbgqutOMsuJFOtNsXaPIn+IFs8iEAD18ZIQYaOoxkz5YdZ6REdBSkMFwYhRAplhAPE0VBe5WfIhgdj5AIyRQdhvGJuLNhg4YBoyuSz1oBHg6bUs0hYoORMmyWuNgfD1shR9ZsxfI9xEsQ5Yc9ELA6aH7CSW8yp0QYk1zkVZte1IqzM3TkooCt/M4pyRSUr3okBh/GUCAPGykBQzkKO44BJgy2BL3x7/5aHi4x4N8NWwof5f9qVwEAAA==) format('woff2');
+  unicode-range: U+00D8, U+00F8;
+}
 
-/* ── MEYERS-STYLE HEADINGS ──
-   Barlow Semi Condensed 800: the free font closest to meyers.dk's custom
-   "Meyer Grand" (72% letterform overlap in direct comparison). Body text
-   stays Inter. */
 .hero-title,
 .text-block h2,
 .highlights-header h2.dark,
@@ -1984,11 +1991,5 @@ body:has(.product-hero-band) .nav {
 .product-page-name,
 .forhandlere-hero h1,
 .om-hero h1 {
-  font-family: 'Barlow Semi Condensed', 'Inter', sans-serif;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.01em;
+  font-family: 'Meyers Oe', 'Inter', system-ui, sans-serif;
 }
-
-/* the MENU block matches the heading font, like on meyers.dk */
-.nav-burger::before { font-family: 'Barlow Semi Condensed', 'Inter', sans-serif; font-weight: 800; letter-spacing: 0.06em; }
