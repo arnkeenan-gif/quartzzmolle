@@ -17,12 +17,16 @@
     /* Canvas: blue at the very top (status-bar strip), CREAM below - the
        strip Safari reserves at the bottom shows the canvas colour, so the
        bar is cream. */
+    /* background-COLOR is what iOS paints in the tiny sliver at the very
+       bottom edge (home indicator) - pure black melts into the phone edge.
+       The gradient IMAGE handles the rest of the canvas: blue top strip,
+       light in the video zone, dark below. */
     html {
-      background-color: #101014 !important;
+      background-color: #000 !important;
       background-image: linear-gradient(to bottom,
         #273071 0px, #273071 160px,
         #faf7f2 480px, #faf7f2 calc(245 * 1lvh),
-        #101014 calc(280 * 1lvh)) !important;
+        #000 calc(280 * 1lvh)) !important;
       background-repeat: no-repeat !important;
     }
     body { background: transparent !important; }
