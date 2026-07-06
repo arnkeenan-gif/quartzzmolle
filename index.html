@@ -36,12 +36,22 @@
     #videoStage .video-bg,
     #videoStage .video-overlay {
       position: absolute !important;
-      top: 0 !important;
+      /* 12% taller than the screen with a 6% offset both ways: a one-frame
+         lag in the scroll pinning can never expose the light canvas (the
+         "light flash" while scrolling fast) */
+      top: -6vh !important;
+      top: -6lvh !important;
       left: 0 !important;
       width: 100% !important;
-      height: 100vh !important;
-      height: 100lvh !important;
+      height: 112vh !important;
+      height: 112lvh !important;
       will-change: transform;
+    }
+    /* shorter curtain zone - video 2 doesn't scroll on forever */
+    #vs2b {
+      height: 45vh;
+      height: 45lvh;
+      min-height: 0;
     }
 
     .video-bg { pointer-events: none; }
