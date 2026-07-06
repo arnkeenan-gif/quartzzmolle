@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Changa:wght@600;800&display=swap");
 /* ============================================================
    QUARTZ MØLLE — CSS
    Blue #273071 accent, readable Inter typography
@@ -1982,6 +1982,17 @@ body:has(.product-hero-band) .nav {
   unicode-range: U+00D8, U+00F8;
 }
 
+/* Clean custom Q built from Barlow's O with a straight tail - replaces
+   Barlow's default Q which looked unprofessional. Covers only U+0051. */
+@font-face {
+  font-family: 'Meyers Q';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(data:font/woff2;base64,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) format('woff2');
+  unicode-range: U+0051;
+}
+
 /* ── MEYERS-STYLE HEADINGS + PRODUCT DISPLAY TEXT ──
    Barlow Semi Condensed 800 is the closest free match to meyers.dk's custom
    "Meyer Grand" (72% letterform overlap). 'Meyers Oe' stays first so the Ø/ø
@@ -1996,7 +2007,7 @@ body:has(.product-hero-band) .nav {
 .product-page-name,
 .forhandlere-hero h1,
 .om-hero h1 {
-  font-family: 'Meyers Oe', 'Barlow Semi Condensed', 'Inter', system-ui, sans-serif;
+  font-family: 'Changa', 'Inter', system-ui, sans-serif;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.01em;
@@ -2008,7 +2019,7 @@ body:has(.product-hero-band) .nav {
 .product-card-name,
 .product-card-sub,
 .product-page-type {
-  font-family: 'Meyers Oe', 'Barlow Semi Condensed', 'Inter', sans-serif;
+  font-family: 'Changa', 'Inter', sans-serif;
   font-weight: 800;
 }
 .product-card-sub,
