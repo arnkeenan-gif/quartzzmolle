@@ -24,12 +24,24 @@
     }
     body { background: transparent !important; }
 
-    /* CURTAIN: "Fra mark til mel" pins to the screen when it reaches the
-       top, and Bestsellers slides UP OVER it instead of the page scrolling
-       down to it - the classic pinned-section reveal. */
-    #vs2 {
-      position: sticky;
-      top: 0;
+    /* NO-BAR CURTAIN: fixed/sticky elements are what create Safari's
+       reserved bar - so nothing is fixed here. The videos are absolute
+       inside #videoStage and a scroll script pins them to the screen with
+       transforms; Safari lets transformed scrolling content shine through
+       its glass bars, so the bottom bar is completely transparent. The
+       empty spacer section (#vs2b) is where "Fra mark til mel" stays
+       pinned while Bestsellers slides up over it (curtain). */
+    #videoStage { position: relative; }
+    #videoStage .video-section { position: static; }
+    #videoStage .video-bg,
+    #videoStage .video-overlay {
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100% !important;
+      height: 100vh !important;
+      height: 100lvh !important;
+      will-change: transform;
     }
 
     .video-bg { pointer-events: none; }
@@ -124,6 +136,7 @@
   </div>
 
   <!-- VIDEO 1 - HERO -->
+  <div id="videoStage">
   <section class="video-section is-active" id="vs1">
     <video class="video-bg" id="vid1" autoplay muted loop playsinline webkit-playsinline preload="auto" disablepictureinpicture disableremoteplayback controlslist="nodownload nofullscreen noremoteplayback noplaybackrate" tabindex="-1">
       <source src="https://pub-a9fcbb930b0c4014b8286f9c245143a9.r2.dev/0602.mp4" type="video/mp4" />
@@ -134,7 +147,6 @@
       <h1 class="hero-title">Quartz Mølle</h1>
       <p class="hero-sub">Økologisk mel – malet på stenkværn i Danmark</p>
       <a href="shop.html" class="btn-primary">Se vores mel</a>
-    </div>
     </div>
   </section>
 
@@ -150,8 +162,11 @@
       <p>Vi dyrker og maler vores korn på stenkværn i hjertet af Danmark. Hver pose mel bærer historien om jord, sol og omtanke.</p>
       <a href="om.html" class="btn-ghost">Læs mere</a>
     </div>
-    </div>
   </section>
+
+  <!-- curtain spacer: the video stays pinned here while Bestsellers rises -->
+  <section class="video-section" id="vs2b" aria-hidden="true"></section>
+  </div>
 
   <!-- BESTSELLERS -->
   <section class="highlights" id="om">
@@ -287,6 +302,30 @@
         initAll();
         document.removeEventListener('touchstart', handler);
       });
+    })();
+  </script>
+
+  <script>
+    /* Pin the videos to the screen with transforms (no fixed elements, so
+       no Safari bar). Runs on requestAnimationFrame - cheap and smooth. */
+    (function () {
+      var stage = document.getElementById('videoStage');
+      if (!stage) return;
+      var els = stage.querySelectorAll('.video-bg, .video-overlay');
+      var ticking = false;
+      function apply() {
+        ticking = false;
+        var r = stage.getBoundingClientRect();
+        var vh = window.innerHeight;
+        var pin = Math.min(Math.max(-r.top, 0), stage.offsetHeight);
+        for (var i = 0; i < els.length; i++) {
+          els[i].style.transform = 'translateY(' + pin.toFixed(1) + 'px)';
+        }
+      }
+      function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(apply); } }
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onScroll);
+      apply();
     })();
   </script>
 
