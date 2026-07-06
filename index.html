@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#273071" />
+  <!-- No theme-color on purpose: with a fixed theme-color Safari paints the
+       status-bar strip that colour permanently, so it "follows" while you
+       scroll. Without it, Safari samples the page itself: blue at the top
+       (the canvas gradient), dark once you scroll into the videos. -->
   <title>Quartz Mølle – Økologisk Mel fra Stenkværn</title>
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" href="/images/favicon.png">
@@ -180,16 +183,6 @@
     </div>
   </section>
 
-  <!-- SORTIMENT - all flour bags on the exact site cream, so image and
-       section melt together as one clean block -->
-  <section class="sortiment" id="vs3">
-    <h2 class="sortiment-title">Vores sortiment</h2>
-    <p class="season-note">Varianterne skifter naturligvis efter sæsonen</p>
-    <p class="sortiment-lead">Fra Dalarna til Purpurhvede – hvert mel har sin egen karakter, smag og bagningsegenskaber.</p>
-    <img src="images/sortiment-poser.jpg" alt="Alle Quartz Mølle meltyper side om side" class="sortiment-img" loading="lazy" />
-    <a href="shop.html" class="btn-dark">Se alle produkter</a>
-  </section>
-
   <!-- BESTSELLERS -->
   <section class="highlights" id="om">
     <div class="highlights-header">
@@ -219,6 +212,16 @@
         <img src="images/logopng.png" alt="Quartz Mølle" />
       </div>
     </div>
+  </section>
+
+  <!-- SORTIMENT - all flour bags on the exact site cream, so image and
+       section melt together as one clean block -->
+  <section class="sortiment" id="vs3">
+    <h2 class="sortiment-title">Vores sortiment</h2>
+    <p class="season-note">Varianterne skifter naturligvis efter sæsonen</p>
+    <p class="sortiment-lead">Fra Dalarna til Purpurhvede – hvert mel har sin egen karakter, smag og bagningsegenskaber.</p>
+    <img src="images/sortiment-poser.jpg" alt="Alle Quartz Mølle meltyper side om side" class="sortiment-img" loading="lazy" />
+    <a href="shop.html" class="btn-dark">Se alle produkter</a>
   </section>
 
   <!-- CONTACT -->
