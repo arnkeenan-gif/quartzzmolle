@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@800&display=swap");
+
 /* ============================================================
    QUARTZ MØLLE — CSS
    Blue #273071 accent, readable Inter typography
@@ -1966,3 +1968,27 @@ body:has(.product-hero-band) .nav {
 .cart-btn { margin-left: auto; }
 .nav.nav-light .cart-btn { color: #fff; }
 .nav.nav-light .cart-count { background: #fff; color: var(--dark); }
+
+
+/* ── MEYERS-STYLE HEADINGS ──
+   Barlow Semi Condensed 800: the free font closest to meyers.dk's custom
+   "Meyer Grand" (72% letterform overlap in direct comparison). Body text
+   stays Inter. */
+.hero-title,
+.text-block h2,
+.highlights-header h2.dark,
+.shop-hero h1,
+.why-text h2,
+.contact-info h2,
+.sortiment h2,
+.product-page-name,
+.forhandlere-hero h1,
+.om-hero h1 {
+  font-family: 'Barlow Semi Condensed', 'Inter', sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+
+/* the MENU block matches the heading font, like on meyers.dk */
+.nav-burger::before { font-family: 'Barlow Semi Condensed', 'Inter', sans-serif; font-weight: 800; letter-spacing: 0.06em; }
