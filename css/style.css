@@ -155,7 +155,7 @@ body {
   transition: transform 0.3s;
 }
 
-/* ── MOBILE MENU — solid cream sheet with blue button links ── */
+/* ── MOBILE MENU — solid cream sheet, plain text links ── */
 .mobile-menu {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -165,7 +165,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.9rem;
+  gap: 2rem;
   transform: translateX(100%);
   transition: transform 0.45s cubic-bezier(0.77,0,0.175,1), visibility 0s linear 0.45s;
   visibility: hidden;
@@ -179,36 +179,17 @@ body {
 
 .mobile-menu a,
 .mobile-menu button {
-  color: #fff;
+  color: var(--brand-blue);
   text-decoration: none;
   font-family: 'Inter', sans-serif;
-  font-size: 1.1rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  background: var(--brand-blue);
+  font-size: 1.8rem;
+  font-weight: 600;
+  background: none;
   border: none;
-  border-radius: 14px;
-  width: min(320px, 78vw);
-  padding: 1rem 1.2rem;
-  text-align: center;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(39, 48, 113, 0.22);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
   /* staggered entrance (animated below when the menu opens) */
   opacity: 0;
-  transform: translateY(22px);
-}
-
-.mobile-menu a:active,
-.mobile-menu button:active {
-  transform: scale(0.97);
-  background: #1e2558;
-}
-
-.mobile-menu a:hover,
-.mobile-menu button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(39, 48, 113, 0.3);
+  transform: translateY(18px);
 }
 
 /* items glide up one after another when the menu opens */
@@ -216,22 +197,24 @@ body {
 .mobile-menu.open button {
   opacity: 1;
   transform: translateY(0);
-  transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
-              box-shadow 0.18s ease, background 0.18s ease;
+  transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.mobile-menu.open > *:nth-child(1) { transition-delay: 0.10s; }
-.mobile-menu.open > *:nth-child(2) { transition-delay: 0.16s; }
-.mobile-menu.open > *:nth-child(3) { transition-delay: 0.22s; }
-.mobile-menu.open > *:nth-child(4) { transition-delay: 0.28s; }
-.mobile-menu.open > *:nth-child(5) { transition-delay: 0.34s; }
-.mobile-menu.open > *:nth-child(6) { transition-delay: 0.40s; }
-.mobile-menu.open > *:nth-child(7) { transition-delay: 0.46s; }
+.mobile-menu.open > *:nth-child(1) { transition-delay: 0.08s; }
+.mobile-menu.open > *:nth-child(2) { transition-delay: 0.14s; }
+.mobile-menu.open > *:nth-child(3) { transition-delay: 0.20s; }
+.mobile-menu.open > *:nth-child(4) { transition-delay: 0.26s; }
+.mobile-menu.open > *:nth-child(5) { transition-delay: 0.32s; }
+.mobile-menu.open > *:nth-child(6) { transition-delay: 0.38s; }
+.mobile-menu.open > *:nth-child(7) { transition-delay: 0.44s; }
 
-/* the Shop Nu call-to-action stands out in dark */
 .mobile-cta {
-  background: var(--dark) !important;
+  background: var(--brand-blue) !important;
   color: #fff !important;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  padding: 0.7rem 2rem;
+  border-radius: 6px;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 1rem !important;
+  box-shadow: 0 2px 12px rgba(39, 48, 113, 0.25);
 }
 
 /* ── VIDEO SECTIONS (crossfade) ── */
@@ -1983,14 +1966,3 @@ body:has(.product-hero-band) .nav {
 .cart-btn { margin-left: auto; }
 .nav.nav-light .cart-btn { color: #fff; }
 .nav.nav-light .cart-count { background: #fff; color: var(--dark); }
-
-/* centre the language pill inside the mobile menu */
-.mobile-menu .lang-switch { width: min(320px, 78vw); }
-.mobile-menu .lang-switch button,
-.mobile-menu .lang-switch .lang-switch-btn {
-  width: 100%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
