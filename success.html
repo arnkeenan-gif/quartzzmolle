@@ -423,6 +423,11 @@
         var sid = params.get('session_id') || '';
         if (!sid) return;
 
+        // Order succeeded — empty the basket IMMEDIATELY so the customer can't
+        // accidentally pay a second time with the same items still in the cart.
+        // (Runs before cart.js loads, so the nav cart badge shows 0.)
+        try { localStorage.removeItem('quartzmolle_cart_v1'); } catch (e) {}
+
         // Show order number immediately
         var ref = sid.slice(-12).toUpperCase();
         var refBox = document.getElementById('success-order-num');

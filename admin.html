@@ -153,8 +153,10 @@
 
   .order-row{
     display:grid;grid-template-columns:96px 1fr 78px 100px 92px;
-    gap:14px;padding:13px 0;border-bottom:1px solid var(--line);font-size:14px;align-items:center
+    gap:14px;padding:13px 0;border-bottom:1px solid var(--line);font-size:14px;align-items:center;
+    cursor:pointer;transition:background .12s;border-radius:10px
   }
+  .order-row:hover{background:var(--blue-soft)}
   .order-row:last-child{border-bottom:none}
   .order-row .ref{color:var(--blue);font-weight:700;font-size:12px;letter-spacing:.02em}
   .order-row .name{font-weight:600}
@@ -178,6 +180,54 @@
   .two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px}
   .loading{text-align:center;padding:28px;color:var(--muted);font-size:14px}
   .empty{text-align:center;padding:20px;color:var(--muted);font-size:13px}
+
+  /* ── ORDER DETAIL MODAL ── */
+  .om-backdrop{
+    position:fixed;inset:0;z-index:2000;background:rgba(20,18,14,.55);
+    display:none;align-items:flex-end;justify-content:center;
+    padding:0;backdrop-filter:blur(2px)
+  }
+  .om-backdrop.open{display:flex}
+  .om-sheet{
+    background:var(--white);width:100%;max-width:560px;max-height:92vh;overflow-y:auto;
+    border-radius:22px 22px 0 0;box-shadow:0 -8px 40px rgba(39,48,113,.25);
+    -webkit-overflow-scrolling:touch;animation:omUp .28s cubic-bezier(.2,.8,.2,1)
+  }
+  @media (min-width:620px){
+    .om-backdrop{align-items:center}
+    .om-sheet{border-radius:22px}
+  }
+  @keyframes omUp{from{transform:translateY(24px);opacity:.6}to{transform:translateY(0);opacity:1}}
+  .om-head{
+    position:sticky;top:0;background:var(--blue);color:#fff;padding:18px 20px;
+    display:flex;align-items:flex-start;justify-content:space-between;gap:12px;z-index:2
+  }
+  .om-head .om-ref{font-size:12px;font-weight:700;letter-spacing:.04em;opacity:.8}
+  .om-head .om-title{font-size:18px;font-weight:800;margin-top:2px}
+  .om-head .om-date{font-size:12px;opacity:.85;margin-top:3px}
+  .om-close{background:rgba(255,255,255,.16);color:#fff;width:34px;height:34px;border-radius:10px;font-size:18px;line-height:1;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .om-body{padding:16px 20px 26px}
+  .om-status{display:inline-block;font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;margin-bottom:14px}
+  .om-status.paid{background:var(--green-soft);color:var(--green)}
+  .om-status.unpaid{background:var(--red-soft);color:var(--red)}
+  .om-section-label{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--grey);margin:18px 0 8px}
+  .om-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .om-item:last-child{border-bottom:none}
+  .om-item img{width:46px;height:46px;border-radius:10px;object-fit:cover;background:var(--warm);flex-shrink:0}
+  .om-item .om-noimg{width:46px;height:46px;border-radius:10px;background:var(--warm);flex-shrink:0}
+  .om-item .om-i-name{flex:1;min-width:0;font-weight:600;font-size:14px}
+  .om-item .om-i-sub{color:var(--muted);font-size:12px;margin-top:2px}
+  .om-item .om-i-price{font-weight:700;color:var(--blue);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .om-info{background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px 14px}
+  .om-info .om-line{display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .om-info .om-line:last-child{border-bottom:none}
+  .om-info .om-k{color:var(--muted);flex-shrink:0}
+  .om-info .om-v{font-weight:600;text-align:right;word-break:break-word}
+  .om-info .om-v a{color:var(--blue);text-decoration:none}
+  .om-totals{margin-top:14px;border-top:2px solid var(--line);padding-top:12px}
+  .om-totals .om-line{display:flex;justify-content:space-between;padding:5px 0;font-size:14px}
+  .om-totals .om-grand{font-size:17px;font-weight:800;color:var(--blue);margin-top:4px}
+  .om-loading{padding:40px;text-align:center;color:var(--muted);font-size:14px}
 
   @media (max-width:700px){
     .two-col{grid-template-columns:1fr}
@@ -298,6 +348,23 @@
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- ORDER DETAIL MODAL -->
+<div class="om-backdrop" id="orderModal">
+  <div class="om-sheet" role="dialog" aria-label="Ordredetaljer">
+    <div class="om-head">
+      <div>
+        <div class="om-ref" id="omRef">#</div>
+        <div class="om-title" id="omName">Ordre</div>
+        <div class="om-date" id="omDate"></div>
+      </div>
+      <button class="om-close" id="omClose" aria-label="Luk">×</button>
+    </div>
+    <div class="om-body" id="omBody">
+      <div class="om-loading">Henter ordre…</div>
+    </div>
   </div>
 </div>
 
@@ -520,7 +587,7 @@
     }
     ordersEl.className = '';
     ordersEl.innerHTML = list.map(o => `
-      <div class="order-row">
+      <div class="order-row" data-id="${escapeHtml(o.id || '')}" role="button" tabindex="0">
         <div class="ref">#${escapeHtml(o.ref)}</div>
         <div>
           <div class="name">${escapeHtml(o.customerName)}</div>
@@ -531,6 +598,115 @@
         <div class="date">${formatDate(o.date)}</div>
       </div>
     `).join('');
+
+    // Clicking (or Enter/Space on) a row opens the full order detail.
+    ordersEl.querySelectorAll('.order-row').forEach(row => {
+      const id = row.getAttribute('data-id');
+      if (!id) return;
+      row.addEventListener('click', () => openOrderDetail(id));
+      row.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openOrderDetail(id); }
+      });
+    });
+  }
+
+  // ── ORDER DETAIL MODAL ──
+  function openOrderDetail(id) {
+    const modal = document.getElementById('orderModal');
+    document.getElementById('omRef').textContent = '#' + id.slice(-12).toUpperCase();
+    document.getElementById('omName').textContent = 'Ordre';
+    document.getElementById('omDate').textContent = '';
+    document.getElementById('omBody').innerHTML = '<div class="om-loading">Henter ordre…</div>';
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+
+    fetch('/api/admin-order?id=' + encodeURIComponent(id))
+      .then(r => {
+        if (r.status === 401) { closeOrderDetail(); showLogin(); throw new Error('auth'); }
+        return r.json();
+      })
+      .then(d => {
+        if (!d || !d.ok) throw new Error(d && d.error ? d.error : 'Fejl');
+        renderOrderDetail(d);
+      })
+      .catch(err => {
+        if (err.message === 'auth') return;
+        document.getElementById('omBody').innerHTML =
+          '<div class="om-loading">Kunne ikke hente ordren.<br>' + escapeHtml(err.message) + '</div>';
+      });
+  }
+
+  function closeOrderDetail() {
+    document.getElementById('orderModal').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  function renderOrderDetail(d) {
+    document.getElementById('omRef').textContent = '#' + escapeHtml(d.ref);
+    document.getElementById('omName').textContent = d.customer.name || 'Kunde';
+    document.getElementById('omDate').textContent = formatDate(d.date);
+
+    const paid = d.paymentStatus === 'paid';
+    const a = d.address || {};
+    const addrLines = [
+      a.line1, a.line2,
+      [a.postalCode, a.city].filter(Boolean).join(' '),
+      a.country
+    ].filter(Boolean).map(escapeHtml).join('<br>');
+
+    const itemsHtml = (d.items || []).map(it => {
+      const sub = [it.weightLabel, 'Antal: ' + it.qty].filter(Boolean).map(escapeHtml).join(' · ');
+      const img = /^https?:\/\//.test(String(it.image || '')) ? it.image : '';
+      return `
+        <div class="om-item">
+          ${img ? `<img src="${escapeHtml(img)}" alt="" />` : '<div class="om-noimg"></div>'}
+          <div class="om-i-name">${escapeHtml(it.name)}<div class="om-i-sub">${sub}</div></div>
+          <div class="om-i-price">${formatKr(it.lineTotal)}</div>
+        </div>`;
+    }).join('');
+
+    const infoRow = (k, v) => v
+      ? `<div class="om-line"><span class="om-k">${k}</span><span class="om-v">${v}</span></div>` : '';
+
+    const emailVal = d.customer.email
+      ? `<a href="mailto:${escapeHtml(d.customer.email)}">${escapeHtml(d.customer.email)}</a>` : '';
+    const phoneVal = d.customer.phone
+      ? `<a href="tel:${escapeHtml(d.customer.phone)}">${escapeHtml(d.customer.phone)}</a>` : '';
+    const cardVal = d.card ? escapeHtml((d.card.brand || '').toUpperCase() + ' •••• ' + d.card.last4) : '';
+    const ipVal = d.ip ? escapeHtml(d.ip) : '<span style="color:var(--grey);font-weight:500">Ikke registreret</span>';
+
+    document.getElementById('omBody').innerHTML = `
+      <span class="om-status ${paid ? 'paid' : 'unpaid'}">${paid ? 'Betalt' : escapeHtml(d.paymentStatus || 'ukendt')}</span>
+
+      <div class="om-section-label">Bestilte varer</div>
+      ${itemsHtml || '<div class="empty">Ingen varelinjer.</div>'}
+
+      <div class="om-section-label">Kunde</div>
+      <div class="om-info">
+        ${infoRow('Navn', escapeHtml(d.customer.name || ''))}
+        ${infoRow('E-mail', emailVal)}
+        ${infoRow('Telefon', phoneVal)}
+      </div>
+
+      <div class="om-section-label">Levering</div>
+      <div class="om-info">
+        ${infoRow('Metode', escapeHtml(d.shipping.name || ''))}
+        ${addrLines ? `<div class="om-line"><span class="om-k">Adresse</span><span class="om-v">${addrLines}</span></div>` : ''}
+      </div>
+
+      <div class="om-section-label">Betaling</div>
+      <div class="om-info">
+        ${infoRow('Kort', cardVal)}
+        ${infoRow('IP-adresse', ipVal)}
+        ${infoRow('Ordre-ref', escapeHtml(d.ref))}
+      </div>
+
+      <div class="om-totals">
+        <div class="om-line"><span class="om-k">Subtotal</span><span>${formatKr(d.subtotal)}</span></div>
+        <div class="om-line"><span class="om-k">Fragt</span><span>${d.shipping.amount > 0 ? formatKr(d.shipping.amount) : 'Gratis'}</span></div>
+        <div class="om-line om-grand"><span>I alt</span><span>${formatKr(d.total)}</span></div>
+      </div>
+    `;
   }
 
   function formatKr(amount) {
@@ -557,6 +733,15 @@
   // Submit on Enter
   document.getElementById('codeInput').addEventListener('keydown', e => {
     if (e.key === 'Enter') login();
+  });
+
+  // Order detail modal: close on ×, backdrop click, or Escape.
+  document.getElementById('omClose').addEventListener('click', closeOrderDetail);
+  document.getElementById('orderModal').addEventListener('click', e => {
+    if (e.target === document.getElementById('orderModal')) closeOrderDetail();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeOrderDetail();
   });
 
   // Order search (client-side, across the loaded range)
