@@ -268,10 +268,22 @@ document.addEventListener('DOMContentLoaded', () => {
   renderHighlights();
 });
 
-// Re-fire scroll on pageshow so when user returns to this page (e.g. via back button
-// from /om.html) the video-fade state and bottom-mask refresh correctly.
-// We previously reloaded on bfcache restore but that created redirect loops with
-// Vercel cleanUrls. Now we only refresh scroll state.
-window.addEventListener('pageshow', () => {
+// When the user returns via the back/forward button, iOS Safari restores the
+// page from its bfcache with the video-pin transforms frozen mid-scroll, which
+// looks glitchy on the homepage. On the homepage ONLY (where #videoStage lives)
+// force one clean reload so the video background re-initialises from the top.
+//
+// This is guarded so it fires only on an actual back/forward restore, never on
+// the fresh load that follows — after a reload the navigation type is 'reload'
+// and event.persisted is false, so it can't loop (an unconditional reload was
+// what previously looped with Vercel cleanUrls).
+window.addEventListener('pageshow', (event) => {
+  const nav = (performance.getEntriesByType && performance.getEntriesByType('navigation')[0]) || null;
+  const cameBack = event.persisted || (nav && nav.type === 'back_forward');
+  if (cameBack && document.getElementById('videoStage')) {
+    window.location.reload();
+    return;
+  }
+  // On every other page just refresh scroll-driven state (video fade, bottom mask).
   window.dispatchEvent(new Event('scroll'));
 });
