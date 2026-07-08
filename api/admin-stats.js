@@ -132,7 +132,7 @@ export default async function handler(req, res) {
       locationCounts[locKey] = (locationCounts[locKey] || 0) + 1;
 
       paid.push({
-        id: s.id,
+        id: s.id,   // kept in the response so the admin can open the order detail
         ref: String(s.id).slice(-12).toUpperCase(),
         customerName: s.customer_details?.name || s.shipping_details?.name || 'Kunde',
         email: s.customer_details?.email || '',
@@ -174,7 +174,7 @@ export default async function handler(req, res) {
       }));
     }
 
-    const recentOrders = paid.map(({ id, created, ...rest }) => rest);
+    const recentOrders = paid.map(({ created, ...rest }) => rest); // keep id for order detail
 
     // Sort + top N
     const topProducts = Object.entries(productCounts)
