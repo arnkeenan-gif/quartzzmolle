@@ -102,12 +102,9 @@ export default async function handler(req, res) {
     const charge = pi && typeof pi.latest_charge === 'object' ? pi.latest_charge : null;
     const card = charge?.payment_method_details?.card || null;
 
-    // Buyer IP: prefer the value we captured at checkout (metadata.client_ip);
-    // fall back to whatever the charge exposes. Older orders (before IP capture
-    // was added) simply have none.
-    const ip = session.metadata?.client_ip
-      || charge?.payment_method_details?.card_present?.ip
-      || '';
+    // Refund state (so the panel can show "Refunderet" and hide the button).
+    const refunded = charge ? (charge.refunded || (charge.amount_refunded || 0) > 0) : false;
+    const amountRefunded = charge ? (charge.amount_refunded || 0) / 100 : 0;
 
     // Delivery method label from the chosen shipping rate.
     const shippingName = session.shipping_cost?.shipping_rate?.display_name || '';
@@ -139,7 +136,8 @@ export default async function handler(req, res) {
       total: (session.amount_total || 0) / 100,
       currency: (session.currency || 'dkk').toUpperCase(),
       card: card ? { brand: card.brand, last4: card.last4, exp: `${card.exp_month}/${card.exp_year}` } : null,
-      ip,
+      refunded,
+      amountRefunded,
     });
   } catch (err) {
     console.error('admin-order error', err.message);
