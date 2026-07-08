@@ -102,8 +102,10 @@ export default async function handler(req, res) {
     const charge = pi && typeof pi.latest_charge === 'object' ? pi.latest_charge : null;
     const card = charge?.payment_method_details?.card || null;
 
-    // Refund state (so the panel can show "Refunderet" and hide the button).
-    const refunded = charge ? (charge.refunded || (charge.amount_refunded || 0) > 0) : false;
+    // Refund state. `refunded` means FULLY refunded (Stripe sets charge.refunded
+    // only then); amountRefunded lets the panel show partial refunds and offer to
+    // refund the remaining balance.
+    const refunded = charge ? !!charge.refunded : false;
     const amountRefunded = charge ? (charge.amount_refunded || 0) / 100 : 0;
 
     // Delivery method label from the chosen shipping rate.

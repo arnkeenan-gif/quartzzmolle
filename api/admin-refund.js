@@ -54,8 +54,20 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Kunne ikke finde betalingen for ordren.' });
     }
 
-    // Full refund of the PaymentIntent.
-    const refund = await stripe.refunds.create({ payment_intent: piId });
+    // Optional partial amount (in kroner). If omitted, Stripe refunds the full
+    // remaining amount. If given, it must be a positive number; Stripe rejects
+    // anything above the remaining refundable balance and we pass that error on.
+    const refundParams = { payment_intent: piId };
+    const raw = req.body.amount;
+    if (raw != null && raw !== '') {
+      const amt = Number(raw);
+      if (!Number.isFinite(amt) || amt <= 0) {
+        return res.status(400).json({ error: 'Ugyldigt beløb.' });
+      }
+      refundParams.amount = Math.round(amt * 100); // kr → øre
+    }
+
+    const refund = await stripe.refunds.create(refundParams);
 
     return res.status(200).json({
       ok: true,
