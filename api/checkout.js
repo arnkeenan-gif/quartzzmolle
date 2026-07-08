@@ -152,6 +152,11 @@ export default async function handler(req, res) {
       `${it.productName}|${it.productType}|${it.label}|${it.qty}|${it.price}`
     ).join(';').slice(0, 490);
 
+    // Record the buyer's IP so it shows on the order in the admin panel.
+    // Behind Vercel the real client IP is the first entry in x-forwarded-for.
+    const clientIp = String(req.headers['x-forwarded-for'] || '')
+      .split(',')[0].trim() || req.socket?.remoteAddress || '';
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card', 'mobilepay'],
       line_items,
@@ -164,7 +169,7 @@ export default async function handler(req, res) {
       phone_number_collection: { enabled: true },
       shipping_options: shippingOptions,
       locale: 'da',
-      metadata: { items_summary: itemsSummary },
+      metadata: { items_summary: itemsSummary, client_ip: clientIp },
     });
 
     return res.status(200).json({ url: session.url });
