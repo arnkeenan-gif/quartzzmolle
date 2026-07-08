@@ -228,6 +228,12 @@
   .om-totals .om-line{display:flex;justify-content:space-between;padding:5px 0;font-size:14px}
   .om-totals .om-grand{font-size:17px;font-weight:800;color:var(--blue);margin-top:4px}
   .om-loading{padding:40px;text-align:center;color:var(--muted);font-size:14px}
+  .om-status.refunded{background:var(--grey-soft);color:var(--muted)}
+  .om-refund-btn{width:100%;margin-top:20px;background:var(--red);color:#fff;font-weight:700;font-size:15px;padding:14px;border-radius:12px;transition:background .15s}
+  .om-refund-btn:hover{background:#9c3232}
+  .om-refund-btn:disabled{opacity:.55;cursor:default}
+  .om-refund-note{text-align:center;color:var(--muted);font-size:12px;margin-top:9px}
+  .om-refunded-badge{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:20px;background:var(--grey-soft);color:var(--muted);font-weight:700;font-size:14px;padding:13px;border-radius:12px}
 
   @media (max-width:700px){
     .two-col{grid-template-columns:1fr}
@@ -611,7 +617,10 @@
   }
 
   // ── ORDER DETAIL MODAL ──
+  let omCurrentId = null;   // the session id of the order currently shown
+
   function openOrderDetail(id) {
+    omCurrentId = id;
     const modal = document.getElementById('orderModal');
     document.getElementById('omRef').textContent = '#' + id.slice(-12).toUpperCase();
     document.getElementById('omName').textContent = 'Ordre';
@@ -647,6 +656,7 @@
     document.getElementById('omDate').textContent = formatDate(d.date);
 
     const paid = d.paymentStatus === 'paid';
+    const refunded = !!d.refunded;
     const a = d.address || {};
     const addrLines = [
       a.line1, a.line2,
@@ -673,10 +683,22 @@
     const phoneVal = d.customer.phone
       ? `<a href="tel:${escapeHtml(d.customer.phone)}">${escapeHtml(d.customer.phone)}</a>` : '';
     const cardVal = d.card ? escapeHtml((d.card.brand || '').toUpperCase() + ' •••• ' + d.card.last4) : '';
-    const ipVal = d.ip ? escapeHtml(d.ip) : '<span style="color:var(--grey);font-weight:500">Ikke registreret</span>';
+
+    const statusPill = refunded
+      ? '<span class="om-status refunded">Refunderet</span>'
+      : `<span class="om-status ${paid ? 'paid' : 'unpaid'}">${paid ? 'Betalt' : escapeHtml(d.paymentStatus || 'ukendt')}</span>`;
+
+    // Refund control: a red button when the order is paid and not yet refunded,
+    // otherwise a greyed-out "already refunded" badge.
+    const refundControl = refunded
+      ? '<div class="om-refunded-badge">✓ Ordren er refunderet</div>'
+      : (paid
+          ? `<button class="om-refund-btn" id="omRefundBtn">Refunder ordre (${formatKr(d.total)})</button>
+             <div class="om-refund-note">Sender pengene tilbage til kundens kort via Stripe.</div>`
+          : '');
 
     document.getElementById('omBody').innerHTML = `
-      <span class="om-status ${paid ? 'paid' : 'unpaid'}">${paid ? 'Betalt' : escapeHtml(d.paymentStatus || 'ukendt')}</span>
+      ${statusPill}
 
       <div class="om-section-label">Bestilte varer</div>
       ${itemsHtml || '<div class="empty">Ingen varelinjer.</div>'}
@@ -697,7 +719,6 @@
       <div class="om-section-label">Betaling</div>
       <div class="om-info">
         ${infoRow('Kort', cardVal)}
-        ${infoRow('IP-adresse', ipVal)}
         ${infoRow('Ordre-ref', escapeHtml(d.ref))}
       </div>
 
@@ -706,7 +727,43 @@
         <div class="om-line"><span class="om-k">Fragt</span><span>${d.shipping.amount > 0 ? formatKr(d.shipping.amount) : 'Gratis'}</span></div>
         <div class="om-line om-grand"><span>I alt</span><span>${formatKr(d.total)}</span></div>
       </div>
+
+      ${refundControl}
     `;
+
+    // Wire up the refund button (only present when the order can be refunded).
+    const rb = document.getElementById('omRefundBtn');
+    if (rb) rb.addEventListener('click', () => refundOrder(d.total));
+  }
+
+  function refundOrder(total) {
+    if (!omCurrentId) return;
+    if (!confirm('Refunder hele ordren (' + formatKr(total) + ') til kundens kort? Dette kan ikke fortrydes.')) return;
+
+    const btn = document.getElementById('omRefundBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Refunderer…'; }
+
+    fetch('/api/admin-refund', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: omCurrentId })
+    })
+      .then(r => {
+        if (r.status === 401) { closeOrderDetail(); showLogin(); throw new Error('auth'); }
+        return r.json();
+      })
+      .then(d => {
+        if (!d || !d.ok) throw new Error(d && d.error ? d.error : 'Refunderingen mislykkedes');
+        // Success: reload the order detail so it shows the "Refunderet" state,
+        // and refresh the dashboard totals in the background.
+        openOrderDetail(omCurrentId);
+        loadDashboard();
+      })
+      .catch(err => {
+        if (err.message === 'auth') return;
+        if (btn) { btn.disabled = false; btn.textContent = 'Prøv igen'; }
+        alert('Kunne ikke refundere: ' + err.message);
+      });
   }
 
   function formatKr(amount) {
