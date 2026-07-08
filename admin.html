@@ -234,6 +234,13 @@
   .om-refund-btn:disabled{opacity:.55;cursor:default}
   .om-refund-note{text-align:center;color:var(--muted);font-size:12px;margin-top:9px}
   .om-refunded-badge{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:20px;background:var(--grey-soft);color:var(--muted);font-weight:700;font-size:14px;padding:13px;border-radius:12px}
+  .om-partial{display:flex;gap:8px;margin-top:10px}
+  .om-partial input{flex:1;min-width:0;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;font-size:15px;font-family:inherit;color:var(--text);outline:none;transition:border-color .15s}
+  .om-partial input:focus{border-color:var(--blue-light)}
+  .om-partial-btn{flex-shrink:0;background:var(--white);border:1.5px solid var(--red);color:var(--red);font-weight:700;font-size:14px;padding:0 16px;border-radius:12px;transition:all .12s}
+  .om-partial-btn:hover{background:var(--red);color:#fff}
+  .om-partial-btn:disabled{opacity:.55;cursor:default}
+  .om-partial-note{color:var(--muted);font-size:12px;margin-top:9px;text-align:center}
 
   @media (max-width:700px){
     .two-col{grid-template-columns:1fr}
@@ -688,13 +695,27 @@
       ? '<span class="om-status refunded">Refunderet</span>'
       : `<span class="om-status ${paid ? 'paid' : 'unpaid'}">${paid ? 'Betalt' : escapeHtml(d.paymentStatus || 'ukendt')}</span>`;
 
-    // Refund control: a red button when the order is paid and not yet refunded,
-    // otherwise a greyed-out "already refunded" badge.
+    // How much is left to refund (total minus anything already refunded).
+    const already = d.amountRefunded || 0;
+    const remaining = Math.max(0, (d.total || 0) - already);
+
+    // Refund control:
+    //  - fully refunded  → greyed "already refunded" badge
+    //  - paid            → full-remaining button + a partial-amount input
+    //  - partially done  → same, plus a note of what's left
+    const partialNote = already > 0
+      ? `<div class="om-partial-note">Allerede refunderet: ${formatKr(already)} · resterende ${formatKr(remaining)}</div>`
+      : '<div class="om-refund-note">Sender pengene tilbage til kundens kort via Stripe.</div>';
+
     const refundControl = refunded
       ? '<div class="om-refunded-badge">✓ Ordren er refunderet</div>'
       : (paid
-          ? `<button class="om-refund-btn" id="omRefundBtn">Refunder ordre (${formatKr(d.total)})</button>
-             <div class="om-refund-note">Sender pengene tilbage til kundens kort via Stripe.</div>`
+          ? `<button class="om-refund-btn" id="omRefundBtn">Refunder ${already > 0 ? 'resten' : 'hele ordren'} (${formatKr(remaining)})</button>
+             <div class="om-partial">
+               <input type="number" id="omPartialAmt" placeholder="Beløb i kr." min="1" max="${remaining}" inputmode="decimal" />
+               <button class="om-partial-btn" id="omPartialBtn">Refunder beløb</button>
+             </div>
+             ${partialNote}`
           : '');
 
     document.getElementById('omBody').innerHTML = `
@@ -731,22 +752,35 @@
       ${refundControl}
     `;
 
-    // Wire up the refund button (only present when the order can be refunded).
+    // Wire up the refund controls (only present when the order can be refunded).
     const rb = document.getElementById('omRefundBtn');
-    if (rb) rb.addEventListener('click', () => refundOrder(d.total));
+    if (rb) rb.addEventListener('click', () => refundOrder(null, remaining));
+    const pb = document.getElementById('omPartialBtn');
+    if (pb) pb.addEventListener('click', () => {
+      const val = parseFloat(document.getElementById('omPartialAmt').value);
+      if (!Number.isFinite(val) || val <= 0) { alert('Indtast et gyldigt beløb.'); return; }
+      if (val > remaining + 0.001) { alert('Beløbet kan højst være ' + formatKr(remaining) + '.'); return; }
+      refundOrder(val, remaining);
+    });
   }
 
-  function refundOrder(total) {
+  // amount = null → refund the full remaining balance; a number → partial refund.
+  function refundOrder(amount, remaining) {
     if (!omCurrentId) return;
-    if (!confirm('Refunder hele ordren (' + formatKr(total) + ') til kundens kort? Dette kan ikke fortrydes.')) return;
+    const isPartial = amount != null;
+    const label = isPartial ? formatKr(amount) : 'hele det resterende beløb (' + formatKr(remaining) + ')';
+    if (!confirm('Refunder ' + label + ' til kundens kort? Dette kan ikke fortrydes.')) return;
 
-    const btn = document.getElementById('omRefundBtn');
+    const btn = document.getElementById(isPartial ? 'omPartialBtn' : 'omRefundBtn');
     if (btn) { btn.disabled = true; btn.textContent = 'Refunderer…'; }
+
+    const body = { id: omCurrentId };
+    if (isPartial) body.amount = amount;
 
     fetch('/api/admin-refund', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: omCurrentId })
+      body: JSON.stringify(body)
     })
       .then(r => {
         if (r.status === 401) { closeOrderDetail(); showLogin(); throw new Error('auth'); }
