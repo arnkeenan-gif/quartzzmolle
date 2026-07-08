@@ -1427,6 +1427,18 @@ body.past-videos .video-overlay {
 
 .nav.nav-light .cart-btn { color: var(--dark); }
 
+/* When the cream mobile menu is open, the header bar sits on top of the cream
+   sheet - the white icons (cart, burger, language) disappear. Flip them to
+   blue so they stay readable while the menu is open. */
+body:has(.mobile-menu.open) .cart-btn { color: var(--brand-blue); }
+body:has(.mobile-menu.open) .cart-count { background: var(--brand-blue); color: #fff; }
+body:has(.mobile-menu.open) .nav-burger span { background: var(--brand-blue); }
+body:has(.mobile-menu.open) .lang-switch-btn,
+body:has(.mobile-menu.open) .lang-switch-btn .lang-chevron {
+  color: var(--brand-blue) !important;
+  text-shadow: none !important;
+}
+
 .cart-count {
   position: absolute;
   top: -2px;
