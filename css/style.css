@@ -1639,6 +1639,36 @@ body:has(.mobile-menu.open) .lang-switch-btn .lang-chevron {
   background: #fff;
 }
 
+.cart-country-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
+}
+.cart-country-row label {
+  font-size: 0.95rem;
+  color: var(--dark);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.cart-country-row select {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0.6rem 0.7rem;
+  border: 1.5px solid rgba(0,0,0,0.18);
+  border-radius: 8px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: var(--dark);
+  cursor: pointer;
+}
+.cart-country-row select:focus {
+  outline: none;
+  border-color: var(--brand-blue);
+}
+
 .cart-total-row {
   display: flex;
   justify-content: space-between;
