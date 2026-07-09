@@ -30,9 +30,25 @@ function checkAuth(req) {
   return Number.isFinite(exp) && exp > Date.now();
 }
 
+// Extra safety gate on top of the login: a 6-digit code must be entered for
+// every refund. The code lives ONLY in the Vercel env var REFUND_CODE — never
+// in the source. If it isn't configured, refunds are refused (fail closed).
+const REFUND_CODE = process.env.REFUND_CODE || '';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   if (!checkAuth(req)) return res.status(401).json({ error: 'Unauthorized' });
+
+  // Verify the refund security code before doing anything else. Fail closed if
+  // the code hasn't been configured in Vercel so a missing env var can't leave
+  // refunds wide open.
+  if (!REFUND_CODE) {
+    return res.status(500).json({ error: 'Refund-kode er ikke konfigureret. Sæt REFUND_CODE i Vercel.' });
+  }
+  const code = String((req.body && req.body.code) || '').trim();
+  if (code !== REFUND_CODE) {
+    return res.status(403).json({ error: 'Forkert sikkerhedskode.' });
+  }
 
   const id = String((req.body && req.body.id) || '');
   if (!/^cs_[A-Za-z0-9_]{10,}$/.test(id)) {
