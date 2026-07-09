@@ -114,36 +114,6 @@ function injectCartUI() {
         </header>
         <div class="cart-items" id="cart-items"></div>
         <footer class="cart-foot">
-          <div class="cart-country-row">
-            <label for="cart-country">Leveringsland</label>
-            <select id="cart-country" aria-label="Leveringsland">
-              <option value="DK">Danmark</option>
-              <option value="BE">Belgien</option>
-              <option value="BG">Bulgarien</option>
-              <option value="FI">Finland</option>
-              <option value="FR">Frankrig</option>
-              <option value="GR">Grækenland</option>
-              <option value="NL">Holland</option>
-              <option value="IE">Irland</option>
-              <option value="IT">Italien</option>
-              <option value="HR">Kroatien</option>
-              <option value="LU">Luxembourg</option>
-              <option value="NO">Norge</option>
-              <option value="PL">Polen</option>
-              <option value="PT">Portugal</option>
-              <option value="RO">Rumænien</option>
-              <option value="CH">Schweiz</option>
-              <option value="SK">Slovakiet</option>
-              <option value="SI">Slovenien</option>
-              <option value="ES">Spanien</option>
-              <option value="GB">Storbritannien</option>
-              <option value="SE">Sverige</option>
-              <option value="CZ">Tjekkiet</option>
-              <option value="DE">Tyskland</option>
-              <option value="HU">Ungarn</option>
-              <option value="AT">Østrig</option>
-            </select>
-          </div>
           <div class="cart-total-row">
             <span>I alt</span>
             <span id="cart-total">0,00 kr.</span>
@@ -163,16 +133,6 @@ function injectCartUI() {
     drawer.querySelectorAll('[data-cart-close]').forEach(el => {
       el.addEventListener('click', closeCart);
     });
-    // Remember the chosen delivery country between visits.
-    const countrySel = document.getElementById('cart-country');
-    if (countrySel) {
-      try { countrySel.value = localStorage.getItem('qm_ship_country') || 'DK'; } catch (e) {}
-      if (!countrySel.value) countrySel.value = 'DK';
-      countrySel.addEventListener('change', () => {
-        try { localStorage.setItem('qm_ship_country', countrySel.value); } catch (e) {}
-      });
-    }
-
     document.getElementById('cart-checkout-btn').addEventListener('click', checkoutCart);
     document.getElementById('cart-continue-btn').addEventListener('click', () => {
       // Continue shopping: go to the shop (or just close the cart if already there)
@@ -260,11 +220,10 @@ async function checkoutCart() {
   btn.disabled = true;
   btn.textContent = 'Forbereder…';
   try {
-    const country = (document.getElementById('cart-country')?.value || 'DK');
     const res = await fetch('/api/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items, country })
+      body: JSON.stringify({ items })
     });
     let data = {};
     try { data = await res.json(); } catch { /* non-JSON response */ }
