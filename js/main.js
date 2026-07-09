@@ -181,6 +181,10 @@ function initVideoFade() {
 // This used to live inside initVideoFade (homepage only); pulled out so the
 // shop and every other page get the same behaviour.
 function initNavFade() {
+  // Not on the single product page — its header stays pinned (solid blue band).
+  // #productInner is the static product-page container (present at load), and the
+  // path check covers it even before/after product.js renders.
+  if (document.getElementById('productInner') || /\/product(\.html)?$/.test(location.pathname)) return;
   const navEl = document.getElementById('nav') || document.querySelector('.nav');
   if (!navEl) return;
   navEl.style.transition = 'opacity .45s ease';
