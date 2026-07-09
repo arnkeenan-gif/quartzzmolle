@@ -1,17 +1,19 @@
-// api/admin-order.js — Full detail for a single order, for the admin panel.
+// api/admin-order.js — Unified admin order endpoint (detail + search + refund).
 //
-// Auth: shares the /locker session cookie (lk_sess) — same passcode as
-//       /locker, /fulfill and the admin dashboard.
-// Query: ?id=cs_live_...  (the Stripe Checkout Session id from admin-stats)
+// Kept as ONE serverless function so the project stays within Vercel's 12-function
+// limit. Routing:
+//   GET  ?id=cs_...        → full order detail (items, customer, address, card, refund state)
+//   GET  ?q=<text>         → search ALL orders (any date) by nr / name / e-mail / city
+//   POST { id, code[,amount] } → refund (full or partial) after a 6-digit code
 //
-// Returns everything the admin needs on one order: line items (with images),
-// customer name/email/phone, full shipping address, delivery method + cost,
-// card brand/last4, payment status, the buyer's IP and, when Stripe has it,
-// the approximate IP location.
+// Auth: shares the /locker session cookie (lk_sess) — same passcode as /locker,
+//       /fulfill and the admin dashboard.
 
 import { createHmac, timingSafeEqual } from 'crypto';
 
 const SESSION_SECRET = process.env.LOCKER_SESSION_SECRET || '';
+// Refund security code — lives ONLY in the Vercel env, never in the source.
+const REFUND_CODE = process.env.REFUND_CODE || '';
 
 // Verify the HMAC-signed lk_sess cookie (identical to admin-stats.js).
 function checkAuth(req) {
@@ -31,8 +33,7 @@ function checkAuth(req) {
   return Number.isFinite(exp) && exp > Date.now();
 }
 
-// Reuse the same product-image map style as admin-stats so the detail view
-// shows the branded pack shots even when Stripe has no product image.
+// Branded pack shots so views show an image even when Stripe has none.
 function getProductImage(productName) {
   if (!productName) return null;
   const n = productName.toLowerCase();
@@ -54,15 +55,23 @@ function getProductImage(productName) {
 export default async function handler(req, res) {
   if (!checkAuth(req)) return res.status(401).json({ error: 'Unauthorized' });
 
+  const stripe = (await import('stripe')).default(process.env.STRIPE_SECRET_KEY);
+
+  if (req.method === 'POST') return handleRefund(req, res, stripe);
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+  if (req.query.q != null && !req.query.id) return handleSearch(req, res, stripe);
+  return handleDetail(req, res, stripe);
+}
+
+// ── ORDER DETAIL (GET ?id=) ──
+async function handleDetail(req, res, stripe) {
   const id = String(req.query.id || '');
-  // Stripe Checkout session ids look like cs_live_/cs_test_ + base62.
   if (!/^cs_[A-Za-z0-9_]{10,}$/.test(id)) {
     return res.status(400).json({ error: 'Ugyldigt ordre-id' });
   }
-
   try {
-    const stripe = (await import('stripe')).default(process.env.STRIPE_SECRET_KEY);
-
     const session = await stripe.checkout.sessions.retrieve(id, {
       expand: [
         'line_items.data.price.product',
@@ -72,7 +81,6 @@ export default async function handler(req, res) {
       ],
     });
 
-    // ── Line items ──
     const items = (session.line_items?.data || []).map(li => {
       const product = li.price?.product || {};
       const desc = product.description || '';
@@ -89,26 +97,16 @@ export default async function handler(req, res) {
       };
     });
 
-    // ── Customer + address ──
     const cust = session.customer_details || {};
-    const ship = session.shipping_details
-      || session.collected_information?.shipping_details
-      || {};
+    const ship = session.shipping_details || session.collected_information?.shipping_details || {};
     const addr = ship.address || cust.address || {};
 
-    // ── Card + IP (from the underlying PaymentIntent / Charge) ──
-    const pi = (session.payment_intent && typeof session.payment_intent === 'object')
-      ? session.payment_intent : null;
+    const pi = (session.payment_intent && typeof session.payment_intent === 'object') ? session.payment_intent : null;
     const charge = pi && typeof pi.latest_charge === 'object' ? pi.latest_charge : null;
     const card = charge?.payment_method_details?.card || null;
 
-    // Refund state. `refunded` means FULLY refunded (Stripe sets charge.refunded
-    // only then); amountRefunded lets the panel show partial refunds and offer to
-    // refund the remaining balance.
     const refunded = charge ? !!charge.refunded : false;
     const amountRefunded = charge ? (charge.amount_refunded || 0) / 100 : 0;
-
-    // Delivery method label from the chosen shipping rate.
     const shippingName = session.shipping_cost?.shipping_rate?.display_name || '';
 
     return res.status(200).json({
@@ -117,23 +115,14 @@ export default async function handler(req, res) {
       id,
       date: new Date((session.created || 0) * 1000).toISOString(),
       paymentStatus: session.payment_status || '',
-      customer: {
-        name: cust.name || ship.name || '',
-        email: cust.email || '',
-        phone: cust.phone || '',
-      },
+      customer: { name: cust.name || ship.name || '', email: cust.email || '', phone: cust.phone || '' },
       address: {
-        line1: addr.line1 || '',
-        line2: addr.line2 || '',
-        postalCode: addr.postal_code || '',
-        city: addr.city || '',
+        line1: addr.line1 || '', line2: addr.line2 || '',
+        postalCode: addr.postal_code || '', city: addr.city || '',
         country: (addr.country || '').toUpperCase(),
       },
       items,
-      shipping: {
-        name: shippingName,
-        amount: (session.shipping_cost?.amount_total || 0) / 100,
-      },
+      shipping: { name: shippingName, amount: (session.shipping_cost?.amount_total || 0) / 100 },
       subtotal: (session.amount_subtotal || 0) / 100,
       total: (session.amount_total || 0) / 100,
       currency: (session.currency || 'dkk').toUpperCase(),
@@ -142,7 +131,85 @@ export default async function handler(req, res) {
       amountRefunded,
     });
   } catch (err) {
-    console.error('admin-order error', err.message);
+    console.error('admin-order detail error', err.message);
     return res.status(500).json({ error: 'Kunne ikke hente ordren' });
+  }
+}
+
+// ── SEARCH ALL ORDERS (GET ?q=) ──
+async function handleSearch(req, res, stripe) {
+  const q = String(req.query.q || '').trim().toLowerCase();
+  if (!q) return res.status(200).json({ ok: true, orders: [], query: '' });
+  try {
+    const nowTs = Math.floor(Date.now() / 1000);
+    const since = nowTs - 400 * 86400; // ~13 months back
+    const MAX_SESSIONS = 3000, MAX_MATCHES = 200;
+    let scanned = 0;
+    const matches = [];
+
+    const iterator = stripe.checkout.sessions.list({ limit: 100, created: { gte: since, lte: nowTs } });
+    for await (const s of iterator) {
+      if (++scanned > MAX_SESSIONS) break;
+      if (s.payment_status !== 'paid') continue;
+      const ref = String(s.id).slice(-12).toUpperCase();
+      const name = s.customer_details?.name || s.shipping_details?.name || '';
+      const email = s.customer_details?.email || '';
+      const addr = s.shipping_details?.address || s.customer_details?.address || {};
+      const city = addr.city || '';
+      const country = (addr.country || '').toUpperCase();
+      if (!`${ref} ${name} ${email} ${city} ${country}`.toLowerCase().includes(q)) continue;
+      matches.push({
+        id: s.id, ref, customerName: name || 'Kunde', email,
+        amount: (s.amount_total || 0) / 100, city: city || 'Ukendt', country,
+        itemCount: null, date: new Date((s.created || 0) * 1000).toISOString(),
+      });
+      if (matches.length >= MAX_MATCHES) break;
+    }
+    matches.sort((a, b) => new Date(b.date) - new Date(a.date));
+    return res.status(200).json({ ok: true, orders: matches, query: q, truncated: scanned > MAX_SESSIONS });
+  } catch (err) {
+    console.error('admin-order search error', err.message);
+    return res.status(500).json({ error: 'Søgningen mislykkedes' });
+  }
+}
+
+// ── REFUND (POST { id, code, amount? }) ──
+async function handleRefund(req, res, stripe) {
+  // 6-digit code gate on top of the login. Fail closed if it isn't configured.
+  if (!REFUND_CODE) {
+    return res.status(500).json({ error: 'Refund-kode er ikke konfigureret. Sæt REFUND_CODE i Vercel.' });
+  }
+  const code = String((req.body && req.body.code) || '').trim();
+  if (code !== REFUND_CODE) {
+    return res.status(403).json({ error: 'Forkert sikkerhedskode.' });
+  }
+
+  const id = String((req.body && req.body.id) || '');
+  if (!/^cs_[A-Za-z0-9_]{10,}$/.test(id)) {
+    return res.status(400).json({ error: 'Ugyldigt ordre-id' });
+  }
+
+  try {
+    const session = await stripe.checkout.sessions.retrieve(id);
+    if (session.payment_status !== 'paid') {
+      return res.status(400).json({ error: 'Ordren er ikke betalt — der er intet at refundere.' });
+    }
+    const piId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id;
+    if (!piId) return res.status(400).json({ error: 'Kunne ikke finde betalingen for ordren.' });
+
+    // Optional partial amount (kr). Omitted → Stripe refunds the full remaining.
+    const refundParams = { payment_intent: piId };
+    const raw = req.body.amount;
+    if (raw != null && raw !== '') {
+      const amt = Number(raw);
+      if (!Number.isFinite(amt) || amt <= 0) return res.status(400).json({ error: 'Ugyldigt beløb.' });
+      refundParams.amount = Math.round(amt * 100);
+    }
+
+    const refund = await stripe.refunds.create(refundParams);
+    return res.status(200).json({ ok: true, refundId: refund.id, status: refund.status, amount: (refund.amount || 0) / 100 });
+  } catch (err) {
+    console.error('admin-order refund error', err.message);
+    return res.status(400).json({ error: err.message || 'Refunderingen mislykkedes.' });
   }
 }
