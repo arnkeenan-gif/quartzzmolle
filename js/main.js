@@ -115,24 +115,8 @@ function initVideoFade() {
     }
   });
 
-  // Header (logo, language switch, cart, burger) FADES away when you scroll down
-  // and FADES back in when you scroll up. Smooth opacity only (no sliding).
-  const navEl = document.getElementById('nav') || document.querySelector('.nav');
-  if (navEl) navEl.style.transition = 'opacity .45s ease';
-  let lastY = window.scrollY || window.pageYOffset || 0;
-  let navHidden = false;
-  const showNav = () => { navEl.style.opacity = '1'; navEl.style.pointerEvents = ''; navHidden = false; };
-  const hideNav = () => { navEl.style.opacity = '0'; navEl.style.pointerEvents = 'none'; navHidden = true; };
-  const updateNav = () => {
-    if (!navEl) return;
-    const y = window.scrollY || window.pageYOffset || 0;
-    const delta = y - lastY;
-    if (y <= 40) { showNav(); lastY = y; return; }   // always visible near the top
-    if (Math.abs(delta) < 6) return;                  // ignore tiny jitter
-    if (delta > 0 && !navHidden) hideNav();           // scrolling down → fade out
-    else if (delta < 0 && navHidden) showNav();       // scrolling up   → fade in
-    lastY = y;
-  };
+  // Header fade on scroll is handled globally by initNavFade() (runs on every
+  // page, including the shop), so it isn't duplicated here.
 
   let activeSection = null;
 
@@ -173,8 +157,6 @@ function initVideoFade() {
 
     // Toggle body class so CSS can hide the fixed videos when user is past the video sections
     document.body.classList.toggle('past-videos', !anyVideoVisible);
-
-    updateNav();
   };
 
   let ticking = false;
@@ -191,6 +173,40 @@ function initVideoFade() {
   window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', onScroll);
   update();
+}
+
+// ── HEADER FADE ON SCROLL (every page) ──
+// The header (logo, language switch, cart, burger) fades away when you scroll
+// down and fades back in when you scroll up — smooth opacity only, no sliding.
+// This used to live inside initVideoFade (homepage only); pulled out so the
+// shop and every other page get the same behaviour.
+function initNavFade() {
+  const navEl = document.getElementById('nav') || document.querySelector('.nav');
+  if (!navEl) return;
+  navEl.style.transition = 'opacity .45s ease';
+  let lastY = window.scrollY || window.pageYOffset || 0;
+  let navHidden = false;
+  const showNav = () => { navEl.style.opacity = '1'; navEl.style.pointerEvents = ''; navHidden = false; };
+  const hideNav = () => { navEl.style.opacity = '0'; navEl.style.pointerEvents = 'none'; navHidden = true; };
+  const updateNav = () => {
+    const y = window.scrollY || window.pageYOffset || 0;
+    const delta = y - lastY;
+    if (y <= 40) { showNav(); lastY = y; return; }   // always visible near the top
+    if (Math.abs(delta) < 6) return;                  // ignore tiny jitter
+    if (delta > 0 && !navHidden) hideNav();           // scrolling down → fade out
+    else if (delta < 0 && navHidden) showNav();       // scrolling up   → fade in
+    lastY = y;
+  };
+  let ticking = false;
+  const onScroll = () => {
+    if (!ticking) {
+      window.requestAnimationFrame(() => { updateNav(); ticking = false; });
+      ticking = true;
+    }
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+  updateNav();
 }
 
 // ── HOMEPAGE HIGHLIGHTS GRID ──
@@ -263,6 +279,7 @@ function initVideoSectionVisibility() {
 // ── INIT ──
 document.addEventListener('DOMContentLoaded', () => {
   initModals();
+  initNavFade();
   initVideoFade();
   initVideoSectionVisibility();
   renderHighlights();
