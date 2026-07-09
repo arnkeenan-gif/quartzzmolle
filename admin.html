@@ -275,6 +275,8 @@
     <div class="ttl">Admin<small>Statistik · Quartz Mølle</small></div>
     <div class="spacer"></div>
     <span class="upd" id="lastUpdate"></span>
+    <!-- Language switch drops in here as a normal header button (not the floating pill) -->
+    <span data-lang-slot></span>
     <button class="logout" onclick="logout()">Log ud</button>
   </div>
 
@@ -769,12 +771,17 @@
     if (!omCurrentId) return;
     const isPartial = amount != null;
     const label = isPartial ? formatKr(amount) : 'hele det resterende beløb (' + formatKr(remaining) + ')';
-    if (!confirm('Refunder ' + label + ' til kundens kort? Dette kan ikke fortrydes.')) return;
+
+    // Security gate: a 6-digit code must be entered for every refund. The code
+    // is verified on the server, so this prompt is the confirmation step too.
+    const code = prompt('Refunder ' + label + ' til kundens kort?\n\nIndtast 6-cifret sikkerhedskode for at bekræfte:');
+    if (code == null) return;                       // cancelled
+    if (!/^\d{6}$/.test(code.trim())) { alert('Koden skal være 6 cifre.'); return; }
 
     const btn = document.getElementById(isPartial ? 'omPartialBtn' : 'omRefundBtn');
     if (btn) { btn.disabled = true; btn.textContent = 'Refunderer…'; }
 
-    const body = { id: omCurrentId };
+    const body = { id: omCurrentId, code: code.trim() };
     if (isPartial) body.amount = amount;
 
     fetch('/api/admin-refund', {
