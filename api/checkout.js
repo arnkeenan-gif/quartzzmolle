@@ -77,21 +77,19 @@ export default async function handler(req, res) {
     // Total cart weight (kg) from the AUTHORITATIVE per-line weight
     const totalWeightKg = validated.reduce((sum, it) => sum + it.kg * it.qty, 0);
 
-    // GLS shipping limits. Orders heavier than GLS can carry are NOT blocked
-    // anymore — they can still be completed with Click & Collect (pickup), which
-    // has no carrier weight limit. See shippingOptions below.
+    // ── Destination country (chosen in the cart). DENMARK keeps its exact old
+    //    prices; every other country is charged the correct GLS rate. ──
+    const country = String((req.body && req.body.country) || 'DK').toUpperCase();
+
+    // GLS DENMARK prices by weight (øre) — UNCHANGED.
     const PAKKESHOP_LIMIT = 19.9;
     const PRIVAT_LIMIT = 24.9;
-
-    // GLS ShopDelivery prices by weight (øre)
     function getPakkeshopPrice(kg) {
       if (kg <= 5)  return 4600;
       if (kg <= 10) return 5500;
       if (kg <= 15) return 6600;
       return 8100; // 15-20 kg
     }
-
-    // GLS PrivateDelivery prices by weight (øre)
     function getPrivatPrice(kg) {
       if (kg <= 5)  return 6300;
       if (kg <= 10) return 7500;
@@ -100,51 +98,78 @@ export default async function handler(req, res) {
       return 13900; // 20-25 kg
     }
 
-    // Build shipping options based on weight.
-    // GLS options are only offered within carrier limits; Click & Collect is always
-    // available — and is the ONLY option for orders heavier than GLS can carry.
-    const shippingOptions = [];
-    if (totalWeightKg <= PAKKESHOP_LIMIT) {
-      shippingOptions.push({
-        shipping_rate_data: {
-          type: 'fixed_amount',
-          fixed_amount: { amount: getPakkeshopPrice(totalWeightKg), currency: 'dkk' },
-          display_name: 'GLS Pakkeshop (max 20 kg)',
-          delivery_estimate: {
-            minimum: { unit: 'business_day', value: 1 },
-            maximum: { unit: 'business_day', value: 3 },
-          },
-        },
-      });
+    // INTERNATIONAL GLS prices (kr → øre) per country, from GLS agreement 31881.
+    // base[] = EuroBusinessParcel / ShopDelivery price by weight band:
+    //   [0-1, >1-5, >5-10, >10-15, >15-20, >20-25, >25-30] kg.
+    // Pakkeshop (ShopDelivery) uses base (max 20 kg, only where shop:true).
+    // Privatadresse (PrivateDelivery) = base + privSur (only where home:true).
+    const INTL_SHIPPING = {
+      BE: { base: [7000, 8800, 11200, 14700, 17550, 23250, 27900], privSur: 2000, home: true, shop: true },
+      BG: { base: [15000, 19500, 22400, 27850, 31600, 42950, 51500], privSur: 2000, home: true, shop: false },
+      CY: { base: [30300, 39300, 54900, 80100, 108600, 143100, 162800], privSur: 0, home: false, shop: false },
+      EE: { base: [14500, 18850, 21650, 26900, 30550, 41500, 49800], privSur: 0, home: false, shop: false },
+      FI: { base: [15000, 19600, 22950, 27300, 32750, 43800, 52600], privSur: 0, home: true, shop: true },
+      FR: { base: [7000, 10250, 11750, 14050, 15400, 19550, 23450], privSur: 2000, home: true, shop: true },
+      GR: { base: [30300, 39300, 54900, 72300, 88700, 125800, 146200], privSur: 2000, home: true, shop: false },
+      NL: { base: [8000, 10100, 12750, 16800, 20050, 26550, 31850], privSur: 2000, home: true, shop: true },
+      IE: { base: [15000, 19600, 22950, 27300, 32750, 43800, 52600], privSur: 2000, home: true, shop: true },
+      IT: { base: [15000, 19500, 22400, 27850, 31600, 42950, 51500], privSur: 2000, home: true, shop: true },
+      HR: { base: [15000, 19450, 27200, 39650, 53750, 70850, 85000], privSur: 2000, home: true, shop: false },
+      LV: { base: [14000, 18200, 20900, 26000, 29500, 40050, 48100], privSur: 0, home: false, shop: false },
+      LT: { base: [14000, 18200, 20900, 26000, 29500, 40050, 48100], privSur: 0, home: false, shop: false },
+      LU: { base: [11000, 13850, 17550, 23100, 27550, 36500, 43800], privSur: 2000, home: true, shop: true },
+      MT: { base: [30300, 39300, 54900, 80100, 108600, 143100, 162800], privSur: 0, home: false, shop: false },
+      NO: { base: [12000, 15150, 19150, 25200, 30050, 39850, 47800], privSur: 0, home: true, shop: false },
+      PL: { base: [7000, 8800, 11200, 14700, 17550, 23250, 27900], privSur: 2000, home: true, shop: true },
+      PT: { base: [15000, 19600, 22950, 27300, 32750, 43800, 52600], privSur: 2000, home: true, shop: true },
+      RO: { base: [15000, 19500, 22400, 27850, 31600, 42950, 51500], privSur: 2000, home: true, shop: false },
+      CH: { base: [14000, 17700, 21850, 28400, 34150, 44650, 53600], privSur: 2000, home: true, shop: false },
+      SK: { base: [14000, 17650, 22350, 29400, 35050, 46450, 55750], privSur: 2000, home: true, shop: true },
+      SI: { base: [14000, 18200, 20900, 26000, 29500, 40050, 48100], privSur: 2000, home: true, shop: true },
+      ES: { base: [14500, 18950, 22200, 26400, 31650, 42350, 50850], privSur: 2000, home: true, shop: true },
+      GB: { base: [13000, 19050, 21800, 26150, 28600, 36300, 43600], privSur: 2000, home: true, shop: false },
+      SE: { base: [10000, 12650, 15600, 20300, 24400, 31900, 38300], privSur: 0, home: false, shop: true },
+      CZ: { base: [14000, 17650, 22350, 29400, 35050, 46450, 55750], privSur: 2000, home: true, shop: true },
+      DE: { base: [7000, 8800, 11200, 14700, 17550, 23250, 27900], privSur: 2000, home: true, shop: true },
+      HU: { base: [14000, 18200, 20900, 26000, 29500, 40050, 48100], privSur: 2000, home: true, shop: true },
+      AT: { base: [11000, 13900, 17200, 22300, 26800, 35100, 42100], privSur: 2000, home: true, shop: true },
+    };
+
+    const WEIGHT_BANDS = [1, 5, 10, 15, 20, 25, 30]; // upper bounds (kg)
+    function bandIndex(kg) {
+      for (let i = 0; i < WEIGHT_BANDS.length; i++) if (kg <= WEIGHT_BANDS[i]) return i;
+      return -1;
     }
-    if (totalWeightKg <= PRIVAT_LIMIT) {
-      shippingOptions.push({
-        shipping_rate_data: {
-          type: 'fixed_amount',
-          fixed_amount: { amount: getPrivatPrice(totalWeightKg), currency: 'dkk' },
-          display_name: 'GLS Privatadresse (max 25 kg)',
-          delivery_estimate: {
-            minimum: { unit: 'business_day', value: 1 },
-            maximum: { unit: 'business_day', value: 3 },
-          },
-        },
-      });
+
+    const est = { minimum: { unit: 'business_day', value: 1 }, maximum: { unit: 'business_day', value: 3 } };
+    const rate = (amount, name) => ({
+      shipping_rate_data: { type: 'fixed_amount', fixed_amount: { amount, currency: 'dkk' }, display_name: name, delivery_estimate: est },
+    });
+
+    // Build the shipping options for the chosen country. The display names keep
+    // "Pakkeshop" / "Privatadresse" / "Click & Collect" so the webhook classifies
+    // them exactly as before. Click & Collect is always available.
+    const shippingOptions = [];
+    if (country === 'DK') {
+      if (totalWeightKg <= PAKKESHOP_LIMIT) shippingOptions.push(rate(getPakkeshopPrice(totalWeightKg), 'GLS Pakkeshop (max 20 kg)'));
+      if (totalWeightKg <= PRIVAT_LIMIT)    shippingOptions.push(rate(getPrivatPrice(totalWeightKg), 'GLS Privatadresse (max 25 kg)'));
+    } else if (INTL_SHIPPING[country]) {
+      const c = INTL_SHIPPING[country];
+      const idx = bandIndex(totalWeightKg);
+      // Pakkeshop (ShopDelivery) — where available, max 20 kg (band index 0-4)
+      if (c.shop && idx >= 0 && idx <= 4) shippingOptions.push(rate(c.base[idx], 'GLS Pakkeshop (max 20 kg)'));
+      // Privatadresse (PrivateDelivery) — where available, up to 30 kg
+      if (c.home && idx >= 0)              shippingOptions.push(rate(c.base[idx] + c.privSur, 'GLS Privatadresse'));
     }
 
     // Click & Collect — gratis afhentning på møllen. The display_name must stay
     // recognisable to the webhook (it matches "afhent"/"collect") and must NOT
     // contain "pakkeshop"/"privat", so it is never misread as a GLS delivery.
-    shippingOptions.push({
-      shipping_rate_data: {
-        type: 'fixed_amount',
-        fixed_amount: { amount: 0, currency: 'dkk' },
-        display_name: 'Click & Collect – Afhentning på møllen (Suså Landevej 101)',
-        delivery_estimate: {
-          minimum: { unit: 'business_day', value: 1 },
-          maximum: { unit: 'business_day', value: 3 },
-        },
-      },
-    });
+    shippingOptions.push(rate(0, 'Click & Collect – Afhentning på møllen (Suså Landevej 101)'));
+
+    // Lock the Stripe address country to the one priced above so the customer
+    // can't switch to a different (mis-priced) country on the payment page.
+    const allowedCountry = (country === 'DK' || INTL_SHIPPING[country]) ? country : 'DK';
 
     // Embed items in metadata (format: name|type|weight|qty|price) so the webhook
     // can always recover productType even if the Stripe product name parsing fails.
@@ -164,7 +189,7 @@ export default async function handler(req, res) {
       success_url: `${req.headers.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.origin}/shop`,
       shipping_address_collection: {
-        allowed_countries: ['DK', 'SE', 'NO', 'DE', 'NL', 'GB'],
+        allowed_countries: [allowedCountry],
       },
       phone_number_collection: { enabled: true },
       shipping_options: shippingOptions,
