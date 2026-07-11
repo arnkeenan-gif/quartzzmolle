@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Ordre-fulfillment · Quartz Mølle</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" href="/images/favicon.png">
+<link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="Quartz Mølle">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#273071; --blue-dark:#1b2252; --blue-light:#3a4599;
+    --blue-soft:rgba(39,48,113,.08);
+    --cream:#faf7f2; --warm:#f5f0e8; --line:#e7e1d6;
+    --text:#1a1611; --muted:#6b6256; --white:#fff;
+    --green:#2e8b57; --green-soft:#e6f1ea;
+    --red:#b23b3b; --red-soft:#f6e7e4;
+    --grey:#9b9488; --grey-soft:#ece8e0;
+    --shadow:0 4px 18px rgba(39,48,113,.10);
+    --radius:18px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+    background:var(--cream); color:var(--text); -webkit-font-smoothing:antialiased; line-height:1.5;
+  }
+  button{font-family:inherit;cursor:pointer;border:none}
+  a{color:inherit}
+  .hide{display:none!important}
+
+  /* ---------- LOGIN ---------- */
+  #login{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .login-card{
+    background:var(--white);border:1px solid var(--line);border-radius:24px;
+    box-shadow:var(--shadow);padding:38px 30px;width:100%;max-width:380px;text-align:center
+  }
+  .login-card img{width:96px;height:96px;object-fit:contain;margin-bottom:10px}
+  .login-card h1{font-size:20px;font-weight:700;color:var(--blue);letter-spacing:.2px}
+  .login-card p{color:var(--muted);font-size:14px;margin-top:4px;margin-bottom:24px}
+  .code-input{
+    width:100%;text-align:center;font-size:30px;font-weight:700;letter-spacing:10px;
+    color:var(--blue);padding:16px;border:2px solid var(--line);border-radius:14px;
+    background:var(--cream);outline:none;transition:border-color .15s
+  }
+  .code-input:focus{border-color:var(--blue-light)}
+  .login-btn{
+    width:100%;margin-top:16px;background:var(--blue);color:#fff;font-size:17px;font-weight:600;
+    padding:16px;border-radius:14px;transition:background .15s
+  }
+  .login-btn:active{background:var(--blue-dark)}
+  .login-err{color:var(--red);font-size:14px;font-weight:500;margin-top:14px;min-height:18px}
+
+  /* ---------- TOPBAR ---------- */
+  .top{
+    position:sticky;top:0;z-index:30;background:var(--blue);color:#fff;
+    display:flex;align-items:center;gap:12px;padding:14px 18px;
+    padding-top:calc(14px + env(safe-area-inset-top));
+  }
+  .top img{width:36px;height:36px;object-fit:cover;border-radius:50%;background:transparent;padding:0}
+  .top .ttl{font-weight:700;font-size:16px;line-height:1.15}
+  .top .ttl small{display:block;font-weight:500;font-size:11px;opacity:.8}
+  .top .spacer{flex:1}
+  .logout{background:rgba(255,255,255,.14);color:#fff;font-size:13px;font-weight:600;padding:8px 12px;border-radius:10px}
+
+  /* ---------- LAYOUT ---------- */
+  .wrap{max-width:860px;margin:0 auto;padding:18px 16px 60px}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .btn{
+    border-radius:13px;font-size:15px;font-weight:600;padding:14px 18px;
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:transform .05s,background .15s;text-decoration:none
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn-primary{background:var(--green);color:#fff}
+  .btn-blue{background:var(--blue);color:#fff}
+  .btn-ghost{background:var(--white);color:var(--blue);border:1.5px solid var(--line)}
+  .btn-grow{flex:1}
+
+  .sec-h{margin:26px 2px 12px;font-size:15px;font-weight:700;color:var(--blue);display:flex;align-items:center;gap:8px}
+  .empty{color:var(--muted);font-size:14px;padding:8px 2px}
+
+  /* ---------- SEARCH ---------- */
+  .search-wrap{position:relative;margin:18px 0 4px}
+  .search-in{
+    width:100%;padding:14px 16px 14px 44px;border:2px solid var(--line);border-radius:14px;
+    background:var(--white);font-size:15px;font-weight:500;color:var(--text);outline:none;
+    font-family:inherit;transition:border-color .15s
+  }
+  .search-in::placeholder{color:var(--grey);font-weight:500}
+  .search-in:focus{border-color:var(--blue-light)}
+  .search-ic{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--grey);pointer-events:none;display:flex}
+  .search-clear{
+    position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--grey-soft);
+    color:var(--muted);border-radius:50%;width:26px;height:26px;font-size:15px;line-height:1;
+    display:none;align-items:center;justify-content:center
+  }
+  .search-clear.show{display:flex}
+
+  /* ---------- ACTIVE CODES ---------- */
+  .codes{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+  .codechip{background:var(--white);border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:0 1px 3px rgba(39,48,113,.05)}
+  .codechip .d{font-size:12px;font-weight:600;color:var(--muted)}
+  .codechip .c{font-size:22px;font-weight:800;color:var(--blue);letter-spacing:1px;margin-top:2px}
+
+  /* ---------- ORDER CARDS ---------- */
+  .order{
+    background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px;box-shadow:0 1px 3px rgba(39,48,113,.05);margin-bottom:11px
+  }
+  .order.done{opacity:.72}
+  .order-top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .order-who{font-weight:700;font-size:15px}
+  .order-email{color:var(--blue);font-size:13.5px;word-break:break-all}
+  .order-ref{font-size:11.5px;color:var(--grey);letter-spacing:.04em;text-align:right}
+  .order-total{font-weight:800;color:var(--blue)}
+  .order-items{font-size:13px;color:var(--muted);margin-top:8px}
+  .order-act{display:flex;gap:9px;align-items:center;margin-top:13px;flex-wrap:wrap}
+  .door-in{
+    width:150px;padding:13px 14px;border:2px solid var(--line);border-radius:12px;
+    background:var(--cream);font-size:16px;font-weight:700;color:var(--blue);outline:none;font-family:inherit
+  }
+  .door-in::placeholder{font-size:13px;font-weight:500;color:var(--grey)}
+  .door-in:focus{border-color:var(--blue-light)}
+  .order-status{font-size:13.5px;font-weight:600}
+  .order-status.ok{color:var(--green)} .order-status.err{color:var(--red)}
+  .sent-line{margin-top:12px;font-weight:700;color:var(--green);font-size:14px}
+  .order-foot{margin-top:12px;display:flex;gap:9px;flex-wrap:wrap}
+  .btn-print{font-size:13.5px;padding:11px 14px}
+  .btn-del{font-size:13.5px;padding:11px 14px;color:var(--red);border-color:#e9cfcf}
+  .btn-del.arm{background:var(--red);color:#fff;border-color:var(--red)}
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN ===== -->
+<div id="login">
+  <div class="login-card">
+    <img src="/images/logopng.png" alt="Quartz Mølle" onerror="this.style.display='none'">
+    <h1>Ordre-fulfillment</h1>
+    <p>Indtast adgangskode</p>
+    <input id="codeInput" class="code-input" type="password" inputmode="numeric"
+           autocomplete="off" maxlength="10" placeholder="••••">
+    <button id="loginBtn" class="login-btn">Lås op</button>
+    <div id="loginErr" class="login-err"></div>
+  </div>
+</div>
+
+<!-- ===== DASHBOARD ===== -->
+<div id="app" class="hide">
+  <div class="top">
+    <img src="/images/logopng.png" alt="" onerror="this.style.display='none'">
+    <div class="ttl">Ordre-fulfillment<small>Click &amp; Collect · Quartz Mølle</small></div>
+    <div class="spacer"></div>
+    <div data-lang-slot></div>
+    <button class="logout" id="logoutBtn">Log ud</button>
+  </div>
+
+  <div class="wrap">
+    <div class="row">
+      <a class="btn btn-ghost" href="/locker">← Skabsstyring</a>
+      <a class="btn btn-ghost" href="/packing">📋 Pakkeliste</a>
+      <button class="btn btn-ghost btn-grow" id="refreshBtn">↻ Opdatér</button>
+    </div>
+
+    <div class="sec-h">Aktive skab-koder</div>
+    <div class="codes" id="codes"></div>
+
+    <div class="search-wrap">
+      <span class="search-ic">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg>
+      </span>
+      <input id="searchInput" class="search-in" type="text" autocomplete="off" placeholder="Søg efter navn eller e-mail…" />
+      <button id="searchClear" class="search-clear" aria-label="Ryd søgning">✕</button>
+    </div>
+
+    <div class="sec-h">Afventende ordrer</div>
+    <div id="pending"></div>
+
+    <div class="sec-h">Afsendte ordrer</div>
+    <div id="done"></div>
+  </div>
+</div>
+
+<script src="js/i18n.js"></script>
+<script>
+(function () {
+  var loginEl = document.getElementById('login');
+  var appEl = document.getElementById('app');
+  var codeInput = document.getElementById('codeInput');
+  var loginErr = document.getElementById('loginErr');
+
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+
+  var searchInput = document.getElementById('searchInput');
+  var searchClear = document.getElementById('searchClear');
+  var lastData = null;     // keep the last loaded payload so search re-renders without a refetch
+  var query = '';
+
+  document.getElementById('loginBtn').addEventListener('click', doLogin);
+  codeInput.addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
+  document.getElementById('refreshBtn').addEventListener('click', function(){ load(); });
+  document.getElementById('logoutBtn').addEventListener('click', logout);
+
+  searchInput.addEventListener('input', function(){
+    query = searchInput.value.trim().toLowerCase();
+    searchClear.classList.toggle('show', query.length > 0);
+    if(lastData) render(lastData);
+  });
+  searchClear.addEventListener('click', function(){
+    searchInput.value=''; query=''; searchClear.classList.remove('show');
+    if(lastData) render(lastData);
+    searchInput.focus();
+  });
+
+  async function doLogin(){
+    loginErr.textContent='';
+    var code = codeInput.value.trim();
+    if(!code){ loginErr.textContent='Indtast kode'; return; }
+    try{
+      var r = await fetch('/api/locker', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'login', code:code}) });
+      var d = await r.json().catch(function(){return {};});
+      if(r.ok && d.ok){ codeInput.value=''; showApp(); load(); }
+      else { loginErr.textContent = d.error || 'Forkert kode'; }
+    }catch(e){ loginErr.textContent='Netværksfejl'; }
+  }
+
+  async function logout(){
+    try{ await fetch('/api/locker', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'logout'}) }); }catch(e){}
+    appEl.classList.add('hide'); loginEl.classList.remove('hide');
+  }
+
+  function showApp(){ loginEl.classList.add('hide'); appEl.classList.remove('hide'); }
+
+  async function load(){
+    try{
+      var r = await fetch('/api/fulfill?action=list');
+      if(r.status===401){ appEl.classList.add('hide'); loginEl.classList.remove('hide'); return; }
+      var d = await r.json();
+      if(!d.ok) return;
+      showApp();
+      render(d);
+    }catch(e){}
+  }
+
+  function matchesQuery(o){
+    if(!query) return true;
+    var hay = ((o.name||'') + ' ' + (o.email||'') + ' ' + (o.ref||'')).toLowerCase();
+    return hay.indexOf(query) !== -1;
+  }
+
+  function render(d){
+    lastData = d;
+    var fulfilled = d.fulfilled || {};
+    var lockers = d.lockers || [];
+    document.getElementById('codes').innerHTML = lockers.length
+      ? lockers.map(function(l){ return '<div class="codechip"><div class="d">Dør '+l.door+'</div><div class="c">'+esc(l.code)+'</div></div>'; }).join('')
+      : '<div class="empty">Ingen aktive koder.</div>';
+
+    var orders = (d.orders || []).filter(matchesQuery);
+    var pending = orders.filter(function(o){ return o && !fulfilled[o.ref]; });
+    var done = orders.filter(function(o){ return o && fulfilled[o.ref]; });
+
+    var pe = document.getElementById('pending');
+    pe.innerHTML = pending.length ? '' : '<div class="empty">'+(query ? 'Ingen afventende ordrer matcher “'+esc(query)+'”.' : 'Ingen afventende ordrer.')+'</div>';
+    pending.forEach(function(o){ pe.appendChild(card(o, null)); });
+
+    var de = document.getElementById('done');
+    de.innerHTML = done.length ? '' : '<div class="empty">'+(query ? 'Ingen afsendte ordrer matcher “'+esc(query)+'”.' : 'Ingen afsendte ordrer.')+'</div>';
+    done.forEach(function(o){ de.appendChild(card(o, fulfilled[o.ref])); });
+  }
+
+  function itemsLine(o){
+    return (o.items||[]).map(function(it){ return esc(it.name)+(it.weightLabel?' ('+esc(it.weightLabel)+')':'')+' × '+(it.qty||1); }).join(', ');
+  }
+
+  function sentText(sent){
+    var slots = sent.slots || (sent.door!=null ? [{door:sent.door, code:sent.code}] : []);
+    if(!slots.length) return '✓ Sendt';
+    var codes = slots.map(function(s){return String(s.code);}).filter(function(v,i,a){return a.indexOf(v)===i;});
+    if(slots.length===1) return '✓ Sendt · Dør '+esc(slots[0].door)+' · Kode '+esc(slots[0].code);
+    if(codes.length===1) return '✓ Sendt · Døre '+slots.map(function(s){return esc(s.door);}).join(', ')+' · Kode '+esc(codes[0]);
+    return '✓ Sendt · '+slots.map(function(s){return 'Dør '+esc(s.door)+' ('+esc(s.code)+')';}).join(', ');
+  }
+
+  function card(o, sent){
+    var el = document.createElement('div');
+    el.className = 'order' + (sent ? ' done' : '');
+    var total = Number(o.total||0).toFixed(2).replace('.', ',');
+    var html = ''
+      + '<div class="order-top">'
+      +   '<div><div class="order-who">'+esc(o.name)+'</div><div class="order-email">'+esc(o.email)+'</div></div>'
+      +   '<div><div class="order-ref">Ordre #'+esc(o.ref)+'</div><div class="order-total">'+total+' kr.</div></div>'
+      + '</div>'
+      + '<div class="order-items">'+itemsLine(o)+'</div>';
+
+    if(sent){
+      html += '<div class="sent-line">'+sentText(sent)+'</div>';
+    } else {
+      html += '<div class="order-act">'
+        + '<input class="door-in" type="text" inputmode="numeric" placeholder="Dør-nr. (fx 7, 8)" />'
+        + '<button class="btn btn-blue send-btn">Send kode</button>'
+        + '<span class="order-status"></span>'
+        + '</div>';
+    }
+
+    // Order-confirmation print + delete buttons on every order
+    html += '<div class="order-foot">'
+      + '<button class="btn btn-ghost btn-print">🖨 Ordrebekræftelse</button>'
+      + '<button class="btn btn-ghost btn-del">🗑 Slet</button>'
+      + '</div>';
+    el.innerHTML = html;
+
+    el.querySelector('.btn-print').addEventListener('click', function(){ printConfirmation(o, sent); });
+    wireDelete(el.querySelector('.btn-del'), o.ref);
+
+    if(!sent){
+      var input = el.querySelector('.door-in');
+      var btn = el.querySelector('.send-btn');
+      var status = el.querySelector('.order-status');
+      btn.addEventListener('click', async function(){
+        var doorsVal = input.value.trim();
+        status.className='order-status';
+        if(!doorsVal){ status.classList.add('err'); status.textContent='Skriv et dør-nummer'; return; }
+        btn.disabled=true; var t=btn.textContent; btn.textContent='Sender…';
+        try{
+          var r = await fetch('/api/fulfill', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'send', ref:o.ref, doors:doorsVal}) });
+          var d = await r.json();
+          if(r.ok && d.ok){ status.classList.add('ok'); status.textContent='Sendt!'; setTimeout(load, 600); }
+          else { status.classList.add('err'); status.textContent = d.error || 'Kunne ikke sende'; btn.disabled=false; btn.textContent=t; }
+        }catch(e){ status.classList.add('err'); status.textContent='Kunne ikke sende'; btn.disabled=false; btn.textContent=t; }
+      });
+    }
+    return el;
+  }
+
+  // A super-simple, clean order confirmation. Prints via a hidden frame so the
+  // print dialog opens on top of this page — no separate tab to get stuck on.
+  function printConfirmation(o, sent){
+    var total = Number(o.total||0).toFixed(2).replace('.', ',');
+    var rows = (o.items||[]).map(function(it){
+      return '<div class="it"><span class="n">'+esc(it.name)
+        + (it.weightLabel?' <span class="wl">'+esc(it.weightLabel)+'</span>':'')
+        + '</span><span class="q">'+(it.qty||1)+'×</span></div>';
+    }).join('') || '<div class="it"><span class="n">—</span></div>';
+
+    var css =
+      '@page{margin:0}' /* zero page margin = browser prints NO header/footer (no URL on the paper) */
+      + '*{box-sizing:border-box;margin:0;padding:0}'
+      + 'body{font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1a1611;background:#fff;padding:14mm 10mm}'
+      + '.card{max-width:400px;margin:0 auto;padding:44px 34px;text-align:center}'
+      + '.logo{width:66px;height:66px;object-fit:cover;border-radius:50%;margin:0 auto 14px;display:block}'
+      + 'h1{font-size:20px;color:#273071;font-weight:800;letter-spacing:.2px}'
+      + '.ref{font-size:13px;color:#9b9488;margin-top:4px}'
+      + '.who{font-size:16px;font-weight:600;margin-top:14px}'
+      + '.rule{height:1px;background:#e7e1d6;margin:22px 0}'
+      + '.items{text-align:left}'
+      + '.it{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #f0ece3;font-size:15px}'
+      + '.it:last-child{border-bottom:none}'
+      + '.it .n{font-weight:500}.it .wl{color:#9b9488;font-weight:400}'
+      + '.it .q{font-weight:800;color:#273071;white-space:nowrap}'
+      + '.total{display:flex;justify-content:space-between;font-size:18px;font-weight:800;color:#273071;margin-top:14px;padding-top:14px;border-top:2px solid #273071;text-align:left}'
+      + '.pickup{font-size:13px;color:#6b6256;margin-top:22px;line-height:1.6}'
+      + '.pickup b{color:#1a1611}'
+      + '.thanks{font-size:14px;font-weight:600;color:#273071;margin-top:22px}'
+      + '.foot{font-size:11px;color:#9b9488;margin-top:10px;letter-spacing:.02em;line-height:1.6}';
+
+    var docHtml = '<!doctype html><html lang="da"><head><meta charset="utf-8">'
+      + '<title>Ordrebekræftelse #'+esc(o.ref)+'</title><style>'+css+'</style></head><body>'
+      + '<div class="card">'
+      +   '<img class="logo" src="/images/favicon.png" alt="" onerror="this.style.display=\'none\'">'
+      +   '<h1>Ordrebekræftelse</h1>'
+      +   '<div class="ref">Ordre #'+esc(o.ref)+'</div>'
+      +   '<div class="who">'+esc(o.name||'—')+'</div>'
+      +   '<div class="rule"></div>'
+      +   '<div class="items">'+rows+'</div>'
+      +   '<div class="total"><span>I alt</span><span>'+total+' kr.</span></div>'
+      +   '<div class="pickup"><b>Afhentning</b><br>Suså Landevej 101, 4160 Herlufmagle</div>'
+      +   '<div class="thanks">Tak for din ordre</div>'
+      +   '<div class="foot">Quartz Mølle · CVR 42117188 · hello@quartzmolle.dk</div>'
+      + '</div></body></html>';
+
+    printViaFrame(docHtml);
+  }
+
+  // Print any HTML document via a hidden iframe (keeps you on the current page).
+  function printViaFrame(docHtml){
+    var old = document.getElementById('printFrame');
+    if(old) old.parentNode.removeChild(old);
+    var f = document.createElement('iframe');
+    f.id = 'printFrame';
+    f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+    var done = false;
+    function go(){ if(done) return; done = true; try{ f.contentWindow.focus(); f.contentWindow.print(); }catch(e){} }
+    f.onload = function(){ setTimeout(go, 350); };
+    document.body.appendChild(f);
+    var idoc = f.contentWindow.document;
+    idoc.open(); idoc.write(docHtml); idoc.close();
+    setTimeout(go, 800); // fallback if onload doesn't fire for written docs
+  }
+
+  // Delete button that must be confirmed twice before it actually deletes.
+  function wireDelete(btn, ref){
+    if(!btn) return;
+    var stage = 0, timer = null, orig = btn.textContent;
+    function reset(){ stage = 0; btn.textContent = orig; btn.classList.remove('arm'); if(timer){ clearTimeout(timer); timer = null; } }
+    btn.addEventListener('click', async function(){
+      stage++;
+      if(timer) clearTimeout(timer);
+      if(stage === 1){ btn.classList.add('arm'); btn.textContent = 'Bekræft slet (1/2)'; timer = setTimeout(reset, 4000); return; }
+      if(stage === 2){ btn.textContent = 'Bekræft slet (2/2)'; timer = setTimeout(reset, 4000); return; }
+      reset();
+      btn.disabled = true; btn.textContent = 'Sletter…';
+      try{
+        var r = await fetch('/api/fulfill', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'delete', ref: ref }) });
+        var d = await r.json().catch(function(){ return {}; });
+        if(r.ok && d.ok){ load(); }
+        else { alert(d.error || 'Kunne ikke slette'); btn.disabled = false; btn.textContent = orig; }
+      }catch(e){ alert('Netværksfejl'); btn.disabled = false; btn.textContent = orig; }
+    });
+  }
+
+  // If already logged in on /locker, the cookie is set — go straight in.
+  load();
+})();
+</script>
+</body>
+</html>
