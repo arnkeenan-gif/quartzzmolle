@@ -108,41 +108,50 @@ export default async function handler(req, res) {
     if (action === 'migrate') {
       const code = (body.code || (req.query && req.query.code) || '').toString();
       if (!CODE || !safeEqual(code, CODE)) return res.status(401).json({ error: 'Unauthorized' });
-      try { if (await kv.get('migrate:done')) return res.status(200).json({ ok: true, alreadyDone: true, note: 'Allerede migreret tidligere.' }); } catch {}
+      // ?force=1 RESTORES the old snapshot even if the new DB already holds fresh
+      // (empty) keys written by syncs since the switch. It only overwrites the
+      // data-bearing keys below — never the live heartbeat (locker:device) or the
+      // open-command queue (locker:cmds), which must stay current.
+      const force = String((req.query && req.query.force) || body.force || '') === '1';
+      if (!force) {
+        try { if (await kv.get('migrate:done')) return res.status(200).json({ ok: true, alreadyDone: true, note: 'Allerede migreret. Tilføj &force=1 for at gennemtvinge gendannelse.' }); } catch {}
+      }
       let oldkv;
       try { ({ kv: oldkv } = await import('@vercel/kv')); }
       catch (e) { return res.status(500).json({ error: 'Kunne ikke indlæse @vercel/kv (gammel database)', detail: String(e && e.message || e) }); }
-      const report = { copied: {}, skipped: [], errors: {} };
+      const report = { forced: force, copied: {}, skipped: [], errors: {} };
       const existsNew = async (k) => { try { return !!(await kv.exists(k)); } catch { return false; } };
+      // [key, restorable] — restorable keys are overwritten when force=1.
+      // locker:device (heartbeat) and locker:cmds (open queue) are never forced.
       // strings / json
-      for (const key of ['locker:state', 'locker:device']) {
+      for (const [key, restorable] of [['locker:state', true], ['locker:device', false]]) {
         try {
-          if (await existsNew(key)) { report.skipped.push(key + ' (findes allerede)'); continue; }
+          if ((!force || !restorable) && await existsNew(key)) { report.skipped.push(key + ' (findes allerede)'); continue; }
           const v = await oldkv.get(key);
           if (v == null) { report.skipped.push(key + ' (tom i gammel)'); continue; }
           await kv.set(key, v); report.copied[key] = 'værdi';
         } catch (e) { report.errors[key] = String(e && e.message || e); }
       }
       // lists (preserve order)
-      for (const key of ['locker:history', 'locker:cmds', 'pickup:orders']) {
+      for (const [key, restorable] of [['pickup:orders', true], ['locker:history', true], ['locker:cmds', false]]) {
         try {
-          if (await existsNew(key)) { report.skipped.push(key + ' (findes allerede)'); continue; }
+          if ((!force || !restorable) && await existsNew(key)) { report.skipped.push(key + ' (findes allerede)'); continue; }
           const items = (await oldkv.lrange(key, 0, -1)) || [];
           if (!items.length) { report.skipped.push(key + ' (tom i gammel)'); continue; }
           await kv.del(key); for (const it of items) await kv.rpush(key, it);
           report.copied[key] = items.length + ' items';
         } catch (e) { report.errors[key] = String(e && e.message || e); }
       }
-      // hash
+      // hash (hset merges fields, so fulfilment marks are never lost)
       for (const key of ['pickup:fulfilled']) {
         try {
-          if (await existsNew(key)) { report.skipped.push(key + ' (findes allerede)'); continue; }
+          if (!force && await existsNew(key)) { report.skipped.push(key + ' (findes allerede)'); continue; }
           const obj = (await oldkv.hgetall(key)) || {};
           if (!Object.keys(obj).length) { report.skipped.push(key + ' (tom i gammel)'); continue; }
           await kv.hset(key, obj); report.copied[key] = Object.keys(obj).length + ' felter';
         } catch (e) { report.errors[key] = String(e && e.message || e); }
       }
-      // optional: visitor-stats sets (best-effort)
+      // optional: visitor-stats sets (best-effort, never forced)
       try {
         const vkeys = (await oldkv.keys('visitors:*')) || [];
         let days = 0;
@@ -159,7 +168,10 @@ export default async function handler(req, res) {
         if (days) report.copied['visitors:* (statistik)'] = days + ' dage';
       } catch (e) { report.errors['visitors:*'] = String(e && e.message || e); }
       try { await kv.set('migrate:done', { at: Date.now() }); } catch {}
-      report.ok = true; report.note = 'Migrering færdig. Intet at slette — endpointet er nu selv-deaktiveret.';
+      report.ok = true;
+      report.note = force
+        ? 'Gennemtvunget gendannelse færdig — skab-status og ordrer er hentet fra den gamle database.'
+        : 'Migrering færdig. Ingenting at slette — endpointet er selv-deaktiveret.';
       return res.status(200).json(report);
     }
 
