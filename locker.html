@@ -182,6 +182,46 @@
     opacity:0;transition:opacity .2s,transform .2s;pointer-events:none
   }
   .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px)}
+
+  /* ---------- DESKTOP / PC ----------
+     The page is built for a narrow tablet; on a wide PC monitor everything
+     otherwise sits as a tiny stamp in the top-centre. Scale it up so it fills
+     the screen and is easy to read and click. Tablet view is untouched. */
+  @media (min-width:900px){
+    .top{padding:16px 34px;gap:14px}
+    .top img{width:44px;height:44px}
+    .top .ttl{font-size:19px}
+    .top .ttl small{font-size:13px}
+    .pill{font-size:14px;padding:9px 15px}
+    .logout{font-size:14px;padding:10px 15px}
+
+    .wrap{max-width:1200px;padding:36px 32px 100px}
+    .row{gap:16px}
+    .btn{font-size:18px;padding:18px 26px;border-radius:15px}
+
+    .statline{font-size:18px;margin:30px 2px 18px}
+    .statline b{font-size:20px}
+
+    .cabinet{max-width:1000px;gap:10px;padding:12px;border-radius:22px;margin:8px auto 0}
+    .door{min-height:120px;border-radius:11px;padding:8px}
+    .door .dn{font-size:15px;top:6px;left:10px}
+    .door .dcode{font-size:26px}
+    .door .dlbl{font-size:14px}
+    .screen{min-height:120px;border-radius:11px}
+
+    .sec-h{font-size:19px;margin:40px 2px 18px}
+    .hist{max-width:1000px}
+    .hrow{padding:16px 20px}
+    .hrow .l1{font-size:16px}
+    .hrow .l2{font-size:14px}
+  }
+  /* Extra breathing room on very large / 4K monitors */
+  @media (min-width:1500px){
+    .wrap{max-width:1360px}
+    .cabinet{max-width:1140px}
+    .door,.screen{min-height:140px}
+    .door .dcode{font-size:30px}
+  }
 </style>
 </head>
 <body>
