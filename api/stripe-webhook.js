@@ -57,6 +57,18 @@ function pickTemplateId(deliveryKey, shippingName, templates, weightKg) {
 }
 
 export default async function handler(req, res) {
+  // ── ONE-OFF RECOVERY (GET, passcode-protected) ──────────────────────────────
+  // Rebuild Click & Collect pickup orders that failed to save while the OLD
+  // database was over its request limit — straight from Stripe (the authoritative
+  // payment record). During the outage savePickupOrder() threw and was swallowed
+  // by its try/catch, so those orders live only in Stripe.
+  //   /api/stripe-webhook?action=recover&code=LOCKER_CODE[&days=21]
+  // Idempotent: skips any order already listed or already fulfilled. Writes only
+  // pickup:orders. The live webhook (POST) path below is completely untouched.
+  if (req.method === 'GET' && req.query && req.query.action === 'recover') {
+    return recoverPickupOrders(req, res);
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -616,6 +628,74 @@ async function savePickupOrder(orderData) {
   };
   await kv.lpush('pickup:orders', record);
   await kv.ltrim('pickup:orders', 0, 199);
+}
+
+// One-off recovery: pull Click & Collect orders back from Stripe and re-add any
+// that are missing from pickup:orders (e.g. orders placed while the old database
+// was down). Passcode-protected; idempotent; only ever adds missing pickup orders.
+async function recoverPickupOrders(req, res) {
+  const code = (req.query.code || '').toString();
+  if (!process.env.LOCKER_CODE || code !== process.env.LOCKER_CODE) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  const days = Math.min(90, Math.max(1, parseInt(req.query.days || '21', 10)));
+  const since = Math.floor(Date.now() / 1000) - days * 86400;
+  const stripe = (await import('stripe')).default(process.env.STRIPE_SECRET_KEY);
+  const { kv } = await import('./_kv.js');
+
+  // Everything we already have (saved or already fulfilled) — dedupe against this.
+  const have = new Set();
+  try {
+    (await kv.lrange('pickup:orders', 0, -1) || []).forEach(o => {
+      if (o && o.externalId) have.add(String(o.externalId));
+      if (o && o.ref) have.add(String(o.ref));
+    });
+  } catch {}
+  try {
+    const f = (await kv.hgetall('pickup:fulfilled')) || {};
+    Object.keys(f).forEach(k => have.add(String(k)));
+  } catch {}
+
+  const report = { window_days: days, scanned: 0, recovered: [], skipped_non_pickup: 0, already_had: 0, errors: [] };
+  const refOf = (extId) => String(extId).slice(-12).toUpperCase();
+
+  const consider = async (orderData) => {
+    if (!orderData) return;
+    report.scanned++;
+    if (orderData.deliveryKey !== 'pickup') { report.skipped_non_pickup++; return; }
+    const ref = refOf(orderData.externalId);
+    if (have.has(String(orderData.externalId)) || have.has(ref)) { report.already_had++; return; }
+    await savePickupOrder(orderData);
+    have.add(String(orderData.externalId)); have.add(ref);
+    report.recovered.push({ ref, name: orderData.customerName || '', total: orderData.amountKr || 0 });
+  };
+
+  // 1) New Elements flow — succeeded PaymentIntents.
+  try {
+    for await (const pi of stripe.paymentIntents.list({ created: { gte: since }, limit: 100 })) {
+      if (pi.status !== 'succeeded') continue;
+      try { await consider(parsePaymentIntent(pi)); }
+      catch (e) { report.errors.push('pi ' + pi.id + ': ' + (e && e.message || e)); }
+      if (report.scanned > 1000) break;
+    }
+  } catch (e) { report.errors.push('list PI: ' + (e && e.message || e)); }
+
+  // 2) Legacy Checkout redirect flow — paid Checkout Sessions.
+  try {
+    for await (const s of stripe.checkout.sessions.list({ created: { gte: since }, limit: 100 })) {
+      if (s.payment_status !== 'paid') continue;
+      try { await consider(await parseCheckoutSession(s)); }
+      catch (e) { report.errors.push('cs ' + s.id + ': ' + (e && e.message || e)); }
+      if (report.scanned > 2000) break;
+    }
+  } catch (e) { report.errors.push('list CS: ' + (e && e.message || e)); }
+
+  report.ok = true;
+  report.recovered_count = report.recovered.length;
+  report.note = report.recovered.length
+    ? report.recovered.length + ' afhentnings-ordre(r) hentet tilbage fra Stripe og lagt i fulfillment-listen.'
+    : 'Ingen manglende afhentnings-ordrer i vinduet — alt var der allerede.';
+  return res.status(200).json(report);
 }
 
 // Human-readable delivery label for emails.
