@@ -14,10 +14,11 @@
 
   var LANG_KEY = 'qm_lang';
   function currentLang() {
-    try { return localStorage.getItem(LANG_KEY) === 'en' ? 'en' : 'da'; } catch (e) { return 'da'; }
+    try { var v = localStorage.getItem(LANG_KEY); return (v === 'en' || v === 'es') ? v : 'da'; } catch (e) { return 'da'; }
   }
   function setLang(lang) {
-    try { localStorage.setItem(LANG_KEY, lang === 'en' ? 'en' : 'da'); } catch (e) {}
+    var v = (lang === 'en' || lang === 'es') ? lang : 'da';
+    try { localStorage.setItem(LANG_KEY, v); } catch (e) {}
     // Reload so the page re-renders from the Danish source, then re-translates.
     window.location.reload();
   }
@@ -245,7 +246,259 @@
     "Varer": "Items",
     "Sendt": "Sent",
     "Dør": "Door",
-    "Kode": "Code"
+    "Kode": "Code",
+
+    // locker/fufill — newer strings (deposit flow, print, buttons)
+    "Ordre-fulfillment (Click & Collect)": "Order fulfilment (Click & Collect)",
+    "📦 Ordre-fulfillment (Click & Collect)": "📦 Order fulfilment (Click & Collect)",
+    "Ordre-fulfillment": "Order fulfilment",
+    "Kode sendt til kunden ✓": "Code sent to the customer ✓",
+    "Kunne ikke sende": "Could not send",
+    "Ingen ordre / færdig": "No order / done",
+    "📧 Send koden til kunden — vælg ordren:": "📧 Send the code to the customer — pick the order:",
+    "Ingen afventende online-ordrer. Kopiér koden og giv den til kunden.": "No pending online orders. Copy the code and give it to the customer.",
+    "Send kode": "Send code",
+    "Ordrebekræftelse": "Order confirmation",
+    "Tak for din ordre": "Thank you for your order"
+  };
+
+  // ── Danish → Spanish dictionary (same keys as QM_DICT) ──
+  var QM_DICT_ES = {
+    // Navigation / shared
+    "Hjem": "Inicio",
+    "Forhandlere": "Distribuidores",
+    "Om os": "Sobre nosotros",
+    "Kontakt": "Contacto",
+    "Shop Nu": "Comprar ahora",
+    "EU Økologi": "Ecológico UE",
+    "Statskontrolleret Økologisk": "Ecológico con control estatal",
+    "Smileyrapport – se vores kontrolrapport fra Fødevarestyrelsen": "Informe Smiley – vea nuestro informe de inspección de la Agencia Danesa de Alimentos",
+    "Smiley­rapport": "Informe Smiley",
+
+    // index.html
+    "Quartz Mølle – Økologisk Mel fra Stenkværn": "Quartz Mølle – Harina ecológica molida a la piedra",
+    "Økologisk mel – malet på stenkværn i Danmark": "Harina ecológica – molida a la piedra en Dinamarca",
+    "Se vores mel": "Ver nuestra harina",
+    "Vores historie": "Nuestra historia",
+    "Fra mark til mel": "Del campo a la harina",
+    "Vi dyrker og maler vores korn på stenkværn i hjertet af Danmark. Hver pose mel bærer historien om jord, sol og omtanke.": "Cultivamos y molemos nuestro grano a la piedra en el corazón de Dinamarca. Cada bolsa de harina lleva la historia de la tierra, el sol y el cuidado.",
+    "Læs mere": "Leer más",
+    "Vores sortiment": "Nuestra gama",
+    "9 varianter af enestående mel": "9 variedades de harina excepcional",
+    "Varianterne skifter naturligvis efter sæsonen": "Las variedades cambian naturalmente según la temporada",
+    "Fra Dalarna til Purpurhvede – hvert mel har sin egen karakter, smag og bagningsegenskaber.": "De Dalarna al trigo púrpura: cada harina tiene su propio carácter, sabor y propiedades de horneado.",
+    "Se alle produkter": "Ver todos los productos",
+    "Udvalgte produkter": "Productos seleccionados",
+    "Se hele sortimentet": "Ver toda la gama",
+    "Hvorfor Quartz Mølle?": "¿Por qué Quartz Mølle?",
+    "Mel med mening": "Harina con sentido",
+    "Stenkværnet": "Molida a la piedra",
+    "– Langsom formaling bevarer næringsstoffer og smag": "– La molienda lenta conserva los nutrientes y el sabor",
+    "Nordisk korn": "Grano nórdico",
+    "– Dyrket på nordisk jord med respekt for naturen": "– Cultivado en suelo nórdico con respeto por la naturaleza",
+    "Certificeret økologisk": "Certificado ecológico",
+    "– EU-Øko & Statskontrolleret Økologisk": "– Ecológico UE y ecológico con control estatal",
+    "Direkte fra mølle": "Directo del molino",
+    "– Ingen mellemmænd, frisk mel til dig": "– Sin intermediarios, harina fresca para ti",
+    "Find os": "Encuéntranos",
+    "4160 Herlufmagle, Danmark": "4160 Herlufmagle, Dinamarca",
+
+    // om.html
+    "Om os – Quartz Mølle": "Sobre nosotros – Quartz Mølle",
+    "Quartz Mølle – Smag, Stabilitet og Stenmalet Kvalitet": "Quartz Mølle – Sabor, consistencia y calidad molida a la piedra",
+    "Hos Quartz Mølle forener vi traditionelt håndværk med moderne indsigt i at fremstille noget af Danmarks mest smagfulde og stabile økologiske mel. Vi samarbejder med økologiske landmænd fra Danmark og Sverige og udvælger kun de bedste, mest næringsrige kornsorter, som vi maler nænsomt – og altid med fokus på smag, sundhed og bageevne.": "En Quartz Mølle unimos la artesanía tradicional con el conocimiento moderno para elaborar algunas de las harinas ecológicas más sabrosas y consistentes de Dinamarca. Trabajamos con agricultores ecológicos de Dinamarca y Suecia y seleccionamos solo las mejores variedades de grano, las más nutritivas, que molemos con delicadeza, siempre con atención al sabor, la salud y la capacidad de horneado.",
+    "Vores mølle er navngivet Quartz Mølle da vores møllesten er rige på kvarts, men også emery og flint – hårde stenarter, som sikrer en præcis, skånsom og stabil formaling. I stedet for at kværne kornet hårdt under høj temperatur, bevarer vi næringsstofferne ved at male langsomt: kun 115 omdrejninger i minuttet – mod de typiske 330 rpm i mange andre stenkværn.": "Nuestro molino se llama Quartz Mølle porque nuestras piedras de moler son ricas en cuarzo, pero también en esmeril y sílex: minerales duros que garantizan una molienda precisa, suave y consistente. En lugar de moler el grano con fuerza a alta temperatura, conservamos los nutrientes moliendo despacio: solo 115 revoluciones por minuto, frente a las 330 rpm habituales en muchos otros molinos de piedra.",
+    "Vi kombinerer vores skånsomme stenformaling med en dobbelt valsemølle fra 1949, som giver os en unik kontrol over struktur og konsistens. Det betyder mel med høj bagekvalitet, stor smag og en stabilitet, som professionelle bagere og passionerede hjemmebagere kan stole på – hver gang. Hos Quartz Mølle tror vi på gennemsigtighed, ærlighed og et kompromisløst fokus på kvalitet. Vi sætter en dyd i at levere det bedste, naturen og håndværket kan tilbyde.": "Combinamos nuestra suave molienda a la piedra con un molino de rodillos doble de 1949, que nos da un control único sobre la estructura y la consistencia. El resultado es una harina de gran calidad de horneado, mucho sabor y una consistencia en la que los panaderos profesionales y los aficionados apasionados pueden confiar, siempre. En Quartz Mølle creemos en la transparencia, la honestidad y un enfoque en la calidad sin concesiones. Nos enorgullece ofrecer lo mejor que la naturaleza y la artesanía pueden dar.",
+    "Quartz Mølle stenkværn": "Molino de piedra Quartz Mølle",
+
+    // forhandlere.html
+    "Forhandlere – Quartz Mølle": "Distribuidores – Quartz Mølle",
+    "Find en Quartz Mølle forhandler i nærheden af dig.": "Encuentra un distribuidor de Quartz Mølle cerca de ti.",
+    "Find en Quartz Mølle forhandler i nærheden af dig. Klik på et logo for at se butikkens hjemmeside.": "Encuentra un distribuidor de Quartz Mølle cerca de ti. Haz clic en un logotipo para ver la web de la tienda.",
+    "Besøg hjemmeside →": "Visitar la web →",
+
+    // shop.html / product.html
+    "Shop – Quartz Mølle": "Tienda – Quartz Mølle",
+    "Produkt – Quartz Mølle": "Producto – Quartz Mølle",
+    "Alle produkter": "Todos los productos",
+    "Økologisk mel malet på stenkværn – dyrket og malet i Norden med omtanke for smag og natur.": "Harina ecológica molida a la piedra: cultivada y molida en los países nórdicos con cuidado por el sabor y la naturaleza.",
+    "Søg efter produkter…": "Buscar productos…",
+    "Søg efter produkter": "Buscar productos",
+    "Ryd søgning": "Borrar búsqueda",
+    "Indlæser produkter…": "Cargando productos…",
+    "Ingen produkter fundet.": "No se han encontrado productos.",
+    "Quartz Mølle · Økologisk stenmalet mel": "Quartz Mølle · Harina ecológica molida a la piedra",
+    "Indlæser produkt…": "Cargando producto…",
+    "Mere fra møllen": "Más del molino",
+    "Du vil måske også kunne lide": "También te puede gustar",
+    "Bestseller": "Más vendido",
+    "← Tilbage til shop": "← Volver a la tienda",
+
+    // product.js UI
+    "Næringsindhold er ikke tilgængelig for dette produkt.": "La información nutricional no está disponible para este producto.",
+    "Næringsindhold pr. 100 g": "Valores nutricionales por 100 g",
+    "Energi": "Energía",
+    "Fedt": "Grasas",
+    "heraf mættede fedtsyrer": "de las cuales saturadas",
+    "Kulhydrat": "Hidratos de carbono",
+    "heraf sukkerarter": "de los cuales azúcares",
+    "Kostfibre": "Fibra alimentaria",
+    "Levering til pakkeshop i Danmark – max 20 kg": "Entrega a punto de recogida en Dinamarca – máx. 20 kg",
+    "Levering til privatadresse i Danmark – max 25 kg": "Entrega a domicilio en Dinamarca – máx. 25 kg",
+    "Bemærk: Du kan ikke bestille 2 stk. 12,5 kg melposer i samme ordre. Vores 12,5 kg poser indeholder altid lidt mere mel end angivet, så to af dem vejer omkring 25,2 kg – hvilket overskrider GLS' grænse på 25 kg.": "Nota: no puedes pedir 2 bolsas de harina de 12,5 kg en el mismo pedido. Nuestras bolsas de 12,5 kg siempre contienen algo más de harina de lo indicado, por lo que dos de ellas pesan alrededor de 25,2 kg, lo que supera el límite de 25 kg de GLS.",
+    "Vælg størrelse": "Elige el tamaño",
+    "Antal": "Cantidad",
+    "Mindre": "Menos",
+    "Mere": "Más",
+    "Tilføj til kurv": "Añadir a la cesta",
+    "Fragt beregnes ved checkout": "Los gastos de envío se calculan al finalizar la compra",
+    "Sikker betaling via Stripe": "Pago seguro con Stripe",
+    "Fragt regler": "Normas de envío",
+    "Næringsindhold": "Información nutricional",
+
+    // cart.js
+    "Kurv": "Cesta",
+    "Din kurv": "Tu cesta",
+    "Luk": "Cerrar",
+    "I alt": "Total",
+    "Til kassen": "Finalizar compra",
+    "Sikker betaling med Stripe": "Pago seguro con Stripe",
+    "Din kurv er tom.": "Tu cesta está vacía.",
+    "Forbereder…": "Preparando…",
+    "Netværksfejl — tjek forbindelse og prøv igen.": "Error de red: comprueba tu conexión e inténtalo de nuevo.",
+
+    // checkout.html / success.html
+    "Checkout – Quartz Mølle": "Pago – Quartz Mølle",
+    "Tak for din ordre! – Quartz Mølle": "¡Gracias por tu pedido! – Quartz Mølle",
+    "Kassen": "Pago",
+    "Udfyld oplysninger og vælg levering": "Rellena tus datos y elige la entrega",
+    "Tak for din ordre!": "¡Gracias por tu pedido!",
+    "Vi har modtaget din bestilling og pakker den hurtigst muligt. Du modtager en bekræftelse på email om kort tid.": "Hemos recibido tu pedido y lo prepararemos lo antes posible. Recibirás una confirmación por correo electrónico en breve.",
+    "Ordrenummer": "Número de pedido",
+    "Din ordre": "Tu pedido",
+    "Levering": "Entrega",
+    "Fortsæt shopping": "Seguir comprando",
+    "Gratis": "Gratis",
+
+    // products.js — types
+    "Fuldkornshvedemel": "Harina integral de trigo",
+    "Mellemsigtet hvedemel – Type 85": "Harina de trigo semiintegral – Tipo 85",
+    "Fintsigtet hvedemel – Type 70": "Harina de trigo refinada – Tipo 70",
+    "Rugmel fuldkorn": "Harina integral de centeno",
+    "Fuldkornsmel": "Harina integral",
+    // products.js — names
+    "Purpurhvede": "Trigo púrpura",
+    "Rød hvede": "Trigo rojo",
+    "Rug": "Centeno",
+    // products.js — descriptions
+    "Dalarna er en klassisk dansk hvedesort med en rig smag og god bageevne. Perfekt til rugbrød, boller og grovbrød. Dyrket og malet i Danmark.": "Dalarna es una variedad clásica de trigo danés con un sabor intenso y excelentes cualidades de horneado. Perfecta para pan de centeno, bollos y panes rústicos. Cultivada y molida en Dinamarca.",
+    "Dalarna Type 85 er et mellemsigtet mel der bevarer mere af kornets naturlige smag og næringsindhold end fintere mel. Ideel til brød med karakter.": "Dalarna Tipo 85 es una harina semiintegral que conserva más del sabor natural y los nutrientes del grano que las harinas más finas. Ideal para panes con carácter.",
+    "Mariagertoba er et fintsigtet hvedemel med fremragende bageegenskaber. Det giver luftige og velsmagende brød og boller. En af vores mest elskede sorter.": "Mariagertoba es una harina de trigo refinada con excelentes propiedades de horneado. Produce panes y bollos esponjosos y sabrosos. Una de nuestras variedades más queridas.",
+    "Ølandshvede er en gammel nordisk kornsort med en kompleks og nøddeagtig smag. Perfekt til surdejsbrød og håndværkerbrød der kræver karakter.": "El trigo Öland es una antigua variedad de grano nórdico con un sabor complejo y a frutos secos. Perfecto para panes de masa madre y panes artesanos que requieren carácter.",
+    "Ølands Type 85 kombinerer det bedste fra fuldkorn og hvidt mel. En alsidig meltype der giver brød med dybde og god struktur.": "Öland Tipo 85 combina lo mejor de la harina integral y la blanca. Una harina versátil que da a los panes profundidad y una buena estructura.",
+    "Purpurhvede er en smuk og sjælden hvedesort med en dyb, lilla farve. Rig på antioxidanter og med en markant, sødlig smag der løfter ethvert bagværk.": "El trigo púrpura es una variedad bonita y poco común con un intenso color morado. Rico en antioxidantes y con un sabor marcado y dulce que realza cualquier horneado.",
+    "Rød hvede er en klassisk dansk hvedesort med en smuk rødlig farve og en fyldig, robust smag. Ideel til grove brød og boller med karakter.": "El trigo rojo es una variedad clásica de trigo danés con un bonito color rojizo y un sabor pleno y robusto. Ideal para panes rústicos y bollos con carácter.",
+    "Rød hvede Type 70 er et let sigtet mel der giver luftige og velsmagende brød. Perfekt når du ønsker det bedste fra rød hvede i en finere tekstur.": "El trigo rojo Tipo 70 es una harina ligeramente tamizada que produce panes esponjosos y sabrosos. Perfecta cuando quieres lo mejor del trigo rojo con una textura más fina.",
+    "Rød hvede Type 85 er det perfekte kompromis mellem fuldkorn og finere mel. Beholder kornets naturlige smag med en mere tilgængelig tekstur.": "El trigo rojo Tipo 85 es el equilibrio perfecto entre la harina integral y la más fina. Conserva el sabor natural del grano con una textura más accesible.",
+    "Vores rugmel er malet af hele rugkerner på stenkværn. Rig på fibre og med en dyb, jordnær smag der er uundværlig i det klassiske danske rugbrød.": "Nuestra harina de centeno se muele a la piedra a partir de granos enteros de centeno. Rica en fibra y con un sabor profundo y terroso, imprescindible en el clásico pan de centeno danés.",
+    "Spelt er en urgammel kornsort med en nøddeagtig, sødlig smag. Lettere fordøjeligt end hvede og perfekt til brød, kager og pasta med en særlig karakter.": "La espelta es un grano ancestral con un sabor dulce y a frutos secos. Más fácil de digerir que el trigo y perfecta para panes, pasteles y pasta con un carácter especial.",
+    // products.js — certifications & origin
+    "Dansk jordbrug": "Agricultura danesa",
+    "EU-jordbrug": "Agricultura de la UE",
+    "EU-Jordbrug": "Agricultura de la UE",
+    "Dyrket i Norden & malet på stenkværn": "Cultivado en los países nórdicos y molido a la piedra",
+    "Malet på stenkværn i Danmark": "Molido a la piedra en Dinamarca",
+
+    // locker.html (internal staff panel)
+    "Skabsstyring · Quartz Mølle": "Gestión de taquillas · Quartz Mølle",
+    "Skabsstyring": "Gestión de taquillas",
+    "Indtast adgangskode": "Introduce el código de acceso",
+    "Lås op": "Desbloquear",
+    "Log ud": "Cerrar sesión",
+    "＋ Ny aflevering": "＋ Nueva entrega",
+    "↻ Opdatér": "↻ Actualizar",
+    "🔓 Åbn alle": "🔓 Abrir todas",
+    "🧹 Ryd alle": "🧹 Vaciar todas",
+    "/ 22 optaget": "/ 22 ocupadas",
+    "Historik": "Historial",
+    "Forkert kode": "Código incorrecto",
+    "Netværksfejl": "Error de red",
+    "lige nu": "ahora mismo",
+    "min siden": "min atrás",
+    "Tablet online": "Tablet en línea",
+    "Tablet offline": "Tablet sin conexión",
+    "ledige": "libres",
+    "Ud af drift": "Fuera de servicio",
+    "Ledig": "Libre",
+    "Ingen hændelser endnu.": "Aún no hay eventos.",
+    "Aflevering": "Entrega",
+    "Afhentning": "Recogida",
+    "Dør åbnet": "Puerta abierta",
+    "Alle døre åbnet": "Todas las puertas abiertas",
+    "Alle skabe ryddet": "Todas las taquillas vaciadas",
+    "Sat ud af drift": "Puesta fuera de servicio",
+    "Sat i drift": "Puesta en servicio",
+    "Åbn dør": "Abrir puerta",
+    "Ryd skab (markér ledig)": "Vaciar taquilla (marcar libre)",
+    "Sæt i drift": "Poner en servicio",
+    "Sæt ud af drift": "Poner fuera de servicio",
+    "Annullér": "Cancelar",
+    "Hvor mange skabe?": "¿Cuántas taquillas?",
+    "Vælg antal skabe til ordren": "Elige el número de taquillas para el pedido",
+    "Opret kode": "Crear código",
+    "Læg pakken i skab": "Coloca el paquete en la taquilla",
+    "Kode til kunden": "Código para el cliente",
+    "Kopiér kode": "Copiar código",
+    "Færdig": "Listo",
+    "Åbn ALLE skabe?": "¿Abrir TODAS las taquillas?",
+    "Alle 22 døre åbnes fysisk på lockeren, én ad gangen.": "Las 22 puertas se abren físicamente en la taquilla, una a una.",
+    "Ja, åbn alle": "Sí, abrir todas",
+    "Åbner alle skabe…": "Abriendo todas las taquillas…",
+    "Ryd ALLE skabe?": "¿Vaciar TODAS las taquillas?",
+    "Alle skabe markeres ledige og koderne fjernes. Kan ikke fortrydes.": "Todas las taquillas se marcan como libres y se eliminan los códigos. No se puede deshacer.",
+    "Ja, ryd alle": "Sí, vaciar todas",
+    "Døren åbnes fysisk på lockeren.": "La puerta se abre físicamente en la taquilla.",
+    "Ja, åbn døren": "Sí, abrir la puerta",
+    "Fejl": "Error",
+    "Alle skabe er optaget": "Todas las taquillas están ocupadas",
+
+    // fulfill.html (staff Click & Collect fulfilment page)
+    "Click & Collect – Quartz Mølle": "Click & Collect – Quartz Mølle",
+    "Click & Collect ordrer": "Pedidos Click & Collect",
+    "Log ind": "Iniciar sesión",
+    "Kodeord": "Contraseña",
+    "Afventende ordrer": "Pedidos pendientes",
+    "Afsendte ordrer": "Pedidos enviados",
+    "Aktive skab-koder": "Códigos de taquilla activos",
+    "Ingen afventende ordrer.": "No hay pedidos pendientes.",
+    "Ingen aktive koder.": "No hay códigos activos.",
+    "Skab-/dør-nummer": "Número de taquilla/puerta",
+    "Send kode til kunde": "Enviar código al cliente",
+    "Opdater": "Actualizar",
+    "Sender…": "Enviando…",
+    "Sendt!": "¡Enviado!",
+    "Kunne ikke sende. Prøv igen.": "No se pudo enviar. Inténtalo de nuevo.",
+    "Skriv et skab-/dør-nummer først.": "Escribe primero un número de taquilla/puerta.",
+    "Der er ingen aktiv kode for det skab. Deponer ordren i skabet på /locker først.": "No hay código activo para esa taquilla. Deposita primero el pedido en la taquilla en /locker.",
+    "Ordre": "Pedido",
+    "Vare": "Artículo",
+    "Varer": "Artículos",
+    "Sendt": "Enviado",
+    "Dør": "Puerta",
+    "Kode": "Código",
+
+    // locker/fufill — newer strings
+    "Ordre-fulfillment (Click & Collect)": "Gestión de pedidos (Click & Collect)",
+    "📦 Ordre-fulfillment (Click & Collect)": "📦 Gestión de pedidos (Click & Collect)",
+    "Ordre-fulfillment": "Gestión de pedidos",
+    "Kode sendt til kunden ✓": "Código enviado al cliente ✓",
+    "Kunne ikke sende": "No se pudo enviar",
+    "Ingen ordre / færdig": "Sin pedido / listo",
+    "📧 Send koden til kunden — vælg ordren:": "📧 Envía el código al cliente — elige el pedido:",
+    "Ingen afventende online-ordrer. Kopiér koden og giv den til kunden.": "No hay pedidos en línea pendientes. Copia el código y dáselo al cliente.",
+    "Send kode": "Enviar código",
+    "Ordrebekræftelse": "Confirmación de pedido",
+    "Tak for din ordre": "Gracias por tu pedido"
   };
 
   // Substring / pattern rules applied to text nodes that don't have an exact match.
@@ -254,8 +507,39 @@
     [/^Fra (\d[\d.,]*\s*kr\.)$/, 'From $1'],          // "Fra 99,00 kr." -> "From 99,00 kr."
     [/(^|\s)Antal:/g, '$1Quantity:'],                  // "3 kg · Antal: 2"
     [/Kunne ikke åbne betaling \(status/g, 'Could not open payment (status'],
-    [/\bPrøv igen\./g, 'Try again.']
+    [/\bPrøv igen\./g, 'Try again.'],
+    // locker dynamic strings (numbers stay in place)
+    [/^(\d+) \/ (\d+) optaget$/, '$1 / $2 occupied'],
+    [/^(\d+) ledige$/, '$1 available'],
+    [/^Skab (\d[\d, ]*) åbnet$/, 'Cabinet $1 opened'],
+    [/^Skabe (\d[\d, ]*) åbnet$/, 'Cabinets $1 opened'],
+    [/^Vælg (\d+) skabe?$/, 'Choose $1 cabinets'],
+    [/^Læg i skab$/, 'Place in cabinet'],
+    [/(\d+) min siden/, '$1 min ago'],
+    [/Afhentning · Skab/g, 'Pickup · Cabinet'],
+    [/Aflevering · Skab/g, 'Deposit · Cabinet']
   ];
+
+  // Spanish equivalents of the pattern rules.
+  var QM_RULES_ES = [
+    [/^Fra (\d[\d.,]*\s*kr\.)$/, 'Desde $1'],
+    [/(^|\s)Antal:/g, '$1Cantidad:'],
+    [/Kunne ikke åbne betaling \(status/g, 'No se pudo abrir el pago (estado'],
+    [/\bPrøv igen\./g, 'Inténtalo de nuevo.'],
+    [/^(\d+) \/ (\d+) optaget$/, '$1 / $2 ocupadas'],
+    [/^(\d+) ledige$/, '$1 libres'],
+    [/^Skab (\d[\d, ]*) åbnet$/, 'Taquilla $1 abierta'],
+    [/^Skabe (\d[\d, ]*) åbnet$/, 'Taquillas $1 abiertas'],
+    [/^Vælg (\d+) skabe?$/, 'Elige $1 taquillas'],
+    [/^Læg i skab$/, 'Coloca en la taquilla'],
+    [/(\d+) min siden/, 'hace $1 min'],
+    [/Afhentning · Skab/g, 'Recogida · Taquilla'],
+    [/Aflevering · Skab/g, 'Entrega · Taquilla'],
+    [/^Offline · /, 'Sin conexión · ']
+  ];
+
+  // Active dictionary/rules for the current non-Danish language (set in init()).
+  var ACTIVE_DICT = QM_DICT, ACTIVE_RULES = QM_RULES;
 
   var ATTRS = ['placeholder', 'aria-label', 'title', 'alt'];
 
@@ -263,13 +547,13 @@
     if (raw == null) return raw;
     var trimmed = raw.trim();
     if (!trimmed) return raw;
-    if (Object.prototype.hasOwnProperty.call(QM_DICT, trimmed)) {
+    if (Object.prototype.hasOwnProperty.call(ACTIVE_DICT, trimmed)) {
       // Preserve original surrounding whitespace
-      return raw.replace(trimmed, QM_DICT[trimmed]);
+      return raw.replace(trimmed, ACTIVE_DICT[trimmed]);
     }
     var out = raw, changed = false;
-    for (var i = 0; i < QM_RULES.length; i++) {
-      var next = out.replace(QM_RULES[i][0], QM_RULES[i][1]);
+    for (var i = 0; i < ACTIVE_RULES.length; i++) {
+      var next = out.replace(ACTIVE_RULES[i][0], ACTIVE_RULES[i][1]);
       if (next !== out) { out = next; changed = true; }
     }
     return changed ? out : raw;
@@ -341,12 +625,13 @@
     wrap.innerHTML =
       '<button class="lang-switch-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Language">' +
         '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>' +
-        '<span class="lang-current">' + (lang === 'en' ? 'EN' : 'DA') + '</span>' +
+        '<span class="lang-current">' + (lang === 'en' ? 'EN' : lang === 'es' ? 'ES' : 'DA') + '</span>' +
         '<svg class="lang-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>' +
       '</button>' +
       '<div class="lang-switch-menu">' +
         '<button type="button" data-lang="da"' + (lang === 'da' ? ' class="active"' : '') + '>Dansk</button>' +
         '<button type="button" data-lang="en"' + (lang === 'en' ? ' class="active"' : '') + '>English</button>' +
+        '<button type="button" data-lang="es"' + (lang === 'es' ? ' class="active"' : '') + '>Español</button>' +
       '</div>';
 
     var btn = wrap.querySelector('.lang-switch-btn');
@@ -433,7 +718,8 @@
     injectStyle();
     injectSwitches(lang);
 
-    if (lang === 'en') {
+    if (lang !== 'da') {
+      if (lang === 'es') { ACTIVE_DICT = QM_DICT_ES; ACTIVE_RULES = QM_RULES_ES; }
       translateAll();
       // Keep translating dynamically-rendered content (cart, cards, checkout, …)
       var obs = new MutationObserver(function (muts) {
@@ -453,5 +739,10 @@
     init();
   }
 
-  window.QuartzI18n = { lang: currentLang, set: setLang, t: function (s) { return (currentLang() === 'en' && QM_DICT[s]) || s; } };
+  window.QuartzI18n = { lang: currentLang, set: setLang, t: function (s) {
+    var l = currentLang();
+    if (l === 'en' && QM_DICT[s]) return QM_DICT[s];
+    if (l === 'es' && QM_DICT_ES[s]) return QM_DICT_ES[s];
+    return s;
+  } };
 })();
