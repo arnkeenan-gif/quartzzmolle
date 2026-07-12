@@ -618,7 +618,7 @@
   }
 
   // ── Language dropdown injected into each .nav ──
-  function buildSwitch(lang) {
+  function buildSwitch(lang, allowEs) {
     var wrap = document.createElement('div');
     wrap.className = 'lang-switch';
     wrap.setAttribute('data-no-i18n', '');
@@ -631,7 +631,7 @@
       '<div class="lang-switch-menu">' +
         '<button type="button" data-lang="da"' + (lang === 'da' ? ' class="active"' : '') + '>Dansk</button>' +
         '<button type="button" data-lang="en"' + (lang === 'en' ? ' class="active"' : '') + '>English</button>' +
-        '<button type="button" data-lang="es"' + (lang === 'es' ? ' class="active"' : '') + '>Español</button>' +
+        (allowEs ? '<button type="button" data-lang="es"' + (lang === 'es' ? ' class="active"' : '') + '>Español</button>' : '') +
       '</div>';
 
     var btn = wrap.querySelector('.lang-switch-btn');
@@ -651,11 +651,11 @@
     return wrap;
   }
 
-  function injectSwitches(lang) {
+  function injectSwitches(lang, allowEs) {
     var placed = 0;
     document.querySelectorAll('.nav').forEach(function (nav) {
       if (nav.querySelector('.lang-switch')) { placed++; return; }
-      var sw = buildSwitch(lang);
+      var sw = buildSwitch(lang, allowEs);
       var cta = nav.querySelector('.nav-cta');
       var burger = nav.querySelector('.nav-burger');
       if (cta) nav.insertBefore(sw, cta);
@@ -666,18 +666,18 @@
     // Also offer it in the mobile menu
     document.querySelectorAll('.mobile-menu').forEach(function (menu) {
       if (menu.querySelector('.lang-switch')) return;
-      menu.appendChild(buildSwitch(lang));
+      menu.appendChild(buildSwitch(lang, allowEs));
     });
     // Explicit slots (e.g. internal panels like /locker, /fulfill)
     document.querySelectorAll('[data-lang-slot]').forEach(function (slot) {
       if (slot.querySelector('.lang-switch')) { placed++; return; }
-      slot.appendChild(buildSwitch(lang));
+      slot.appendChild(buildSwitch(lang, allowEs));
       placed++;
     });
     // Fallback: pages with no nav/menu/slot get a floating control so the
     // language option is always available (internal panels, etc.).
     if (placed === 0 && document.body) {
-      var fsw = buildSwitch(lang);
+      var fsw = buildSwitch(lang, allowEs);
       fsw.classList.add('lang-switch--floating');
       document.body.appendChild(fsw);
     }
@@ -714,12 +714,17 @@
 
   function init() {
     var lang = currentLang();
-    document.documentElement.lang = lang;
+    // Spanish is offered ONLY inside the staff panels (locker / fufill / admin),
+    // which are the pages that expose a [data-lang-slot]. On customer-facing
+    // pages a stored 'es' falls back to Danish and the ES option isn't shown.
+    var isStaff = !!document.querySelector('[data-lang-slot]');
+    var effLang = (lang === 'es' && !isStaff) ? 'da' : lang;
+    document.documentElement.lang = effLang;
     injectStyle();
-    injectSwitches(lang);
+    injectSwitches(effLang, isStaff);
 
-    if (lang !== 'da') {
-      if (lang === 'es') { ACTIVE_DICT = QM_DICT_ES; ACTIVE_RULES = QM_RULES_ES; }
+    if (effLang !== 'da') {
+      if (effLang === 'es') { ACTIVE_DICT = QM_DICT_ES; ACTIVE_RULES = QM_RULES_ES; }
       translateAll();
       // Keep translating dynamically-rendered content (cart, cards, checkout, …)
       var obs = new MutationObserver(function (muts) {
