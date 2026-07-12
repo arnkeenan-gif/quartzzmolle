@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Ordre-fulfillment · Quartz Mølle</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" href="/images/favicon.png">
+<link rel="apple-touch-icon" href="/images/appletouchicon.png">
+<meta name="apple-mobile-web-app-title" content="Quartz Mølle">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -55,10 +59,10 @@
   /* ---------- TOPBAR ---------- */
   .top{
     position:sticky;top:0;z-index:30;background:var(--blue);color:#fff;
-    display:flex;align-items:center;gap:12px;padding:14px 18px;
-    padding-top:calc(14px + env(safe-area-inset-top));
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;row-gap:10px;padding:12px 16px;
+    padding-top:calc(12px + env(safe-area-inset-top));
   }
-  .top img{width:36px;height:36px;object-fit:cover;border-radius:50%;background:transparent;padding:0}
+  .top img{width:34px;height:34px;object-fit:cover;border-radius:50%;background:transparent;padding:0;flex-shrink:0}
   .top .ttl{font-weight:700;font-size:16px;line-height:1.15}
   .top .ttl small{display:block;font-weight:500;font-size:11px;opacity:.8}
   .top .spacer{flex:1}
@@ -196,6 +200,8 @@
   var searchClear = document.getElementById('searchClear');
   var lastData = null;     // keep the last loaded payload so search re-renders without a refetch
   var query = '';
+  var TOTAL_DOORS = 22;
+  var suggestedDoors = {}; // ref -> a free locker suggested for that pending order
 
   document.getElementById('loginBtn').addEventListener('click', doLogin);
   codeInput.addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
@@ -261,6 +267,24 @@
     var pending = orders.filter(function(o){ return o && !fulfilled[o.ref]; });
     var done = orders.filter(function(o){ return o && fulfilled[o.ref]; });
 
+    // Suggest a free locker for each pending order — never one that's occupied or
+    // out of service, and never the same one twice. If we don't have live locker
+    // state, assume all 22 doors are free.
+    var freeDoors;
+    if (lockers.length) {
+      freeDoors = lockers.filter(function(l){ return !l.occ && !l.oos; })
+                         .map(function(l){ return l.door; })
+                         .sort(function(a,b){ return a-b; });
+    } else {
+      freeDoors = [];
+      for (var i = 1; i <= TOTAL_DOORS; i++) freeDoors.push(i);
+    }
+    suggestedDoors = {};
+    var fi = 0;
+    pending.forEach(function(o){
+      if (fi < freeDoors.length) suggestedDoors[o.ref] = freeDoors[fi++];
+    });
+
     var pe = document.getElementById('pending');
     pe.innerHTML = pending.length ? '' : '<div class="empty">'+(query ? 'Ingen afventende ordrer matcher “'+esc(query)+'”.' : 'Ingen afventende ordrer.')+'</div>';
     pending.forEach(function(o){ pe.appendChild(card(o, null)); });
@@ -297,8 +321,10 @@
     if(sent){
       html += '<div class="sent-line">'+sentText(sent)+'</div>';
     } else {
+      var sug = suggestedDoors[o.ref];
       html += '<div class="order-act">'
-        + '<input class="door-in" type="text" inputmode="numeric" placeholder="Dør-nr. (fx 7, 8)" />'
+        + '<input class="door-in" type="text" inputmode="numeric" placeholder="Dør-nr. (fx 7, 8)"'
+        +   (sug != null ? ' value="'+sug+'"' : '') + ' />'
         + '<button class="btn btn-blue send-btn">Send kode</button>'
         + '<span class="order-status"></span>'
         + '</div>';
@@ -344,6 +370,20 @@
         + '</span><span class="q">'+(it.qty||1)+'×</span></div>';
     }).join('') || '<div class="it"><span class="n">—</span></div>';
 
+    // Which locker to place this order in. For a sent order use the real door(s)
+    // it was put in; for a pending one use the free-locker suggestion.
+    var skabLabel = '', skabDoors = '';
+    if (sent) {
+      var slots = sent.slots || (sent.door!=null ? [{door:sent.door, code:sent.code}] : []);
+      var doors = slots.map(function(s){ return s.door; }).filter(function(v,i,a){ return a.indexOf(v)===i; });
+      if (doors.length) { skabLabel = doors.length>1 ? 'Skabe' : 'Skab'; skabDoors = doors.join(', '); }
+    } else if (suggestedDoors[o.ref] != null) {
+      skabLabel = 'Læg i skab'; skabDoors = String(suggestedDoors[o.ref]);
+    }
+    var skabHtml = skabDoors
+      ? '<div class="skab"><span class="sl">'+skabLabel+'</span><span class="sn">'+esc(skabDoors)+'</span></div>'
+      : '';
+
     var css =
       '@page{margin:0}' /* zero page margin = browser prints NO header/footer (no URL on the paper) */
       + '*{box-sizing:border-box;margin:0;padding:0}'
@@ -360,6 +400,9 @@
       + '.it .n{font-weight:500}.it .wl{color:#9b9488;font-weight:400}'
       + '.it .q{font-weight:800;color:#273071;white-space:nowrap}'
       + '.total{display:flex;justify-content:space-between;font-size:18px;font-weight:800;color:#273071;margin-top:14px;padding-top:14px;border-top:2px solid #273071;text-align:left}'
+      + '.skab{display:flex;align-items:center;justify-content:center;gap:14px;background:#273071;color:#fff;border-radius:14px;padding:16px 18px;margin:22px 0 4px}'
+      + '.skab .sl{font-size:14px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;opacity:.85}'
+      + '.skab .sn{font-size:34px;font-weight:800;line-height:1;letter-spacing:.5px}'
       + '.pickup{font-size:13px;color:#6b6256;margin-top:22px;line-height:1.6}'
       + '.pickup b{color:#1a1611}'
       + '.thanks{font-size:14px;font-weight:600;color:#273071;margin-top:22px}'
@@ -375,6 +418,7 @@
       +   '<div class="rule"></div>'
       +   '<div class="items">'+rows+'</div>'
       +   '<div class="total"><span>I alt</span><span>'+total+' kr.</span></div>'
+      +   skabHtml
       +   '<div class="pickup"><b>Afhentning</b><br>Suså Landevej 101, 4160 Herlufmagle</div>'
       +   '<div class="thanks">Tak for din ordre</div>'
       +   '<div class="foot">Quartz Mølle · CVR 42117188 · hello@quartzmolle.dk</div>'
