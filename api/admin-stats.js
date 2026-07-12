@@ -5,7 +5,7 @@
 // Query: ?days=7 (default 7, options: 7/30/90)
 
 import { createHmac, timingSafeEqual } from 'crypto';
-import { kv } from '@vercel/kv';
+import { kv } from './_kv.js';
 
 // Map product names (from Stripe line item descriptions) to image paths in our repo
 function getProductImage(productName) {

@@ -11,7 +11,7 @@
 //   action=list -> { orders, fulfilled, lockers }
 //   action=send -> { ref, door } -> emails the customer, records fulfilment
 
-import { kv } from '@vercel/kv';
+import { kv } from './_kv.js';
 import { createHmac, timingSafeEqual } from 'crypto';
 
 const SESSION_SECRET = process.env.LOCKER_SESSION_SECRET || ''; // fail closed: no guessable default

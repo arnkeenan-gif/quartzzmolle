@@ -599,7 +599,7 @@ async function sendAdminNotificationEmail(orderData) {
 // Persist a Click & Collect order so the staff fulfilment page (/fufill) can
 // list it and later email the customer their locker door + code.
 async function savePickupOrder(orderData) {
-  const { kv } = await import('@vercel/kv');
+  const { kv } = await import('./_kv.js');
   const record = {
     ref: String(orderData.externalId).slice(-12).toUpperCase(),
     externalId: orderData.externalId,

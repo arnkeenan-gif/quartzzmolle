@@ -17,7 +17,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { kv } = await import('@vercel/kv');
+  const { kv } = await import('./_kv.js');
 
   // Run at most once per calendar day, even if the endpoint is hit again.
   const today = new Date().toISOString().slice(0, 10);

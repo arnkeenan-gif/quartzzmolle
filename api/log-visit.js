@@ -3,7 +3,7 @@
 // Called by every page on the site every 30 seconds.
 // Stores: visitor IDs with timestamps for "active now" + daily counters.
 
-import { kv } from '@vercel/kv';
+import { kv } from './_kv.js';
 
 // Only allow the site's own origins to post visitor heartbeats (reduces
 // off-site abuse / metric pollution). '*' previously let anyone write.
