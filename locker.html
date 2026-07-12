@@ -328,7 +328,7 @@ function render(d){
   // status pill
   const pill=$('#statusPill'), txt=$('#statusText');
   if(d.device.online){ pill.classList.add('online'); txt.textContent='Tablet online'; }
-  else { pill.classList.remove('online'); txt.textContent = d.device.lastSeen? ('Offline · '+fmt(d.device.lastSeen)) : 'Tablet offline'; }
+  else { pill.classList.remove('online'); txt.textContent = d.device.lastSeen? ('Offline · '+fmt(d.device.lastSeen).slice(0,-3)) : 'Tablet offline'; }
 
   // counts
   const occ = d.lockers.filter(l=>l.occ).length;
