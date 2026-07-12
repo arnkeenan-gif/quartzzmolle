@@ -1639,36 +1639,6 @@ body:has(.mobile-menu.open) .lang-switch-btn .lang-chevron {
   background: #fff;
 }
 
-.cart-country-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 0.9rem;
-}
-.cart-country-row label {
-  font-size: 0.95rem;
-  color: var(--dark);
-  font-weight: 600;
-  white-space: nowrap;
-}
-.cart-country-row select {
-  flex: 1 1 auto;
-  min-width: 0;
-  padding: 0.6rem 0.7rem;
-  border: 1.5px solid rgba(0,0,0,0.18);
-  border-radius: 8px;
-  background: #fff;
-  font-family: inherit;
-  font-size: 0.95rem;
-  color: var(--dark);
-  cursor: pointer;
-}
-.cart-country-row select:focus {
-  outline: none;
-  border-color: var(--brand-blue);
-}
-
 .cart-total-row {
   display: flex;
   justify-content: space-between;
@@ -1955,4 +1925,42 @@ body:has(.mobile-menu.open) .lang-switch-btn .lang-chevron {
   .suggested { padding: 0.5rem 1.25rem 4rem; }
   .suggested-inner { padding-top: 2.5rem; }
   .suggested-grid { gap: 1.25rem; }
+}
+
+/* ============================================================
+   DESKTOP / PC — fill the wide screen on all pages.
+   Only min-width rules, so phones/tablets (below 1200px) are
+   COMPLETELY unaffected — mobile stays exactly as before.
+   ============================================================ */
+@media (min-width: 1200px) {
+  /* Bestsellers (exactly 4 items) — 4 big even columns filling the row */
+  .highlights-grid {
+    max-width: min(1440px, 90vw);
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2.2rem;
+  }
+  /* Related-products grid on the product page */
+  .suggested-inner { max-width: min(1600px, 92vw); }
+  .suggested-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+
+  /* Two-column info bands + footer — a gentle bump (they look empty if
+     stretched too wide, since it's just text + a logo/map). */
+  .why-inner,
+  .contact-inner { max-width: min(1280px, 90vw); }
+  .footer-inner  { max-width: min(1280px, 90vw); }
+
+  /* Product detail (image + buy panel) */
+  .product-page-inner { max-width: min(1240px, 88vw); }
+
+  /* Forhandlere map */
+  .forhandlere-map-wrap { max-width: min(1600px, 92vw); }
+}
+@media (min-width: 1800px) {
+  .highlights-grid { max-width: 1560px; }
+  .suggested-inner,
+  .forhandlere-map-wrap { max-width: 1720px; }
+  .why-inner,
+  .contact-inner,
+  .footer-inner { max-width: 1360px; }
+  .product-page-inner { max-width: 1320px; }
 }
