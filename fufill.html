@@ -321,10 +321,8 @@
     if(sent){
       html += '<div class="sent-line">'+sentText(sent)+'</div>';
     } else {
-      var sug = suggestedDoors[o.ref];
       html += '<div class="order-act">'
-        + '<input class="door-in" type="text" inputmode="numeric" placeholder="Dør-nr. (fx 7, 8)"'
-        +   (sug != null ? ' value="'+sug+'"' : '') + ' />'
+        + '<input class="door-in" type="text" inputmode="numeric" placeholder="Dør-nr. (fx 7, 8)" />'
         + '<button class="btn btn-blue send-btn">Send kode</button>'
         + '<span class="order-status"></span>'
         + '</div>';
