@@ -36,6 +36,15 @@ function fragtReglerHTML() {
   `;
 }
 
+// ── Click & Collect content (same for every product) ──
+function clickCollectHTML() {
+  return `
+    <p><strong>Click &amp; Collect (afhentning i automaten)</strong> bestilles <strong>kun her på hjemmesiden</strong>.</p>
+    <p>Læg dine varer i kurven, gå til <strong>checkout</strong> og vælg <strong>Click &amp; Collect</strong> som leveringsmetode. Når din ordre er klar, får du en kode til automaten på Suså Landevej 101, 4160 Herlufmagle.</p>
+    <p><strong>Ring ikke til os</strong> for at bestille afhentning – det foregår udelukkende gennem checkout her på siden.</p>
+  `;
+}
+
 // ── Næringsindhold table (per product) ──
 function nutritionTableHTML(n) {
   if (!n) return '<p style="color:#888;font-size:0.9rem">Næringsindhold er ikke tilgængelig for dette produkt.</p>';
@@ -150,6 +159,15 @@ function renderProduct(product) {
           </button>
           <div class="accordion-body">
             <div class="accordion-content">${fragtReglerHTML()}</div>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <button class="accordion-header" type="button">
+            Click &amp; Collect
+            <svg class="chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="accordion-body">
+            <div class="accordion-content">${clickCollectHTML()}</div>
           </div>
         </div>
         <div class="accordion-item">
