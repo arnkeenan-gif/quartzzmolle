@@ -2000,3 +2000,25 @@ body:has(.mobile-menu.open) .lang-switch-btn .lang-chevron {
   .btn-primary, .btn-blue { transition: background-color .18s ease, color .18s ease; }
   .btn-primary:hover, .btn-blue:hover { transform: none; }
 }
+
+/* Product page: "Tilføj til kurv" + "Køb nu" side by side */
+.buy-row { display: flex; gap: .7rem; align-items: stretch; margin-bottom: 1.5rem; }
+.buy-row .btn-buy { flex: 1 1 0; padding-left: 1rem; padding-right: 1rem; min-width: 0; white-space: nowrap; margin-bottom: 0; }
+.btn-buy-now { background: var(--brand-blue, #273071); }
+.btn-buy-now:hover { background: var(--brand-blue-light, #3a4599); }
+
+/* "Mere fra møllen": horizontal scroll row on phones (was a vertical stack) */
+@media (max-width: 768px) {
+  .suggested-grid {
+    display: flex;
+    grid-template-columns: none;
+    overflow-x: auto;
+    gap: 1rem;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: .5rem;
+    scrollbar-width: none;
+  }
+  .suggested-grid::-webkit-scrollbar { display: none; }
+  .suggested-grid > .product-card { flex: 0 0 68%; scroll-snap-align: start; }
+}
