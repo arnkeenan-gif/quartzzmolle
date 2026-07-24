@@ -308,3 +308,76 @@ window.addEventListener('pageshow', (event) => {
   // On every other page just refresh scroll-driven state (video fade, bottom mask).
   window.dispatchEvent(new Event('scroll'));
 });
+
+// ── Scroll-reveal + staggered grids (progressive enhancement) ──
+// Tagged elements fade/slide up when they enter the viewport. Grid children
+// (shop / bestsellers / related) stagger in. Dynamically-rendered grids are
+// handled via a MutationObserver. Fully skipped for reduced-motion users.
+(function initReveal() {
+  try {
+    if (!('IntersectionObserver' in window)) return;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add('qm-in'); io.unobserve(e.target); }
+      });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+
+    function reveal(el, delayMs) {
+      if (!el || el.nodeType !== 1 || el.classList.contains('qm-reveal')) return;
+      el.classList.add('qm-reveal');
+      if (delayMs) el.style.transitionDelay = delayMs + 'ms';
+      io.observe(el);
+    }
+
+    var STATIC = ['.highlights-header', '.why-inner', '.sortiment h2', '.sortiment .season-note',
+      '.sortiment-lead', '.sortiment-img', '.contact-inner', '.forhandlere-map-wrap',
+      '.om-content', '.suggested-header'];
+    var GRIDS = ['.shop-grid', '.highlights-grid', '.suggested-grid'];
+
+    function run() {
+      STATIC.forEach(function (sel) {
+        document.querySelectorAll(sel).forEach(function (el) { reveal(el); });
+      });
+      GRIDS.forEach(function (gridSel) {
+        document.querySelectorAll(gridSel).forEach(function (grid) {
+          Array.prototype.forEach.call(grid.children, function (c, i) { reveal(c, Math.min(i, 8) * 70); });
+          new MutationObserver(function (muts) {
+            muts.forEach(function (m) {
+              var i = 0;
+              Array.prototype.forEach.call(m.addedNodes, function (n) {
+                if (n.nodeType === 1) { reveal(n, Math.min(i, 8) * 70); i++; }
+              });
+            });
+          }).observe(grid, { childList: true });
+        });
+      });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+    else run();
+  } catch (e) { /* never break the page for an animation */ }
+})();
+
+// Fly-to-cart: clone an element (product image) and animate it into the cart
+// icon. Exposed for product.js. No-op for reduced-motion users.
+window.qmFlyToCart = function (srcEl) {
+  try {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var cart = document.querySelector('.cart-btn') || document.querySelector('[data-cart-count]');
+    if (!srcEl || !cart) return;
+    var s = srcEl.getBoundingClientRect(), t = cart.getBoundingClientRect();
+    if (!s.width) return;
+    var fly = srcEl.cloneNode(true);
+    fly.className = 'qm-fly';
+    fly.removeAttribute('loading');
+    fly.style.left = s.left + 'px'; fly.style.top = s.top + 'px';
+    fly.style.width = s.width + 'px'; fly.style.height = s.height + 'px';
+    document.body.appendChild(fly);
+    void fly.offsetWidth; // reflow so the transition runs
+    fly.style.left = (t.left + t.width / 2 - 22) + 'px';
+    fly.style.top = (t.top + t.height / 2 - 22) + 'px';
+    fly.style.width = '44px'; fly.style.height = '44px'; fly.style.opacity = '0.15';
+    setTimeout(function () { if (fly.parentNode) fly.parentNode.removeChild(fly); }, 950);
+  } catch (e) {}
+};

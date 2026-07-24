@@ -27,8 +27,20 @@ function getBadgeHTML(badge) {
   return '';
 }
 
+// Current customer-page language (Danish source, English via the switcher).
+// The rich-text accordion content below is rendered directly in the chosen
+// language — the i18n dictionary can't reliably translate text split by <strong>.
+function qmLang() {
+  try { return localStorage.getItem('qm_lang') === 'en' ? 'en' : 'da'; } catch (e) { return 'da'; }
+}
+
 // ── Fragt Regler content (same for every product) ──
 function fragtReglerHTML() {
+  if (qmLang() === 'en') return `
+    <p><strong>GLS</strong> Delivery to a parcel shop in Denmark – <strong>max 20 kg</strong></p>
+    <p><strong>GLS</strong> Delivery to a private address in Denmark – <strong>max 25 kg</strong></p>
+    <p>Note: you <strong>cannot order two 12.5 kg flour bags</strong> in the same order. Our 12.5 kg bags always contain a little more flour than stated, so two of them weigh around <strong>25.2 kg</strong> – which exceeds GLS' 25 kg limit.</p>
+  `;
   return `
     <p><strong>GLS</strong> Levering til pakkeshop i Danmark – <strong>max 20 kg</strong></p>
     <p><strong>GLS</strong> Levering til privatadresse i Danmark – <strong>max 25 kg</strong></p>
@@ -38,6 +50,11 @@ function fragtReglerHTML() {
 
 // ── Click & Collect content (same for every product) ──
 function clickCollectHTML() {
+  if (qmLang() === 'en') return `
+    <p><strong>Click &amp; Collect (pickup from the locker)</strong> is ordered <strong>only here on the website</strong>.</p>
+    <p>Add your items to the basket, go to <strong>checkout</strong> and choose <strong>Click &amp; Collect</strong> as the delivery method. When your order is ready, you'll receive a code for the locker at Suså Landevej 101, 4160 Herlufmagle.</p>
+    <p><strong>Do not call us</strong> to arrange pickup – it happens exclusively through the checkout here on the website.</p>
+  `;
   return `
     <p><strong>Click &amp; Collect (afhentning i automaten)</strong> bestilles <strong>kun her på hjemmesiden</strong>.</p>
     <p>Læg dine varer i kurven, gå til <strong>checkout</strong> og vælg <strong>Click &amp; Collect</strong> som leveringsmetode. Når din ordre er klar, får du en kode til automaten på Suså Landevej 101, 4160 Herlufmagle.</p>
@@ -65,8 +82,39 @@ function nutritionTableHTML(n) {
   `;
 }
 
+// Inject Product structured data (JSON-LD) so Google can show price, brand and
+// availability as a rich result. Googlebot renders JS, so a dynamically added
+// tag is read.
+function injectProductSchema(product) {
+  try {
+    const prices = (product.weights || []).map(w => w.price).filter(p => typeof p === 'number');
+    const low = prices.length ? Math.min.apply(null, prices) : null;
+    let img = safeUrl(product.previewImage || (product.weights && product.weights[0] && product.weights[0].image) || '');
+    const abs = img ? (img.indexOf('http') === 0 ? img : 'https://www.quartzmolle.dk/' + String(img).replace(/^\//, '')) : '';
+    const data = {
+      '@context': 'https://schema.org/',
+      '@type': 'Product',
+      name: product.name + ' – ' + product.type,
+      description: product.description || (product.name + ' – økologisk mel malet på stenkværn i Danmark.'),
+      brand: { '@type': 'Brand', name: 'Quartz Mølle' }
+    };
+    if (abs) data.image = [abs];
+    data.offers = {
+      '@type': 'Offer',
+      priceCurrency: 'DKK',
+      availability: 'https://schema.org/InStock',
+      url: (typeof location !== 'undefined' ? location.href : 'https://www.quartzmolle.dk/')
+    };
+    if (low != null) data.offers.price = low.toFixed(2);
+    let el = document.getElementById('qm-product-schema');
+    if (!el) { el = document.createElement('script'); el.type = 'application/ld+json'; el.id = 'qm-product-schema'; document.head.appendChild(el); }
+    el.textContent = JSON.stringify(data);
+  } catch (e) { /* schema is best-effort */ }
+}
+
 function renderProduct(product) {
   currentProduct = product;
+  injectProductSchema(product);
   const inner = document.getElementById('productInner');
   document.title = `${product.name} – ${product.type} | Quartz Mølle`;
 
@@ -109,7 +157,7 @@ function renderProduct(product) {
     <div>
       <a href="shop.html" class="btn-back">← Tilbage til shop</a>
       <img src="${esc(safeUrl(defaultImage))}" alt="${esc(product.name)}"
-           class="product-page-img" id="productImg" />
+           class="product-page-img" id="productImg" width="1000" height="1250" />
       ${thumbsHTML}
     </div>
     <div class="product-page-info">
@@ -283,6 +331,7 @@ async function handleBuy() {
       image: w.image,
       qty: qty,
     });
+    if (window.qmFlyToCart) window.qmFlyToCart(document.getElementById('productImg'));
     window.QuartzCart.open();
   }
 }
@@ -314,7 +363,7 @@ function renderSuggested(product) {
       : '';
     return `
       <a href="product.html?id=${encodeURIComponent(p.id)}" class="product-card">
-        <img src="${esc(safeUrl(img))}" alt="${esc(p.name + ' ' + p.type)}" class="product-card-img" loading="lazy" />
+        <img src="${esc(safeUrl(img))}" alt="${esc(p.name + ' ' + p.type)}" class="product-card-img" width="900" height="1200" loading="lazy" />
         <div class="product-card-body">
           ${badgeHTML}
           <div class="product-card-name">${esc(p.name)}</div>

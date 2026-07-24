@@ -35,7 +35,7 @@ function renderShopGrid(products) {
 
     return `
       <a href="product.html?id=${encodeURIComponent(p.id)}" class="product-card">
-        <img src="${escapeHTML(safeUrl(img))}" alt="${escapeHTML(p.name + ' ' + p.type)}" class="product-card-img" loading="lazy" />
+        <img src="${escapeHTML(safeUrl(img))}" alt="${escapeHTML(p.name + ' ' + p.type)}" class="product-card-img" width="900" height="1200" loading="lazy" />
         <div class="product-card-body">
           <div class="product-card-name">${escapeHTML(p.name)}</div>
           <div class="product-card-sub">${escapeHTML(p.type)}</div>

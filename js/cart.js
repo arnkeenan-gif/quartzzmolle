@@ -147,13 +147,18 @@ function injectCartUI() {
   updateCartUI();
 }
 
+let _prevCartCount = -1;
 function updateCartUI() {
   const items = readCart();
   const count = items.reduce((s, i) => s + i.qty, 0);
+  // Pop the badge only when the count actually goes up (not on first load).
+  const bounce = _prevCartCount >= 0 && count > _prevCartCount;
+  _prevCartCount = count;
 
   document.querySelectorAll('[data-cart-count]').forEach(el => {
     el.textContent = count;
     el.classList.toggle('has-items', count > 0);
+    if (bounce) { el.classList.remove('qm-bounce'); void el.offsetWidth; el.classList.add('qm-bounce'); }
   });
 
   const list = document.getElementById('cart-items');
