@@ -234,6 +234,16 @@ function hideCheckoutLoader() {
   if (el) el.classList.remove('show');
 }
 
+// If the visitor presses BACK from Stripe, the browser restores the page from
+// its back/forward cache exactly as it looked — i.e. with the loader still
+// covering everything. Always hide the loader (and re-arm the checkout button)
+// when the page is shown again, so back never lands on a stuck loading screen.
+window.addEventListener('pageshow', () => {
+  hideCheckoutLoader();
+  const btn = document.getElementById('cart-checkout-btn');
+  if (btn) { btn.disabled = false; btn.textContent = 'Til kassen'; }
+});
+
 async function checkoutCart() {
   const items = readCart();
   if (items.length === 0) return;
