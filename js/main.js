@@ -359,40 +359,37 @@ window.addEventListener('pageshow', (event) => {
   } catch (e) { /* never break the page for an animation */ }
 })();
 
-// Fly-to-cart: clone the product image and arc it into the cart icon, then pop
-// the cart. Uses a two-element trick — outer element eases X, inner eases Y — so
-// the path is a nice parabola instead of a straight line. No-op for
-// reduced-motion users. Exposed for product.js.
+// Add-to-cart feedback: a small copy of the product label drops straight down
+// from above into the cart icon, and the cart shakes when it lands. No-op for
+// reduced-motion users. Exposed for product.js (name kept for compatibility).
 window.qmFlyToCart = function (srcEl) {
   try {
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     var cart = document.querySelector('.cart-btn') || document.querySelector('[data-cart-count]');
-    if (!srcEl || !cart) return;
-    var s = srcEl.getBoundingClientRect(), t = cart.getBoundingClientRect();
-    if (!s.width) return;
-    var dx = (t.left + t.width / 2) - (s.left + s.width / 2);
-    var dy = (t.top + t.height / 2) - (s.top + s.height / 2);
+    if (!cart) return;
+    var t = cart.getBoundingClientRect();
+    var size = 34;
 
-    var outer = document.createElement('div');
-    outer.className = 'qm-fly-outer';
-    outer.style.left = s.left + 'px'; outer.style.top = s.top + 'px';
-    outer.style.width = s.width + 'px'; outer.style.height = s.height + 'px';
-    outer.style.setProperty('--qm-dx', dx + 'px');
+    var drop;
+    if (srcEl && srcEl.tagName === 'IMG' && srcEl.src) {
+      drop = document.createElement('img');
+      drop.src = srcEl.currentSrc || srcEl.src;
+      drop.alt = '';
+    } else {
+      drop = document.createElement('div');
+      drop.style.background = '#273071';
+    }
+    drop.className = 'qm-drop';
+    drop.style.width = size + 'px';
+    drop.style.height = size + 'px';
+    drop.style.left = (t.left + t.width / 2 - size / 2) + 'px';
+    drop.style.top = (t.top + t.height / 2 - size / 2) + 'px';
+    document.body.appendChild(drop);
 
-    var img = srcEl.cloneNode(true);
-    img.className = 'qm-fly-img';
-    img.removeAttribute('loading'); img.removeAttribute('id');
-    img.style.setProperty('--qm-dy', dy + 'px');
-
-    outer.appendChild(img);
-    document.body.appendChild(outer);
-    void outer.offsetWidth; // reflow so the transition runs
-    outer.classList.add('go');
-
-    // Pop the cart when the parcel lands.
+    // Shake the cart when the label lands (the fall takes ~0.43s of the anim).
     setTimeout(function () {
-      if (cart) { cart.classList.remove('qm-cart-pop'); void cart.offsetWidth; cart.classList.add('qm-cart-pop'); }
-    }, 720);
-    setTimeout(function () { if (outer.parentNode) outer.parentNode.removeChild(outer); }, 950);
+      cart.classList.remove('qm-cart-shake'); void cart.offsetWidth; cart.classList.add('qm-cart-shake');
+    }, 430);
+    setTimeout(function () { if (drop.parentNode) drop.parentNode.removeChild(drop); }, 800);
   } catch (e) {}
 };

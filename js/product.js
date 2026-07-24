@@ -390,30 +390,6 @@ function renderSuggested(product) {
   }).join('');
 
   section.hidden = false;
-
-  // One-time scroll "nudge" so it's obvious the row scrolls horizontally on
-  // phones: when the row scrolls into view, gently slide it right to reveal the
-  // next card, then back.
-  try {
-    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (!reduce && 'IntersectionObserver' in window && grid.scrollWidth > grid.clientWidth + 10) {
-      var nudged = false;
-      var nio = new IntersectionObserver(function (entries) {
-        entries.forEach(function (en) {
-          if (en.isIntersecting && !nudged) {
-            nudged = true; nio.disconnect();
-            setTimeout(function () {
-              try {
-                grid.scrollTo({ left: Math.round(grid.clientWidth * 0.30), behavior: 'smooth' });
-                setTimeout(function () { grid.scrollTo({ left: 0, behavior: 'smooth' }); }, 700);
-              } catch (e) {}
-            }, 350);
-          }
-        });
-      }, { threshold: 0.4 });
-      nio.observe(grid);
-    }
-  } catch (e) {}
 }
 
 function loadProduct() {
