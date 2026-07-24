@@ -157,7 +157,7 @@ function renderProduct(product) {
     <div>
       <a href="shop.html" class="btn-back">← Tilbage til shop</a>
       <img src="${esc(safeUrl(defaultImage))}" alt="${esc(product.name)}"
-           class="product-page-img" id="productImg" width="1000" height="1250" />
+           class="product-page-img" id="productImg" />
       ${thumbsHTML}
     </div>
     <div class="product-page-info">
@@ -363,7 +363,7 @@ function renderSuggested(product) {
       : '';
     return `
       <a href="product.html?id=${encodeURIComponent(p.id)}" class="product-card">
-        <img src="${esc(safeUrl(img))}" alt="${esc(p.name + ' ' + p.type)}" class="product-card-img" width="900" height="1200" loading="lazy" />
+        <img src="${esc(safeUrl(img))}" alt="${esc(p.name + ' ' + p.type)}" class="product-card-img" loading="lazy" />
         <div class="product-card-body">
           ${badgeHTML}
           <div class="product-card-name">${esc(p.name)}</div>
