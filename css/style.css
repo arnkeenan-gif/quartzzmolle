@@ -2051,3 +2051,16 @@ body:has(.mobile-menu.open) .lang-switch-btn .lang-chevron {
   /* smaller cards so the next one clearly peeks in = obvious it scrolls */
   .suggested-grid > .product-card { flex: 0 0 54%; scroll-snap-align: start; }
 }
+
+/* Cart heads-up when the order exceeds GLS' 25 kg limit (pickup only) */
+.cart-weight-note {
+  background: var(--warm-white, #f5f0e8);
+  border-left: 3px solid var(--brand-blue, #273071);
+  border-radius: 8px;
+  color: #4a463f;
+  font-size: 0.84rem;
+  line-height: 1.6;
+  padding: 0.75rem 0.95rem;
+  margin: 0 0 0.85rem;
+}
+.cart-weight-note strong { color: var(--brand-blue, #273071); }
