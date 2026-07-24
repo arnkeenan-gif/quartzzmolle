@@ -359,8 +359,10 @@ window.addEventListener('pageshow', (event) => {
   } catch (e) { /* never break the page for an animation */ }
 })();
 
-// Fly-to-cart: clone an element (product image) and animate it into the cart
-// icon. Exposed for product.js. No-op for reduced-motion users.
+// Fly-to-cart: clone the product image and arc it into the cart icon, then pop
+// the cart. Uses a two-element trick — outer element eases X, inner eases Y — so
+// the path is a nice parabola instead of a straight line. No-op for
+// reduced-motion users. Exposed for product.js.
 window.qmFlyToCart = function (srcEl) {
   try {
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -368,16 +370,29 @@ window.qmFlyToCart = function (srcEl) {
     if (!srcEl || !cart) return;
     var s = srcEl.getBoundingClientRect(), t = cart.getBoundingClientRect();
     if (!s.width) return;
-    var fly = srcEl.cloneNode(true);
-    fly.className = 'qm-fly';
-    fly.removeAttribute('loading');
-    fly.style.left = s.left + 'px'; fly.style.top = s.top + 'px';
-    fly.style.width = s.width + 'px'; fly.style.height = s.height + 'px';
-    document.body.appendChild(fly);
-    void fly.offsetWidth; // reflow so the transition runs
-    fly.style.left = (t.left + t.width / 2 - 22) + 'px';
-    fly.style.top = (t.top + t.height / 2 - 22) + 'px';
-    fly.style.width = '44px'; fly.style.height = '44px'; fly.style.opacity = '0.15';
-    setTimeout(function () { if (fly.parentNode) fly.parentNode.removeChild(fly); }, 950);
+    var dx = (t.left + t.width / 2) - (s.left + s.width / 2);
+    var dy = (t.top + t.height / 2) - (s.top + s.height / 2);
+
+    var outer = document.createElement('div');
+    outer.className = 'qm-fly-outer';
+    outer.style.left = s.left + 'px'; outer.style.top = s.top + 'px';
+    outer.style.width = s.width + 'px'; outer.style.height = s.height + 'px';
+    outer.style.setProperty('--qm-dx', dx + 'px');
+
+    var img = srcEl.cloneNode(true);
+    img.className = 'qm-fly-img';
+    img.removeAttribute('loading'); img.removeAttribute('id');
+    img.style.setProperty('--qm-dy', dy + 'px');
+
+    outer.appendChild(img);
+    document.body.appendChild(outer);
+    void outer.offsetWidth; // reflow so the transition runs
+    outer.classList.add('go');
+
+    // Pop the cart when the parcel lands.
+    setTimeout(function () {
+      if (cart) { cart.classList.remove('qm-cart-pop'); void cart.offsetWidth; cart.classList.add('qm-cart-pop'); }
+    }, 720);
+    setTimeout(function () { if (outer.parentNode) outer.parentNode.removeChild(outer); }, 950);
   } catch (e) {}
 };

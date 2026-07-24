@@ -216,6 +216,24 @@ function closeCart() {
   window.location.reload();
 }
 
+// Full-screen Quartz spinner shown while Stripe is being prepared (same as the
+// confirmation page). Stays up through the redirect to Stripe.
+function showCheckoutLoader() {
+  let el = document.getElementById('qm-checkout-loader');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'qm-checkout-loader';
+    el.innerHTML = '<img src="images/logopng.png" alt="Quartz Mølle" />';
+    document.body.appendChild(el);
+  }
+  void el.offsetWidth;
+  el.classList.add('show');
+}
+function hideCheckoutLoader() {
+  const el = document.getElementById('qm-checkout-loader');
+  if (el) el.classList.remove('show');
+}
+
 async function checkoutCart() {
   const items = readCart();
   if (items.length === 0) return;
@@ -223,6 +241,7 @@ async function checkoutCart() {
   const errEl = document.getElementById('cart-error');
   if (errEl) errEl.textContent = '';
   if (btn) { btn.disabled = true; btn.textContent = 'Forbereder…'; }
+  showCheckoutLoader();
   try {
     const res = await fetch('/api/checkout', {
       method: 'POST',
@@ -239,12 +258,17 @@ async function checkoutCart() {
 
     const msg = data.error || `Kunne ikke åbne betaling (status ${res.status}). Prøv igen.`;
     console.error('Checkout failed:', res.status, data);
+    hideCheckoutLoader();
     if (errEl) errEl.textContent = msg;
     if (btn) { btn.disabled = false; btn.textContent = "Til kassen"; }
+    // If the drawer isn't open (e.g. "Køb nu"), open it so the error is visible.
+    if (typeof openCart === 'function') openCart();
   } catch (err) {
     console.error(err);
+    hideCheckoutLoader();
     if (errEl) errEl.textContent = 'Netværksfejl — tjek forbindelse og prøv igen.';
     if (btn) { btn.disabled = false; btn.textContent = 'Til kassen'; }
+    if (typeof openCart === 'function') openCart();
   }
 }
 
