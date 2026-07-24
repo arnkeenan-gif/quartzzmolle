@@ -128,6 +128,17 @@
     /* first video visible immediately (no black flash before JS runs) */
     #vid1, #vs1 .video-overlay { opacity: 1; }
 
+    /* Scroll hint: pinned to the bottom of the first screen, fades out as soon
+       as the visitor starts scrolling (video sections are position:static here,
+       so the shared absolute positioning would anchor wrong — pin it fixed). */
+    .scroll-hint {
+      position: fixed;
+      bottom: calc(2.2rem + env(safe-area-inset-bottom));
+      transition: opacity .45s ease;
+      pointer-events: none;
+    }
+    .scroll-hint.gone { opacity: 0; }
+
     /* The section is 100lvh tall but Safari's bars cover part of it, so the
        flex-centred hero lands visually low. Pull it up so logo + title sit
        in the middle of the VISIBLE screen. */
@@ -218,6 +229,10 @@
       <h1 class="hero-title">Quartz Mølle</h1>
       <p class="hero-sub">Økologisk mel – malet på stenkværn i Danmark</p>
       <a href="shop.html" class="btn-primary">Se vores mel</a>
+    </div>
+    <div class="scroll-hint" id="scrollHint" aria-hidden="true">
+      <span>Scroll</span>
+      <div class="scroll-line"></div>
     </div>
   </section>
 
@@ -379,6 +394,17 @@
        CSS feature, and (3) SELF-TESTS the CSS path while you scroll - if
        the browser claims support but the animation isn't really moving the
        videos, it switches to the JS pin automatically. */
+    // Fade the scroll hint away as soon as the visitor starts scrolling.
+    (function () {
+      var hint = document.getElementById('scrollHint');
+      if (!hint) return;
+      function onScroll() {
+        hint.classList.toggle('gone', window.scrollY > 60);
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+    })();
+
     (function () {
       var stage = document.getElementById('videoStage');
       if (!stage) return;
