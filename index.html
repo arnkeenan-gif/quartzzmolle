@@ -134,10 +134,11 @@
     .scroll-hint {
       position: fixed;
       bottom: calc(2.2rem + env(safe-area-inset-bottom));
-      transition: opacity .45s ease;
+      transition: opacity .28s ease-out, transform .28s ease-out;
       pointer-events: none;
+      will-change: opacity, transform;
     }
-    .scroll-hint.gone { opacity: 0; }
+    .scroll-hint.gone { opacity: 0; transform: translateX(-50%) translateY(10px); }
 
     /* The section is 100lvh tall but Safari's bars cover part of it, so the
        flex-centred hero lands visually low. Pull it up so logo + title sit
@@ -394,12 +395,18 @@
        CSS feature, and (3) SELF-TESTS the CSS path while you scroll - if
        the browser claims support but the animation isn't really moving the
        videos, it switches to the JS pin automatically. */
-    // Fade the scroll hint away as soon as the visitor starts scrolling.
+    // Fade the scroll hint away the instant the visitor starts scrolling.
     (function () {
       var hint = document.getElementById('scrollHint');
       if (!hint) return;
+      var ticking = false;
       function onScroll() {
-        hint.classList.toggle('gone', window.scrollY > 60);
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(function () {
+          ticking = false;
+          hint.classList.toggle('gone', window.scrollY > 8);
+        });
       }
       window.addEventListener('scroll', onScroll, { passive: true });
       onScroll();
