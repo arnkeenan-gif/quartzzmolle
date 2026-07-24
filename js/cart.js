@@ -118,6 +118,7 @@ function injectCartUI() {
             <span>I alt</span>
             <span id="cart-total">0,00 kr.</span>
           </div>
+          <p id="cart-weight-note" class="cart-weight-note" hidden></p>
           <p id="cart-error" class="cart-error"></p>
           <button class="btn-buy" id="cart-checkout-btn">Til kassen</button>
           <button id="cart-continue-btn" style="width:100%;margin-top:0.6rem;background:none;border:1.5px solid rgba(0,0,0,0.25);border-radius:6px;padding:0.85rem;font-family:inherit;font-size:0.95rem;font-weight:600;color:#000;cursor:pointer;">Shop videre</button>
@@ -199,6 +200,28 @@ function updateCartUI() {
   const total = document.getElementById('cart-total');
   if (total) {
     total.textContent = `${cartTotal().toFixed(2).replace('.', ',')} kr.`;
+  }
+
+  // Heads-up BEFORE Stripe: orders above GLS' 25 kg limit can only be collected
+  // (Click & Collect), so Stripe will preselect it as the only shipping method.
+  // Explain that here in the cart so it never confuses anyone on the payment page.
+  const note = document.getElementById('cart-weight-note');
+  if (note) {
+    const totalKg = items.reduce((sum, it) => {
+      const m = String(it.weightLabel || '').match(/(\d+(?:[.,]\d+)?)\s*kg/i);
+      return sum + (m ? parseFloat(m[1].replace(',', '.')) : 0) * (it.qty || 1);
+    }, 0);
+    if (totalKg > 25) {
+      const kgTxt = String(Math.round(totalKg * 10) / 10).replace('.', ',');
+      const en = (function () { try { return localStorage.getItem('qm_lang') === 'en'; } catch (e) { return false; } })();
+      note.innerHTML = en
+        ? `Your order weighs <strong>${kgTxt} kg</strong> — above GLS' 25 kg shipping limit. It can therefore only be collected with <strong>free Click &amp; Collect</strong> at the mill (Suså Landevej 101), which is preselected at checkout.`
+        : `Din ordre vejer <strong>${kgTxt} kg</strong> — over GLS' grænse på 25 kg for levering. Den kan derfor kun afhentes med <strong>gratis Click &amp; Collect</strong> på møllen (Suså Landevej 101), som er valgt på forhånd i checkout.`;
+      note.hidden = false;
+    } else {
+      note.hidden = true;
+      note.innerHTML = '';
+    }
   }
 }
 
