@@ -1964,3 +1964,39 @@ body:has(.mobile-menu.open) .lang-switch-btn .lang-chevron {
   .footer-inner { max-width: 1360px; }
   .product-page-inner { max-width: 1320px; }
 }
+
+/* ============================================================
+   MOTION & POLISH (scroll-reveal, hero, buttons, cart, fly-to-cart)
+   All guarded by prefers-reduced-motion.
+   ============================================================ */
+/* Scroll-reveal: elements tagged by main.js fade/slide up when in view */
+.qm-reveal { opacity: 0; transform: translateY(26px); transition: opacity .6s ease, transform .7s cubic-bezier(.22,1,.36,1); will-change: opacity, transform; }
+.qm-reveal.qm-in { opacity: 1; transform: none; }
+
+/* Hero content glides in on load (index) */
+@keyframes qmHeroIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+#heroContent > * { animation: qmHeroIn .9s cubic-bezier(.22,1,.36,1) both; }
+#heroContent > *:nth-child(1){ animation-delay:.10s } #heroContent > *:nth-child(2){ animation-delay:.22s }
+#heroContent > *:nth-child(3){ animation-delay:.34s } #heroContent > *:nth-child(4){ animation-delay:.46s }
+
+/* Button micro-interaction: gentle lift + shadow on hover, press down on click */
+.btn-primary, .btn-blue { transition: transform .16s cubic-bezier(.22,1,.36,1), box-shadow .2s ease, background-color .18s ease, color .18s ease; }
+.btn-primary:hover, .btn-blue:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(39,48,113,.22); }
+.btn-primary:active, .btn-blue:active { transform: translateY(0); box-shadow: 0 3px 10px rgba(39,48,113,.18); }
+
+/* Cart badge pop when an item is added */
+@keyframes qmBadgePop { 0%{transform:scale(1)} 28%{transform:scale(1.55)} 55%{transform:scale(.86)} 100%{transform:scale(1)} }
+.cart-count.qm-bounce { animation: qmBadgePop .5s ease; }
+
+/* Fly-to-cart clone (created by product.js) */
+.qm-fly { position: fixed; z-index: 9999; border-radius: 12px; object-fit: cover; pointer-events: none;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+  transition: left .8s cubic-bezier(.6,-.28,.74,.05), top .8s cubic-bezier(.6,-.28,.74,.05), width .8s ease, height .8s ease, opacity .8s ease .1s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .qm-reveal, .qm-reveal.qm-in { opacity: 1 !important; transform: none !important; transition: none !important; }
+  #heroContent > * { animation: none !important; }
+  .cart-count.qm-bounce { animation: none !important; }
+  .btn-primary, .btn-blue { transition: background-color .18s ease, color .18s ease; }
+  .btn-primary:hover, .btn-blue:hover { transform: none; }
+}
