@@ -265,6 +265,11 @@ window.addEventListener('pageshow', () => {
   hideCheckoutLoader();
   const btn = document.getElementById('cart-checkout-btn');
   if (btn) { btn.disabled = false; btn.textContent = 'Til kassen'; }
+  // A back/forward restore shows the page as an old snapshot — its cart badge
+  // and drawer reflect the cart as it WAS. Re-read localStorage so the cart
+  // always shows the current contents.
+  _prevCartCount = -1; // don't bounce the badge over a restore
+  updateCartUI();
 });
 
 async function checkoutCart() {
