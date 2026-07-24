@@ -184,13 +184,16 @@ function renderProduct(product) {
         </div>
       </div>
 
-      <button class="btn-buy" id="buyBtn">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-        </svg>
-        Tilføj til kurv
-      </button>
+      <div class="buy-row">
+        <button class="btn-buy" id="buyBtn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+          </svg>
+          Tilføj til kurv
+        </button>
+        <button class="btn-buy btn-buy-now" id="buyNowBtn">Køb nu</button>
+      </div>
 
       <div class="certifications">${certsHTML}</div>
 
@@ -253,6 +256,8 @@ function renderProduct(product) {
     });
   });
   document.getElementById('buyBtn').addEventListener('click', handleBuy);
+  var buyNowBtn = document.getElementById('buyNowBtn');
+  if (buyNowBtn) buyNowBtn.addEventListener('click', buyNow);
 
   // Wire up quantity stepper
   const qtyInput = document.getElementById('qtyInput');
@@ -304,36 +309,46 @@ function selectWeight(index) {
   });
 }
 
-async function handleBuy() {
-  if (!currentProduct) return;
-
+// Validate the size selection and add the chosen weight/qty to the cart.
+// Returns true on success, false if no size is picked (and flashes the selector).
+function addSelectedToCart() {
+  if (!currentProduct) return false;
   if (selectedWeightIndex < 0) {
-    // Gently flash the size selector instead of a toast
     const sel = document.querySelector('.weight-selector');
     if (sel) {
       sel.classList.add('needs-attention');
       setTimeout(() => sel.classList.remove('needs-attention'), 1200);
     }
-    return;
+    return false;
   }
-
+  if (!window.QuartzCart) return false;
   const w = currentProduct.weights[selectedWeightIndex];
   const qtyEl = document.getElementById('qtyInput');
   const qty = Math.max(1, Math.min(99, parseInt(qtyEl?.value, 10) || 1));
+  window.QuartzCart.add({
+    productId: currentProduct.id,
+    productName: currentProduct.name,
+    productType: currentProduct.type,
+    weightLabel: w.label,
+    price: w.price,
+    image: w.image,
+    qty: qty,
+  });
+  return true;
+}
 
-  if (window.QuartzCart) {
-    window.QuartzCart.add({
-      productId: currentProduct.id,
-      productName: currentProduct.name,
-      productType: currentProduct.type,
-      weightLabel: w.label,
-      price: w.price,
-      image: w.image,
-      qty: qty,
-    });
-    if (window.qmFlyToCart) window.qmFlyToCart(document.getElementById('productImg'));
-    window.QuartzCart.open();
-  }
+// "Tilføj til kurv" — add to cart WITHOUT opening the drawer. The badge pop +
+// fly-to-cart animation are the feedback, so the user can keep browsing.
+async function handleBuy() {
+  if (!addSelectedToCart()) return;
+  if (window.qmFlyToCart) window.qmFlyToCart(document.getElementById('productImg'));
+}
+
+// "Køb nu" — add to cart and go straight to Stripe checkout.
+async function buyNow() {
+  if (!addSelectedToCart()) return;
+  if (window.QuartzCart && window.QuartzCart.checkout) window.QuartzCart.checkout();
+  else if (window.QuartzCart && window.QuartzCart.open) window.QuartzCart.open();
 }
 
 // ── FORESLÅEDE PRODUKTER ──

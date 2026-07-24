@@ -222,8 +222,7 @@ async function checkoutCart() {
   const btn = document.getElementById('cart-checkout-btn');
   const errEl = document.getElementById('cart-error');
   if (errEl) errEl.textContent = '';
-  btn.disabled = true;
-  btn.textContent = 'Forbereder…';
+  if (btn) { btn.disabled = true; btn.textContent = 'Forbereder…'; }
   try {
     const res = await fetch('/api/checkout', {
       method: 'POST',
@@ -241,13 +240,11 @@ async function checkoutCart() {
     const msg = data.error || `Kunne ikke åbne betaling (status ${res.status}). Prøv igen.`;
     console.error('Checkout failed:', res.status, data);
     if (errEl) errEl.textContent = msg;
-    btn.disabled = false;
-    btn.textContent = 'Til kassen';
+    if (btn) { btn.disabled = false; btn.textContent = "Til kassen"; }
   } catch (err) {
     console.error(err);
     if (errEl) errEl.textContent = 'Netværksfejl — tjek forbindelse og prøv igen.';
-    btn.disabled = false;
-    btn.textContent = 'Til kassen';
+    if (btn) { btn.disabled = false; btn.textContent = 'Til kassen'; }
   }
 }
 
@@ -257,6 +254,7 @@ window.QuartzCart = {
   open: openCart,
   close: closeCart,
   count: cartCount,
+  checkout: checkoutCart,
 };
 
 document.addEventListener('DOMContentLoaded', injectCartUI);
