@@ -1988,18 +1988,25 @@ body:has(.mobile-menu.open) .lang-switch-btn .lang-chevron {
 @keyframes qmBadgePop { 0%{transform:scale(1)} 28%{transform:scale(1.55)} 55%{transform:scale(.86)} 100%{transform:scale(1)} }
 .cart-count.qm-bounce { animation: qmBadgePop .5s ease; }
 
-/* Fly-to-cart: outer eases X, inner eases Y -> parabolic arc into the cart */
-.qm-fly-outer { position: fixed; z-index: 9999; pointer-events: none;
-  transition: transform .78s cubic-bezier(.35,0,.6,.35); will-change: transform; }
-.qm-fly-outer.go { transform: translateX(var(--qm-dx, 0)); }
-.qm-fly-img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 14px;
-  box-shadow: 0 14px 34px rgba(0,0,0,.30);
-  transition: transform .78s cubic-bezier(.5,.02,.66,.16), opacity .35s ease .5s; will-change: transform, opacity; }
-.qm-fly-outer.go .qm-fly-img { transform: translateY(var(--qm-dy, 0)) scale(.10) rotate(16deg); opacity: .15; }
-
-/* Cart icon pops when the parcel lands */
-@keyframes qmCartPop { 0%{transform:scale(1)} 35%{transform:scale(1.32)} 60%{transform:scale(.92)} 100%{transform:scale(1)} }
-.cart-btn.qm-cart-pop { animation: qmCartPop .42s cubic-bezier(.22,1,.36,1); }
+/* Add-to-cart: a small label drops straight down from above into the cart,
+   then the cart shakes. */
+.qm-drop { position: fixed; z-index: 9999; pointer-events: none; border-radius: 8px;
+  object-fit: cover; box-shadow: 0 8px 20px rgba(0,0,0,.28);
+  animation: qmDropIn .55s cubic-bezier(.55,.06,.68,.19) both; will-change: transform, opacity; }
+@keyframes qmDropIn {
+  0%   { transform: translateY(-90px) scale(1); opacity: 0; }
+  18%  { opacity: 1; }
+  78%  { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(0) scale(.35); opacity: 0; }
+}
+@keyframes qmCartShake {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  20% { transform: translateX(-3px) rotate(-8deg); }
+  40% { transform: translateX(3px)  rotate(7deg); }
+  60% { transform: translateX(-2px) rotate(-4deg); }
+  80% { transform: translateX(1px)  rotate(2deg); }
+}
+.cart-btn.qm-cart-shake { animation: qmCartShake .5s ease; }
 
 /* Checkout loading overlay — same Quartz spinner as the confirmation page,
    shown while Stripe is being prepared (Køb nu / Til kassen). */
@@ -2011,8 +2018,8 @@ body:has(.mobile-menu.open) .lang-switch-btn .lang-chevron {
 @media (prefers-reduced-motion: reduce) {
   .qm-reveal, .qm-reveal.qm-in { opacity: 1 !important; transform: none !important; transition: none !important; }
   #heroContent > * { animation: none !important; }
-  .cart-count.qm-bounce, .cart-btn.qm-cart-pop { animation: none !important; }
-  .qm-fly-outer, .qm-fly-img { transition: none !important; }
+  .cart-count.qm-bounce, .cart-btn.qm-cart-shake { animation: none !important; }
+  .qm-drop { animation: none !important; opacity: 0 !important; }
   #qm-checkout-loader img { animation: none !important; }
   .btn-primary, .btn-blue { transition: background-color .18s ease, color .18s ease; }
   .btn-primary:hover, .btn-blue:hover { transform: none; }
@@ -2037,6 +2044,10 @@ body:has(.mobile-menu.open) .lang-switch-btn .lang-chevron {
     scrollbar-width: none;
   }
   .suggested-grid::-webkit-scrollbar { display: none; }
+  /* Lock touch gestures on the row to horizontal only — a finger on the cards
+     can never drag/scroll them up and down, only sideways. */
+  .suggested-grid { touch-action: pan-x; overscroll-behavior-x: contain; }
+  .suggested-grid > .product-card { touch-action: pan-x; }
   /* smaller cards so the next one clearly peeks in = obvious it scrolls */
   .suggested-grid > .product-card { flex: 0 0 54%; scroll-snap-align: start; }
 }
