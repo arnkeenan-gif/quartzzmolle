@@ -330,6 +330,25 @@
     </div>
   </section>
 
+  <!-- NEWSLETTER: bogmærke-fane i siden + popup med logo-grafik -->
+  <button class="nl-tab" id="nlTab" type="button" aria-haspopup="dialog">10% RABAT</button>
+  <div class="nl-modal" id="nlModal" role="dialog" aria-modal="true" aria-label="Nyhedsbrev">
+    <div class="nl-backdrop" data-nl-close></div>
+    <div class="nl-card">
+      <img class="nl-bg" src="images/newsletter-art.jpg" alt="Få 10% på din næste ordre — tilmeld dig nyhedsbrevet" loading="lazy" />
+      <button class="nl-close" data-nl-close aria-label="Luk">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div class="nl-formwrap">
+        <form id="nlForm" class="newsletter-form" novalidate>
+          <input type="email" id="nlEmail" placeholder="Din e-mailadresse" autocomplete="email" required />
+          <button type="submit" id="nlBtn">Tilmeld</button>
+        </form>
+        <div id="nlMsg" class="newsletter-msg" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+
   <footer class="footer">
     <div class="footer-inner">
       <img src="images/logopng.png" alt="Quartz Mølle" class="footer-logo" />
@@ -494,6 +513,72 @@
       }
       window.addEventListener('scroll', function () { requestAnimationFrame(canvasColor); }, { passive: true });
       canvasColor();
+    })();
+  </script>
+
+  <script>
+    // Nyhedsbrev: bogmærke-fane + popup. Gemmer e-mailen og udløser velkomstmail
+    // med 10%-koden. Fanen skjules når man er tilmeldt; popup'en viser sig selv
+    // én enkelt gang pr. besøgende (efter 5 sek.), ellers kun via fanen.
+    (function () {
+      var form = document.getElementById('nlForm');
+      if (!form) return;
+      var input = document.getElementById('nlEmail');
+      var btn = document.getElementById('nlBtn');
+      var msg = document.getElementById('nlMsg');
+      var modal = document.getElementById('nlModal');
+      var tab = document.getElementById('nlTab');
+
+      function subscribed() { try { return localStorage.getItem('qm_nl_sub') === '1'; } catch (e) { return false; } }
+      function openNl() { modal.classList.add('open'); document.body.style.overflow = 'hidden'; setTimeout(function () { try { input.focus(); } catch (e) {} }, 250); }
+      function closeNl() { modal.classList.remove('open'); document.body.style.overflow = ''; }
+
+      if (subscribed()) tab.classList.add('hidden');
+      tab.addEventListener('click', openNl);
+      modal.querySelectorAll('[data-nl-close]').forEach(function (el) { el.addEventListener('click', closeNl); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeNl(); });
+
+      // Auto-vis én gang pr. besøgende — aldrig hvis man er (eller lige er
+      // blevet) tilmeldt på denne enhed.
+      try {
+        if (!subscribed() && !localStorage.getItem('qm_nl_seen')) {
+          setTimeout(function () {
+            localStorage.setItem('qm_nl_seen', '1');
+            if (!subscribed() && !modal.classList.contains('open')) openNl();
+          }, 5000);
+        }
+      } catch (e) {}
+
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        var email = (input.value || '').trim();
+        msg.className = 'newsletter-msg';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+          msg.classList.add('err'); msg.textContent = 'Skriv en gyldig e-mailadresse.'; return;
+        }
+        btn.disabled = true; var t = btn.textContent; btn.textContent = 'Tilmelder…';
+        try {
+          var r = await fetch('/api/log-visit', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'newsletter', email: email }),
+          });
+          var d = await r.json().catch(function () { return {}; });
+          if (r.ok && d.ok) {
+            msg.textContent = d.already
+              ? 'Du er allerede tilmeldt — tjek din indbakke for koden.'
+              : 'Tak! Tjek din indbakke — din 10%-rabatkode er på vej.';
+            input.value = '';
+            try { localStorage.setItem('qm_nl_sub', '1'); localStorage.setItem('qm_nl_seen', '1'); } catch (err) {}
+            tab.classList.add('hidden');
+            setTimeout(closeNl, 2600);
+          } else {
+            msg.classList.add('err'); msg.textContent = d.error || 'Noget gik galt. Prøv igen.';
+          }
+        } catch (err) {
+          msg.classList.add('err'); msg.textContent = 'Netværksfejl — prøv igen.';
+        }
+        btn.disabled = false; btn.textContent = t;
+      });
     })();
   </script>
 
