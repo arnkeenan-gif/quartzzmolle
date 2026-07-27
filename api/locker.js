@@ -358,6 +358,16 @@ export default async function handler(req, res) {
       await kv.hset('push:subs', { [key]: sub });
       return res.status(200).json({ ok: true });
     }
+    // Newsletter subscriber list for the admin (email + signup time).
+    if (action === 'newsletterlist') {
+      let all = {};
+      try { all = (await kv.hgetall('newsletter:emails')) || {}; } catch {}
+      const emails = Object.entries(all)
+        .map(([email, v]) => ({ email, t: (v && v.t) || 0, code: (v && v.code) || '' }))
+        .sort((a, b) => b.t - a.t);
+      return res.status(200).json({ ok: true, count: emails.length, emails });
+    }
+
     if (action === 'pushtest') {
       // Mirror the real order notification so the test previews the actual look
       // (iOS adds the app name on top by itself — don't repeat it in the title).
