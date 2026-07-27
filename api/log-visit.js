@@ -92,6 +92,7 @@ async function handleNewsletter(req, res, body) {
       return res.status(400).json({ ok: false, error: 'Skriv en gyldig e-mailadresse.' });
     }
     const key = normalizeEmail(email);
+    const lang = String(body.lang || 'da') === 'en' ? 'en' : 'da';
 
     // Dedupe on the NORMALISED address: name+2@gmail.com can't harvest a second
     // code for name@gmail.com.
@@ -128,7 +129,7 @@ async function handleNewsletter(req, res, body) {
 
     // Welcome email (best-effort — the signup itself is saved). Over-limit
     // signups get the welcome WITHOUT a discount code.
-    try { await sendWelcomeEmail(email, code); } catch (e) { console.error('welcome email failed:', e.message); }
+    try { await sendWelcomeEmail(email, code, lang); } catch (e) { console.error('welcome email failed:', e.message); }
 
     return res.status(200).json({ ok: true });
   } catch (e) {
@@ -188,30 +189,54 @@ async function ensureFallbackPromo() {
   await stripe.promotionCodes.create({ coupon: couponId, code: FALLBACK_CODE });
 }
 
-async function sendWelcomeEmail(email, code) {
+async function sendWelcomeEmail(email, code, lang) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return;
+  const en = lang === 'en';
+  const T = en ? {
+    heading: 'Thank you for subscribing',
+    welcome: "Welcome to Quartz Mølle's newsletter.",
+    first: "You'll be among the first to hear about <strong>new flour varieties</strong>, news from the mill, recipes and the season's grain.",
+    codeLabel: 'Your personal discount code – 10% off your next order',
+    codeHow: 'Enter the code in the "Add promotion code" field at checkout. The code is personal and can be used once.',
+    cta: 'Shop our flour',
+    footer1: 'You are receiving this email because you signed up at quartzmolle.dk.',
+    footer2: 'To unsubscribe, reply to this email with "Unsubscribe".',
+    subjectCode: 'Welcome! Your personal discount code: 10% off your next order 🌾',
+    subjectNoCode: "Welcome to Quartz Mølle's newsletter 🌾",
+  } : {
+    heading: 'Tak for din tilmelding',
+    welcome: 'Velkommen til Quartz Mølles nyhedsbrev.',
+    first: 'Du bliver blandt de første til at høre om <strong>nye melvarianter</strong>, nyheder fra møllen, opskrifter og sæsonens korn.',
+    codeLabel: 'Din personlige rabatkode – 10% på din næste ordre',
+    codeHow: 'Indtast koden i feltet "Tilføj rabatkode" ved betalingen. Koden er personlig og kan bruges én gang.',
+    cta: 'Se vores mel',
+    footer1: 'Du modtager denne mail, fordi du tilmeldte dig på quartzmolle.dk.',
+    footer2: 'Ønsker du at afmelde, så svar på denne mail med "Afmeld".',
+    subjectCode: 'Velkommen! Din personlige rabatkode: 10% på din næste ordre 🌾',
+    subjectNoCode: 'Velkommen til Quartz Mølles nyhedsbrev 🌾',
+  };
   const codeBlock = code ? `
     <div style="background:#fff;border:2px dashed #3a4599;border-radius:14px;padding:20px;text-align:center;margin:0 0 8px;">
-      <div style="font-size:13px;color:#6b6256;margin-bottom:6px;">Din personlige rabatkode – 10% på din næste ordre</div>
+      <div style="font-size:13px;color:#6b6256;margin-bottom:6px;">${T.codeLabel}</div>
       <div style="font-size:28px;font-weight:800;letter-spacing:2px;color:#273071;">${code}</div>
     </div>
-    <p style="text-align:center;font-size:13px;color:#6b6256;margin:0 0 22px;">Indtast koden i feltet "Tilføj rabatkode" ved betalingen. Koden er personlig og kan bruges én gang.</p>` : '';
+    <p style="text-align:center;font-size:13px;color:#6b6256;margin:0 0 22px;">${T.codeHow}</p>` : '';
   const html = `
   <div style="font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;max-width:520px;margin:0 auto;padding:30px 24px;background:#faf7f2;border-radius:16px;color:#1a1611;">
     <div style="text-align:center;margin-bottom:18px;">
       <img src="https://www.quartzmolle.dk/images/qm-icon-192.png" alt="Quartz Mølle" width="64" height="64" style="border-radius:50%;">
     </div>
-    <h2 style="color:#273071;text-align:center;margin:0 0 8px;">Tak for din tilmelding</h2>
-    <p style="text-align:center;margin:0 0 6px;color:#4a463f;">Velkommen til Quartz Mølles nyhedsbrev.</p>
-    <p style="text-align:center;margin:0 0 20px;color:#4a463f;">Du bliver blandt de første til at høre om <strong>nye melvarianter</strong>, nyheder fra møllen, opskrifter og sæsonens korn.</p>
+    <h2 style="color:#273071;text-align:center;margin:0 0 8px;">${T.heading}</h2>
+    <p style="text-align:center;margin:0 0 6px;color:#4a463f;">${T.welcome}</p>
+    <p style="text-align:center;margin:0 0 20px;color:#4a463f;">${T.first}</p>
     ${codeBlock}
     <div style="text-align:center;margin-bottom:26px;">
-      <a href="https://www.quartzmolle.dk/shop" style="background:#273071;color:#fff;text-decoration:none;font-weight:600;padding:13px 30px;border-radius:10px;display:inline-block;">Se vores mel</a>
+      <a href="https://www.quartzmolle.dk/shop" style="background:#273071;color:#fff;text-decoration:none;font-weight:600;padding:13px 30px;border-radius:10px;display:inline-block;">${T.cta}</a>
     </div>
     <p style="font-size:11.5px;color:#9b9488;text-align:center;line-height:1.6;margin:0;">
-      Du modtager denne mail, fordi du tilmeldte dig på quartzmolle.dk.<br>
-      Ønsker du at afmelde, så svar på denne mail med "Afmeld".<br>
+      ${T.footer1}<br>
+      ${T.footer2}<br>
       Quartz Mølle · Suså Landevej 101, 4160 Herlufmagle · CVR 42117188
     </p>
   </div>`;
@@ -221,7 +246,7 @@ async function sendWelcomeEmail(email, code) {
     body: JSON.stringify({
       from: 'Quartz Mølle <order@quartzmolle.dk>',
       to: [email],
-      subject: code ? 'Velkommen! Din personlige rabatkode: 10% på din næste ordre 🌾' : 'Velkommen til Quartz Mølles nyhedsbrev 🌾',
+      subject: code ? T.subjectCode : T.subjectNoCode,
       html,
     }),
   });
