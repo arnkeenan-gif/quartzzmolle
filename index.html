@@ -128,17 +128,20 @@
     /* first video visible immediately (no black flash before JS runs) */
     #vid1, #vs1 .video-overlay { opacity: 1; }
 
-    /* Scroll hint: pinned to the bottom of the first screen, fades out as soon
-       as the visitor starts scrolling (video sections are position:static here,
-       so the shared absolute positioning would anchor wrong — pin it fixed). */
+    /* Scroll hint: anchored to the bottom of the FIRST screen of the page (not
+       the viewport), so it stays in place and scrolls away with the content —
+       while also fading out smoothly. The video sections are position:static
+       here, so it anchors to #videoStage which starts at the top of the page. */
     .scroll-hint {
-      position: fixed;
-      bottom: calc(2.2rem + env(safe-area-inset-bottom));
-      transition: opacity .28s ease-out, transform .28s ease-out;
+      position: absolute;
+      top: calc(100vh - 5.5rem);
+      top: calc(100svh - 5.5rem);
+      bottom: auto;
+      transition: opacity .35s ease-out;
       pointer-events: none;
-      will-change: opacity, transform;
+      will-change: opacity;
     }
-    .scroll-hint.gone { opacity: 0; transform: translateX(-50%) translateY(10px); }
+    .scroll-hint.gone { opacity: 0; }
 
     /* The section is 100lvh tall but Safari's bars cover part of it, so the
        flex-centred hero lands visually low. Pull it up so logo + title sit
@@ -405,7 +408,7 @@
         ticking = true;
         requestAnimationFrame(function () {
           ticking = false;
-          hint.classList.toggle('gone', window.scrollY > 8);
+          hint.classList.toggle('gone', window.scrollY > 40);
         });
       }
       window.addEventListener('scroll', onScroll, { passive: true });
