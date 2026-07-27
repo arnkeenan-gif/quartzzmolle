@@ -108,6 +108,10 @@ export default async function handler(req, res) {
       return res.status(200).json({ received: true, skipped: 'no order data' });
     }
 
+    // Push notification to the owner's phone(s) for every new order (best-effort,
+    // never blocks the webhook).
+    try { await sendOrderPush(orderData); } catch (e) { console.error('Order push failed:', e); }
+
     // ── CLICK & COLLECT (afhentning) ──
     // No carrier shipment: skip Shipmondo/GLS label booking entirely and just send
     // the order confirmation + admin notification emails. This also covers orders
@@ -677,6 +681,48 @@ async function recoverPickupOrders(req, res) {
     };
     const refOf = (extId) => String(extId).slice(-12).toUpperCase();
 
+    // 0a) SEED: insert known orders straight from their email data — NO Stripe call
+    //     at all, so this cannot fail on an API hiccup. Trigger with ?seed=1.
+    if (String(req.query.seed || '') === '1') {
+      const SEED_ORDERS = [
+        {
+          externalId: 'cs_live_b1JW5FwCLB2AYDRLeN92nvEum1lt2O9VDO27dPCWbC5SAhcgRxCM1Tb6aG',
+          customerName: 'Ann-Britt Frøstrup', customerEmail: '6021affe@gmail.com', customerPhone: '+4551844485',
+          amountKr: 646, items: [
+            { productName: 'Rød hvede – Fintsigtet hvedemel – Type 70', weightLabel: '3 kg', qty: 2 },
+            { productName: 'Mariagertoba – Fintsigtet hvedemel – Type 70', weightLabel: '3 kg', qty: 2 },
+            { productName: 'Rug – Rugmel fuldkorn', weightLabel: '11 kg', qty: 1 },
+          ],
+        },
+        {
+          externalId: 'cs_live_b1vpt2RBMCAO89MolbGUpE4xF8vqpjEZ97LY5vtshXR6Tw2BaMxR7Y72MQ',
+          customerName: 'Camilla Hansen', customerEmail: 'camilla@tovborg.com', customerPhone: '+4520216621',
+          amountKr: 837, items: [
+            { productName: 'Mariagertoba – Fintsigtet hvedemel – Type 70', weightLabel: '12,5 kg', qty: 2 },
+            { productName: 'Ølands / Quarna – Fuldkornshvedemel', weightLabel: '3 kg', qty: 1 },
+            { productName: 'Purpurhvede – Fuldkornshvedemel', weightLabel: '3 kg', qty: 1 },
+          ],
+        },
+      ];
+      for (const od of SEED_ORDERS) {
+        const ref = refOf(od.externalId);
+        const row = { kind: 'seed', ref, name: od.customerName, amountKr: od.amountKr, decision: '' };
+        try {
+          if (have.has(String(od.externalId)) || have.has(ref)) { row.decision = 'already had'; report.diagnostics.push(row); continue; }
+          await savePickupOrder(od);
+          have.add(String(od.externalId)); have.add(ref);
+          row.decision = 'RESTORED';
+          report.recovered.push({ ref, name: od.customerName, total: od.amountKr });
+        } catch (e) { row.decision = 'error: ' + (e && e.message || e); }
+        report.diagnostics.push(row);
+      }
+      report.recovered_count = report.recovered.length;
+      report.note = report.recovered.length
+        ? `${report.recovered.length} ordre(r) lagt direkte ind i afhentningslisten (uden Stripe).`
+        : 'Begge seed-ordrer var der allerede.';
+      return res.status(200).json(report);
+    }
+
     const consider = async (kind, id, od) => {
       const row = { kind, id, deliveryKey: od && od.deliveryKey, shipping: od && od.shippingDisplayName || '', amountKr: od && od.amountKr, name: od && od.customerName, decision: '' };
       if (!od) { row.decision = 'no order data'; report.diagnostics.push(row); return; }
@@ -893,4 +939,36 @@ async function parseCheckoutSession(session) {
     shippingDisplayName,
     items,
   };
+}
+
+// ── PUSH NOTIFICATION til ejeren ved nye ordrer ─────────────────────────────
+// Sends a Web Push to every admin device saved via /api/locker action=pushsub.
+// Public key matches the one embedded in admin.html; the private key lives only
+// in Vercel env (VAPID_PRIVATE_KEY). Dead subscriptions are pruned.
+const QM_VAPID_PUBLIC = 'BO1VNQRG3or-Sm9xL0EQoqZ3UUMUYlZXJOCFhhcP0BlG7asMkdSTaaSceGDxkpnnDmTkjE_fLNhoxR9ATeVgHsc';
+async function sendOrderPush(orderData) {
+  const priv = process.env.VAPID_PRIVATE_KEY || '';
+  if (!priv) return; // not configured yet — skip silently
+  const webpush = (await import('web-push')).default;
+  webpush.setVapidDetails(process.env.VAPID_SUBJECT || 'mailto:hello@quartzmolle.dk', QM_VAPID_PUBLIC, priv);
+  const { kv } = await import('./_kv.js');
+  let subs = {};
+  try { subs = (await kv.hgetall('push:subs')) || {}; } catch {}
+  if (!Object.keys(subs).length) return;
+
+  const isPickup = orderData.deliveryKey === 'pickup';
+  const kr = Number(orderData.amountKr || 0).toFixed(2).replace('.', ',');
+  const payload = JSON.stringify({
+    title: `Ny ordre – ${kr} kr.`,
+    body: `${orderData.customerName || 'Kunde'} · ${isPickup ? 'Click & Collect (afhentning)' : 'GLS levering'}`,
+    url: isPickup ? '/fufill' : '/admin',
+    tag: 'order-' + String(orderData.externalId || '').slice(-10),
+  });
+  await Promise.all(Object.entries(subs).map(async ([k, sub]) => {
+    try { await webpush.sendNotification(sub, payload); }
+    catch (e) {
+      const c = e && e.statusCode;
+      if (c === 404 || c === 410) { try { await kv.hdel('push:subs', k); } catch {} }
+    }
+  }));
 }

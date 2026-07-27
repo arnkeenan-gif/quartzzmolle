@@ -346,9 +346,51 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, cleared: n });
     }
 
+    // ── PUSH NOTIFICATIONS (admin devices) ──
+    // pushsub: save this browser's push subscription so the Stripe webhook can
+    // notify the owner's phone(s) about new orders. pushtest: send a test push.
+    if (action === 'pushsub') {
+      const sub = body.sub;
+      if (!sub || !sub.endpoint || !sub.keys || !sub.keys.p256dh || !sub.keys.auth) {
+        return res.status(400).json({ error: 'Ugyldig tilmelding' });
+      }
+      const key = createHmac('sha256', 'pushsub').update(String(sub.endpoint)).digest('hex').slice(0, 24);
+      await kv.hset('push:subs', { [key]: sub });
+      return res.status(200).json({ ok: true });
+    }
+    if (action === 'pushtest') {
+      const result = await sendPushToAll({
+        title: 'Quartz Mølle', body: 'Test — notifikationer virker', url: '/admin', tag: 'qm-test',
+      });
+      return res.status(200).json({ ok: true, ...result });
+    }
+
     return res.status(400).json({ error: 'Ukendt handling' });
   } catch (e) {
     console.error('locker error', e);
     return res.status(500).json({ error: 'Serverfejl' });
   }
+}
+
+// Send a Web Push to every stored admin subscription. The VAPID public key is
+// the same one embedded in admin.html; the PRIVATE key lives only in Vercel env
+// (VAPID_PRIVATE_KEY). Dead subscriptions (404/410) are pruned automatically.
+const QM_VAPID_PUBLIC = 'BO1VNQRG3or-Sm9xL0EQoqZ3UUMUYlZXJOCFhhcP0BlG7asMkdSTaaSceGDxkpnnDmTkjE_fLNhoxR9ATeVgHsc';
+async function sendPushToAll(payloadObj) {
+  const priv = process.env.VAPID_PRIVATE_KEY || '';
+  if (!priv) return { sent: 0, error: 'VAPID_PRIVATE_KEY mangler i Vercel env' };
+  const webpush = (await import('web-push')).default;
+  webpush.setVapidDetails(process.env.VAPID_SUBJECT || 'mailto:hello@quartzmolle.dk', QM_VAPID_PUBLIC, priv);
+  let subs = {};
+  try { subs = (await kv.hgetall('push:subs')) || {}; } catch {}
+  const payload = JSON.stringify(payloadObj);
+  let sent = 0;
+  await Promise.all(Object.entries(subs).map(async ([k, sub]) => {
+    try { await webpush.sendNotification(sub, payload); sent++; }
+    catch (e) {
+      const c = e && e.statusCode;
+      if (c === 404 || c === 410) { try { await kv.hdel('push:subs', k); } catch {} }
+    }
+  }));
+  return { sent, total: Object.keys(subs).length };
 }
