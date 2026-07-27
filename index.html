@@ -529,6 +529,27 @@
       var modal = document.getElementById('nlModal');
       var tab = document.getElementById('nlTab');
 
+      // Engelsk besøgende? Så engelsk plakat, tekster og velkomstmail.
+      var nlEn = false; try { nlEn = localStorage.getItem('qm_lang') === 'en'; } catch (e) {}
+      var NLT = nlEn ? {
+        tab: '10% OFF', ph: 'Your email address', btn: 'Sign up', busy: 'Signing up…',
+        invalid: 'Please enter a valid email address.',
+        already: 'You are already subscribed — check your inbox for the code.',
+        thanks: 'Thanks! Check your inbox — your 10% discount code is on its way.',
+        fail: 'Something went wrong. Please try again.', net: 'Network error — please try again.'
+      } : {
+        tab: '10% RABAT', ph: 'Din e-mailadresse', btn: 'Tilmeld', busy: 'Tilmelder…',
+        invalid: 'Skriv en gyldig e-mailadresse.',
+        already: 'Du er allerede tilmeldt — tjek din indbakke for koden.',
+        thanks: 'Tak! Tjek din indbakke — din 10%-rabatkode er på vej.',
+        fail: 'Noget gik galt. Prøv igen.', net: 'Netværksfejl — prøv igen.'
+      };
+      if (nlEn) {
+        var bg = modal.querySelector('.nl-bg');
+        if (bg) { bg.src = 'images/newsletter-art-en.jpg'; bg.alt = 'Get 10% off your next order — join the newsletter'; }
+        tab.textContent = NLT.tab; input.placeholder = NLT.ph; btn.textContent = NLT.btn;
+      }
+
       function subscribed() { try { return localStorage.getItem('qm_nl_sub') === '1'; } catch (e) { return false; } }
       function openNl() { modal.classList.add('open'); document.body.style.overflow = 'hidden'; setTimeout(function () { try { input.focus(); } catch (e) {} }, 250); }
       function closeNl() { modal.classList.remove('open'); document.body.style.overflow = ''; }
@@ -554,28 +575,26 @@
         var email = (input.value || '').trim();
         msg.className = 'newsletter-msg';
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
-          msg.classList.add('err'); msg.textContent = 'Skriv en gyldig e-mailadresse.'; return;
+          msg.classList.add('err'); msg.textContent = NLT.invalid; return;
         }
-        btn.disabled = true; var t = btn.textContent; btn.textContent = 'Tilmelder…';
+        btn.disabled = true; var t = btn.textContent; btn.textContent = NLT.busy;
         try {
           var r = await fetch('/api/log-visit', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'newsletter', email: email }),
+            body: JSON.stringify({ action: 'newsletter', email: email, lang: nlEn ? 'en' : 'da' }),
           });
           var d = await r.json().catch(function () { return {}; });
           if (r.ok && d.ok) {
-            msg.textContent = d.already
-              ? 'Du er allerede tilmeldt — tjek din indbakke for koden.'
-              : 'Tak! Tjek din indbakke — din 10%-rabatkode er på vej.';
+            msg.textContent = d.already ? NLT.already : NLT.thanks;
             input.value = '';
             try { localStorage.setItem('qm_nl_sub', '1'); localStorage.setItem('qm_nl_seen', '1'); } catch (err) {}
             tab.classList.add('hidden');
             setTimeout(closeNl, 2600);
           } else {
-            msg.classList.add('err'); msg.textContent = d.error || 'Noget gik galt. Prøv igen.';
+            msg.classList.add('err'); msg.textContent = d.error || NLT.fail;
           }
         } catch (err) {
-          msg.classList.add('err'); msg.textContent = 'Netværksfejl — prøv igen.';
+          msg.classList.add('err'); msg.textContent = NLT.net;
         }
         btn.disabled = false; btn.textContent = t;
       });
