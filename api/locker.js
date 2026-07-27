@@ -175,6 +175,36 @@ export default async function handler(req, res) {
       return res.status(200).json(report);
     }
 
+    // ---------------- DIAGNOSE: kan Stripe oprette rabatkoder? ----------------
+    // /api/locker?action=promotest&code=LOCKER_CODE — runs the exact same Stripe
+    // calls the newsletter uses and reports each step's precise error, so a
+    // failing unique-code pipeline can be diagnosed from the browser.
+    if (action === 'promotest') {
+      const codeParam = (body.code || (req.query && req.query.code) || '').toString();
+      if (!CODE || !safeEqual(codeParam, CODE)) return res.status(401).json({ error: 'Unauthorized' });
+      const report = { keyPresent: !!process.env.STRIPE_SECRET_KEY, keyPrefix: (process.env.STRIPE_SECRET_KEY || '').slice(0, 8), steps: {} };
+      if (!process.env.STRIPE_SECRET_KEY) return res.status(200).json(report);
+      const errMsg = (e) => (e && e.raw && e.raw.message) || (e && e.message) || String(e);
+      let stripe, coupon = null, promo = null;
+      try { stripe = (await import('stripe')).default(process.env.STRIPE_SECRET_KEY); report.steps.load = 'ok'; }
+      catch (e) { report.steps.load = 'FEJL: ' + errMsg(e); return res.status(200).json(report); }
+      try {
+        coupon = await stripe.coupons.create({ percent_off: 10, duration: 'once', name: 'DIAGNOSE-TEST (slettes)' });
+        report.steps.couponCreate = 'ok (' + coupon.id + ')';
+      } catch (e) { report.steps.couponCreate = 'FEJL: ' + errMsg(e); return res.status(200).json(report); }
+      const testCode = 'QMDIAG' + Math.floor(Math.random() * 90000 + 10000);
+      try {
+        promo = await stripe.promotionCodes.create({ coupon: coupon.id, code: testCode, max_redemptions: 1 });
+        report.steps.promoCreate = 'ok (' + promo.code + ')';
+      } catch (e) { report.steps.promoCreate = 'FEJL: ' + errMsg(e); }
+      try { if (promo) { await stripe.promotionCodes.update(promo.id, { active: false }); report.steps.promoDeactivate = 'ok'; } } catch (e) { report.steps.promoDeactivate = 'FEJL: ' + errMsg(e); }
+      try { await stripe.coupons.del(coupon.id); report.steps.couponDelete = 'ok'; } catch (e) { report.steps.couponDelete = 'FEJL: ' + errMsg(e); }
+      report.conclusion = report.steps.promoCreate && report.steps.promoCreate.startsWith('ok')
+        ? 'ALT VIRKER — nyhedsbrevet vil lave unikke koder. Test med en NY e-mailadresse.'
+        : 'Fejlen står ovenfor — send den til Claude.';
+      return res.status(200).json(report);
+    }
+
     // ---------------- TABLET SYNC ----------------
     if (action === 'sync') {
       // Accept the device secret from the header, the query string OR the body —
@@ -363,7 +393,7 @@ export default async function handler(req, res) {
       let all = {};
       try { all = (await kv.hgetall('newsletter:emails')) || {}; } catch {}
       const emails = Object.entries(all)
-        .map(([email, v]) => ({ email, t: (v && v.t) || 0, code: (v && v.code) || '' }))
+        .map(([key, v]) => ({ email: (v && v.email) || key, t: (v && v.t) || 0, code: (v && v.code) || '' }))
         .sort((a, b) => b.t - a.t);
       return res.status(200).json({ ok: true, count: emails.length, emails });
     }
