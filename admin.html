@@ -372,6 +372,13 @@
       <div id="ordersList" class="loading">Henter ordrer…</div>
     </div>
 
+    <!-- Newsletter subscribers -->
+    <div class="panel">
+      <h2><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Nyhedsbrev <span id="nlCount" style="color:var(--muted);font-weight:500;font-size:13px"></span></h2>
+      <div id="nlList" class="loading">Henter tilmeldinger…</div>
+      <button id="nlCsvBtn" class="dchip" type="button" style="margin-top:10px;display:none">Hent som CSV</button>
+    </div>
+
     <div class="two-col">
       <!-- Top products -->
       <div class="panel">
@@ -448,6 +455,7 @@
     document.getElementById('loginWrap').classList.add('hide');
     document.getElementById('dashboard').classList.remove('hide');
     loadDashboard();
+    if (typeof loadNewsletter === 'function') loadNewsletter();
     // Refresh active users every 15 sec
     if (pollTimer) clearInterval(pollTimer);
     pollTimer = setInterval(refreshLiveStats, 15000);
@@ -979,6 +987,43 @@
 </script>
 
 <script>
+// ── NYHEDSBREVS-LISTE ───────────────────────────────────────────────────────
+async function loadNewsletter() {
+  const list = document.getElementById('nlList');
+  const cnt = document.getElementById('nlCount');
+  const csvBtn = document.getElementById('nlCsvBtn');
+  if (!list) return;
+  try {
+    const r = await fetch('/api/locker', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin', body: JSON.stringify({ action: 'newsletterlist' }),
+    });
+    const d = await r.json();
+    if (!r.ok || !d.ok) throw new Error(d.error || r.status);
+    cnt.textContent = '· ' + d.count + ' tilmeldt' + (d.count === 1 ? '' : 'e');
+    if (!d.emails.length) { list.className = 'empty'; list.textContent = 'Ingen tilmeldinger endnu.'; return; }
+    list.className = '';
+    list.innerHTML = d.emails.map(e =>
+      '<div style="display:flex;justify-content:space-between;gap:10px;padding:8px 2px;border-bottom:1px solid #f0ece3;font-size:13.5px;flex-wrap:wrap">'
+      + '<span style="font-weight:600">' + escapeHtml(e.email) + '</span>'
+      + '<span style="color:var(--muted);font-size:12px;white-space:nowrap">'
+      + (e.code ? '<span style="font-weight:700;color:var(--blue);margin-right:10px">' + escapeHtml(e.code) + '</span>' : '')
+      + (e.t ? new Date(e.t).toLocaleDateString('da-DK') : '') + '</span>'
+      + '</div>').join('');
+    csvBtn.style.display = 'inline-block';
+    csvBtn.onclick = () => {
+      const csv = 'email;rabatkode;dato\n' + d.emails.map(e => e.email + ';' + (e.code || '') + ';' + (e.t ? new Date(e.t).toISOString().slice(0, 10) : '')).join('\n');
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+      a.download = 'nyhedsbrev-tilmeldinger.csv';
+      a.click();
+    };
+  } catch (e) {
+    list.className = 'empty'; list.textContent = 'Kunne ikke hente listen.';
+  }
+}
+// (kaldes fra showDashboard efter login)
+
 // ── PUSH-NOTIFIKATIONER VED NYE ORDRER ──────────────────────────────────────
 // Works when the site is installed on the Home Screen (iOS 16.4+) or in a
 // normal desktop browser. The VAPID public key is safe to embed; the private
