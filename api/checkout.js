@@ -169,6 +169,9 @@ export default async function handler(req, res) {
       },
       phone_number_collection: { enabled: true },
       shipping_options: shippingOptions,
+      // Show the "Add promotion code" field in Stripe (used by the newsletter's
+      // VELKOMMEN10 welcome code, and any future campaign codes).
+      allow_promotion_codes: true,
       locale: 'da',
       metadata: { items_summary: itemsSummary, client_ip: clientIp },
     });
