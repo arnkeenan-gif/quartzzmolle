@@ -2064,3 +2064,83 @@ body:has(.mobile-menu.open) .lang-switch-btn .lang-chevron {
   margin: 0 0 0.85rem;
 }
 .cart-weight-note strong { color: var(--brand-blue, #273071); }
+
+/* ── NEWSLETTER (10% velkomstrabat) ── */
+.newsletter { background: var(--brand-blue); padding: 4.5rem 2rem; text-align: center; position: relative; z-index: 2; }
+.newsletter-inner { max-width: 560px; margin: 0 auto; }
+.newsletter .eyebrow-dark { color: rgba(255,255,255,.75); }
+.newsletter h2 { font-family: 'Inter', sans-serif; font-size: clamp(1.7rem, 4vw, 2.4rem); font-weight: 700; color: #fff; margin: .4rem 0 .6rem; letter-spacing: -0.01em; }
+.newsletter p { color: rgba(255,255,255,.85); font-size: .97rem; line-height: 1.65; margin: 0 0 1.6rem; }
+.newsletter-form { display: flex; gap: .6rem; max-width: 440px; margin: 0 auto; }
+.newsletter-form input {
+  flex: 1 1 auto; min-width: 0; font-family: inherit; font-size: 1rem;
+  padding: .95rem 1.1rem; border: none; border-radius: 10px; background: #fff; color: var(--text);
+}
+.newsletter-form input:focus { outline: 3px solid rgba(255,255,255,.35); }
+.newsletter-form button {
+  font-family: inherit; font-size: 1rem; font-weight: 700; cursor: pointer;
+  background: #fff; color: var(--brand-blue); border: none; border-radius: 10px; padding: .95rem 1.6rem;
+  transition: transform .15s cubic-bezier(.22,1,.36,1), box-shadow .2s ease;
+}
+.newsletter-form button:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(0,0,0,.25); }
+.newsletter-form button:disabled { opacity: .6; cursor: wait; transform: none; }
+.newsletter-msg { min-height: 1.4em; margin-top: .9rem; font-size: .92rem; font-weight: 600; color: #fff; }
+.newsletter-msg.err { color: #ffd9d9; }
+@media (max-width: 520px) {
+  .newsletter-form { flex-direction: column; }
+  .newsletter-form button { width: 100%; }
+}
+
+/* ── NEWSLETTER POPUP + SIDE BOOKMARK TAB ── */
+.nl-tab {
+  position: fixed; right: 0; top: 58%; z-index: 90;
+  writing-mode: vertical-rl; text-orientation: mixed;
+  background: var(--brand-blue); color: #fff;
+  font-family: inherit; font-size: .8rem; font-weight: 800; letter-spacing: .14em;
+  padding: 16px 11px; border: none; border-radius: 12px 0 0 12px; cursor: pointer;
+  box-shadow: -4px 4px 16px rgba(39,48,113,.28);
+  transition: transform .2s cubic-bezier(.22,1,.36,1), background .2s ease;
+}
+.nl-tab:hover { background: var(--brand-blue-light); transform: translateX(-3px); }
+.nl-tab.hidden { display: none; }
+
+.nl-modal { position: fixed; inset: 0; z-index: 220; display: none; align-items: center; justify-content: center; padding: 18px; }
+.nl-modal.open { display: flex; }
+.nl-backdrop { position: absolute; inset: 0; background: rgba(20,16,12,.55); }
+/* The whole popup IS the artwork: a portrait (2:3) hand-painted poster of the
+   mill-logo world with the headline lettered INTO the painting (Higgsfield).
+   Only the email field + button float on the clean hill at the bottom. */
+.nl-card {
+  position: relative; overflow: hidden;
+  width: min(400px, 92vw); aspect-ratio: 2 / 3; max-height: 88vh;
+  border-radius: 24px; background: var(--brand-blue);
+  box-shadow: 0 30px 80px rgba(0,0,0,.4);
+  animation: nlPop .5s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes nlPop { from { opacity: 0; transform: translateY(28px) scale(.96); } to { opacity: 1; transform: none; } }
+.nl-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+.nl-formwrap { position: absolute; left: 16px; right: 16px; bottom: 13px; z-index: 2; }
+.nl-formwrap .newsletter-form { flex-direction: column; gap: .45rem; max-width: none; }
+.nl-formwrap .newsletter-form input {
+  border: none; background: rgba(255,255,255,.97); box-shadow: 0 8px 26px rgba(0,0,0,.28);
+  padding: .72rem 1rem; font-size: .95rem;
+}
+.nl-formwrap .newsletter-form input:focus { outline: 3px solid rgba(255,255,255,.5); }
+.nl-formwrap .newsletter-form button {
+  background: var(--brand-blue); color: #fff; box-shadow: 0 8px 26px rgba(27,34,82,.45);
+  padding: .72rem 1rem; font-size: .95rem;
+}
+.nl-formwrap .newsletter-msg {
+  color: #fff; text-align: center; margin-top: .35rem; min-height: 0;
+  text-shadow: 0 1px 8px rgba(0,0,0,.55); font-weight: 700; font-size: .85rem;
+}
+.nl-formwrap .newsletter-msg.err { color: #ffd9d9; }
+.nl-close {
+  position: absolute; top: 12px; right: 12px; z-index: 3; width: 38px; height: 38px;
+  border: none; border-radius: 50%; background: rgba(255,255,255,.92); color: var(--text);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  box-shadow: 0 2px 12px rgba(0,0,0,.25);
+  transition: transform .2s cubic-bezier(.22,1,.36,1);
+}
+.nl-close:hover { transform: rotate(90deg); }
+@media (prefers-reduced-motion: reduce) { .nl-card { animation: none; } }
