@@ -359,8 +359,10 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
     if (action === 'pushtest') {
+      // Mirror the real order notification so the test previews the actual look
+      // (iOS adds the app name on top by itself — don't repeat it in the title).
       const result = await sendPushToAll({
-        title: 'Quartz Mølle', body: 'Test — notifikationer virker', url: '/admin', tag: 'qm-test',
+        title: 'Ny ordre – 99,00 kr. (test)', body: 'Test Kunde · Click & Collect (afhentning)', url: '/admin', tag: 'qm-test',
       });
       return res.status(200).json({ ok: true, ...result });
     }
