@@ -109,6 +109,9 @@ export default async function handler(req, res) {
     const iterator = stripe.checkout.sessions.list({
       limit: 100,
       created: { gte: since, lte: until },
+      // Same API call, but with the shipping rate expanded so each order knows
+      // its delivery method (Click & Collect vs GLS) for the admin filter.
+      expand: ['data.shipping_cost.shipping_rate'],
     });
 
     for await (const s of iterator) {
@@ -131,6 +134,14 @@ export default async function handler(req, res) {
       const locKey = `${city}, ${country}`;
       locationCounts[locKey] = (locationCounts[locKey] || 0) + 1;
 
+      // Delivery method: from the shipping rate's display name, with the
+      // shipping price as fallback (Click & Collect is the only free option).
+      const shipName = s.shipping_cost?.shipping_rate?.display_name || '';
+      const shipLower = shipName.toLowerCase();
+      const delivery = (shipLower.includes('afhent') || shipLower.includes('collect')) ? 'pickup'
+        : (shipLower.includes('pakkeshop') || shipLower.includes('privat') || shipLower.includes('gls')) ? 'gls'
+        : ((s.shipping_cost?.amount_total || 0) === 0 ? 'pickup' : 'gls');
+
       paid.push({
         id: s.id,   // kept in the response so the admin can open the order detail
         ref: String(s.id).slice(-12).toUpperCase(),
@@ -139,6 +150,8 @@ export default async function handler(req, res) {
         amount: amountKr,
         city: city,
         country: country,
+        delivery,
+        shippingName: shipName,
         itemCount: null,
         created: s.created || 0,
         date: new Date((s.created || 0) * 1000).toISOString(),

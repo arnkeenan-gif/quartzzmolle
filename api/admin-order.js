@@ -147,7 +147,7 @@ async function handleSearch(req, res, stripe) {
     let scanned = 0;
     const matches = [];
 
-    const iterator = stripe.checkout.sessions.list({ limit: 100, created: { gte: since, lte: nowTs } });
+    const iterator = stripe.checkout.sessions.list({ limit: 100, created: { gte: since, lte: nowTs }, expand: ['data.shipping_cost.shipping_rate'] });
     for await (const s of iterator) {
       if (++scanned > MAX_SESSIONS) break;
       if (s.payment_status !== 'paid') continue;
@@ -158,9 +158,15 @@ async function handleSearch(req, res, stripe) {
       const city = addr.city || '';
       const country = (addr.country || '').toUpperCase();
       if (!`${ref} ${name} ${email} ${city} ${country}`.toLowerCase().includes(q)) continue;
+      const shipName = s.shipping_cost?.shipping_rate?.display_name || '';
+      const shipLower = shipName.toLowerCase();
+      const delivery = (shipLower.includes('afhent') || shipLower.includes('collect')) ? 'pickup'
+        : (shipLower.includes('pakkeshop') || shipLower.includes('privat') || shipLower.includes('gls')) ? 'gls'
+        : ((s.shipping_cost?.amount_total || 0) === 0 ? 'pickup' : 'gls');
       matches.push({
         id: s.id, ref, customerName: name || 'Kunde', email,
         amount: (s.amount_total || 0) / 100, city: city || 'Ukendt', country,
+        delivery, shippingName: shipName,
         itemCount: null, date: new Date((s.created || 0) * 1000).toISOString(),
       });
       if (matches.length >= MAX_MATCHES) break;
