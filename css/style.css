@@ -733,7 +733,9 @@ body.past-videos .video-overlay {
 
 .footer-links {
   display: flex;
-  gap: 1.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.8rem 1.5rem;
 }
 
 .footer-links a {
