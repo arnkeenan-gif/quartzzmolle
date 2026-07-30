@@ -53,7 +53,7 @@ body:has(#videoStage)::before {
   top: 0;
   left: 0;
   right: 0;
-  height: max(14px, env(safe-area-inset-top, 0px));
+  height: 8px;
   background: #000;
   z-index: 10000;
   pointer-events: none;
