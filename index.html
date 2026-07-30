@@ -128,6 +128,23 @@
     /* first video visible immediately (no black flash before JS runs) */
     #vid1, #vs1 .video-overlay { opacity: 1; }
 
+    /* Black strip at the VERY top of the page, exactly as tall as Apple's
+       status bar (the safe-area inset — the minimum Apple allows). It is
+       absolute, NOT fixed: it sits at the top of the page and scrolls away
+       with the content, just like the old look. Zero height on devices
+       without a top notch, so it is invisible there. */
+    body::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: env(safe-area-inset-top, 0px);
+      background: #000;
+      z-index: 10000;
+      pointer-events: none;
+    }
+
     /* Scroll hint: anchored to the bottom of the FIRST screen of the page (not
        the viewport), so it stays in place and scrolls away with the content —
        while also fading out smoothly. The video sections are position:static
@@ -358,6 +375,9 @@
         <a href="forhandlere.html">Forhandlere</a>
         <a href="om.html">Om os</a>
         <a href="#kontakt">Kontakt</a>
+        <a href="leveringspolitik.html">Levering</a>
+        <a href="refusionspolitik.html">Fortrydelse &amp; refusion</a>
+        <a href="privatlivspolitik.html">Privatlivspolitik</a>
         <a href="https://www.findsmiley.dk/1149461" class="footer-smiley-link" target="_blank" rel="noopener" title="Smileyrapport – se vores kontrolrapport fra Fødevarestyrelsen" aria-label="Smileyrapport – se vores kontrolrapport fra Fødevarestyrelsen">
           <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
             <circle cx="12" cy="12" r="9"></circle>
