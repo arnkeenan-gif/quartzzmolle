@@ -107,7 +107,10 @@ function injectCartUI() {
       <div class="cart-backdrop" data-cart-close></div>
       <aside class="cart-panel" role="dialog" aria-label="Cart">
         <header class="cart-head">
-          <h2>Din kurv</h2>
+          <div class="cart-head-titles">
+            <h2>Din kurv</h2>
+            <p class="cart-head-sub" id="cart-head-sub" hidden></p>
+          </div>
           <button class="cart-close" data-cart-close aria-label="Luk">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
@@ -118,10 +121,11 @@ function injectCartUI() {
             <span>I alt</span>
             <span id="cart-total">0,00 kr.</span>
           </div>
+          <p class="cart-shipnote">Fragt beregnes ved checkout</p>
           <p id="cart-weight-note" class="cart-weight-note" hidden></p>
           <p id="cart-error" class="cart-error"></p>
-          <button class="btn-buy" id="cart-checkout-btn">Til kassen</button>
-          <button id="cart-continue-btn" style="width:100%;margin-top:0.6rem;background:none;border:1.5px solid rgba(0,0,0,0.25);border-radius:6px;padding:0.85rem;font-family:inherit;font-size:0.95rem;font-weight:600;color:#000;cursor:pointer;">Shop videre</button>
+          <button class="btn-buy cart-cta" id="cart-checkout-btn">Til kassen</button>
+          <button id="cart-continue-btn" class="cart-continue">Shop videre</button>
           <p class="cart-secure-note">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             Sikker betaling med Stripe
@@ -162,27 +166,42 @@ function updateCartUI() {
     if (bounce) { el.classList.remove('qm-bounce'); void el.offsetWidth; el.classList.add('qm-bounce'); }
   });
 
+  const headSub = document.getElementById('cart-head-sub');
+  if (headSub) {
+    headSub.hidden = count === 0;
+    headSub.textContent = `${count} ${count === 1 ? 'vare' : 'varer'}`;
+  }
+
   const list = document.getElementById('cart-items');
   if (list) {
     if (items.length === 0) {
-      list.innerHTML = `<p class="cart-empty">Din kurv er tom.</p>`;
+      list.innerHTML = `
+        <div class="cart-empty">
+          <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          <p>Din kurv er tom.</p>
+          <a class="cart-empty-btn" href="shop.html">Se alle produkter</a>
+        </div>`;
     } else {
       list.innerHTML = items.map(it => `
         <div class="cart-item" data-pid="${it.productId}" data-wl="${it.weightLabel}">
           <img src="${it.image}" alt="${it.productName}" />
           <div class="cart-item-info">
-            <div class="cart-item-name">${it.productName}</div>
-            <div class="cart-item-sub">${it.productType} &middot; ${it.weightLabel}</div>
-            <div class="cart-item-controls">
-              <button class="qty-btn" data-qty="-1" aria-label="Decrease">−</button>
-              <span class="qty-val">${it.qty}</span>
-              <button class="qty-btn" data-qty="1" aria-label="Increase">+</button>
+            <div class="cart-item-top">
+              <div class="cart-item-name">${it.productName}</div>
               <button class="cart-item-remove" aria-label="Remove">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
               </button>
             </div>
+            <div class="cart-item-sub">${it.productType} &middot; ${it.weightLabel}</div>
+            <div class="cart-item-bottom">
+              <div class="qty-pill">
+                <button class="qty-btn" data-qty="-1" aria-label="Mindre">−</button>
+                <span class="qty-val">${it.qty}</span>
+                <button class="qty-btn" data-qty="1" aria-label="Mere">+</button>
+              </div>
+              <div class="cart-item-price">${(it.price * it.qty).toFixed(2).replace('.', ',')} kr.</div>
+            </div>
           </div>
-          <div class="cart-item-price">${(it.price * it.qty).toFixed(2).replace('.', ',')} kr.</div>
         </div>
       `).join('');
 

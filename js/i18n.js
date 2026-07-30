@@ -35,6 +35,8 @@
     "Statskontrolleret Økologisk": "State-Controlled Organic",
     "Smileyrapport – se vores kontrolrapport fra Fødevarestyrelsen": "Smiley report – see our inspection report from the Danish Veterinary and Food Administration",
     "Smiley­rapport": "Smiley report",
+    "Fortrydelse & refusion": "Returns & refunds",
+    "Privatlivspolitik": "Privacy policy",
 
     // index.html
     "Quartz Mølle – Økologisk Mel fra Stenkværn": "Quartz Mølle – Organic Stone-Milled Flour",
@@ -125,6 +127,7 @@
     "Til kassen": "Checkout",
     "Sikker betaling med Stripe": "Secure payment with Stripe",
     "Din kurv er tom.": "Your cart is empty.",
+    "Shop videre": "Continue shopping",
     "Forbereder…": "Preparing…",
     "Netværksfejl — tjek forbindelse og prøv igen.": "Network error — check your connection and try again.",
 
@@ -274,6 +277,8 @@
     "Statskontrolleret Økologisk": "Ecológico con control estatal",
     "Smileyrapport – se vores kontrolrapport fra Fødevarestyrelsen": "Informe Smiley – vea nuestro informe de inspección de la Agencia Danesa de Alimentos",
     "Smiley­rapport": "Informe Smiley",
+    "Fortrydelse & refusion": "Devoluciones y reembolsos",
+    "Privatlivspolitik": "Política de privacidad",
 
     // index.html
     "Quartz Mølle – Økologisk Mel fra Stenkværn": "Quartz Mølle – Harina ecológica molida a la piedra",
@@ -364,6 +369,7 @@
     "Til kassen": "Finalizar compra",
     "Sikker betaling med Stripe": "Pago seguro con Stripe",
     "Din kurv er tom.": "Tu cesta está vacía.",
+    "Shop videre": "Seguir comprando",
     "Forbereder…": "Preparando…",
     "Netværksfejl — tjek forbindelse og prøv igen.": "Error de red: comprueba tu conexión e inténtalo de nuevo.",
 
@@ -505,6 +511,8 @@
   // Used for nodes that mix static labels with dynamic values.
   var QM_RULES = [
     [/^Fra (\d[\d.,]*\s*kr\.)$/, 'From $1'],          // "Fra 99,00 kr." -> "From 99,00 kr."
+    [/^(\d+) varer$/, '$1 items'],                     // cart header "3 varer"
+    [/^1 vare$/, '1 item'],
     [/(^|\s)Antal:/g, '$1Quantity:'],                  // "3 kg · Antal: 2"
     [/Kunne ikke åbne betaling \(status/g, 'Could not open payment (status'],
     [/\bPrøv igen\./g, 'Try again.'],
@@ -523,6 +531,8 @@
   // Spanish equivalents of the pattern rules.
   var QM_RULES_ES = [
     [/^Fra (\d[\d.,]*\s*kr\.)$/, 'Desde $1'],
+    [/^(\d+) varer$/, '$1 artículos'],
+    [/^1 vare$/, '1 artículo'],
     [/(^|\s)Antal:/g, '$1Cantidad:'],
     [/Kunne ikke åbne betaling \(status/g, 'No se pudo abrir el pago (estado'],
     [/\bPrøv igen\./g, 'Inténtalo de nuevo.'],
