@@ -41,6 +41,24 @@ body {
   line-height: 1.6;
 }
 
+/* Front page only (the page with the hero videos): a slim black strip on the
+   very top edge of the page. Safari's status-bar glass mirrors the page's top
+   edge, so this turns the bar behind the clock/battery black instead of the
+   pale video sky. It is absolute (not fixed), so it scrolls away with the
+   page, and as small as possible — the safe-area height when Safari reports
+   one, otherwise just 14px. */
+body:has(#videoStage)::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: max(14px, env(safe-area-inset-top, 0px));
+  background: #000;
+  z-index: 10000;
+  pointer-events: none;
+}
+
 /* ── NAV ── */
 /* Desktop: absolute so it sits in the header and scrolls away with the page (doesn't follow). */
 /* Mobile: fixed (overridden in the responsive block) so the burger is always reachable. */
