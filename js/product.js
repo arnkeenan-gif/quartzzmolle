@@ -50,15 +50,19 @@ function fragtReglerHTML() {
 
 // ── Click & Collect content (same for every product) ──
 function clickCollectHTML() {
+  const skabImg = (alt) =>
+    `<img src="images/click-collect-skab.jpg" alt="${alt}" loading="lazy" style="display:block;width:100%;max-width:340px;margin:0.6rem auto 0.2rem;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.12)" />`;
   if (qmLang() === 'en') return `
     <p><strong>Click &amp; Collect (pickup from the locker)</strong> is ordered <strong>only here on the website</strong>.</p>
     <p>Add your items to the basket, go to <strong>checkout</strong> and choose <strong>Click &amp; Collect</strong> as the delivery method. When your order is ready, you'll receive a code for the locker at Suså Landevej 101, 4160 Herlufmagle.</p>
     <p><strong>Do not call us</strong> to arrange pickup – it happens exclusively through the checkout here on the website.</p>
+    ${skabImg('The Quartz Mølle pickup locker at the mill')}
   `;
   return `
     <p><strong>Click &amp; Collect (afhentning i automaten)</strong> bestilles <strong>kun her på hjemmesiden</strong>.</p>
     <p>Læg dine varer i kurven, gå til <strong>checkout</strong> og vælg <strong>Click &amp; Collect</strong> som leveringsmetode. Når din ordre er klar, får du en kode til automaten på Suså Landevej 101, 4160 Herlufmagle.</p>
     <p><strong>Ring ikke til os</strong> for at bestille afhentning – det foregår udelukkende gennem checkout her på siden.</p>
+    ${skabImg('Quartz Mølle afhentningsautomaten på møllen')}
   `;
 }
 
