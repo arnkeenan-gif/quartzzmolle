@@ -342,12 +342,12 @@ window.addEventListener('pageshow', (event) => {
       });
       GRIDS.forEach(function (gridSel) {
         document.querySelectorAll(gridSel).forEach(function (grid) {
-          Array.prototype.forEach.call(grid.children, function (c, i) { reveal(c, Math.min(i, 8) * 70); });
+          Array.prototype.forEach.call(grid.children, function (c, i) { reveal(c, Math.min(i, 6) * 40); });
           new MutationObserver(function (muts) {
             muts.forEach(function (m) {
               var i = 0;
               Array.prototype.forEach.call(m.addedNodes, function (n) {
-                if (n.nodeType === 1) { reveal(n, Math.min(i, 8) * 70); i++; }
+                if (n.nodeType === 1) { reveal(n, Math.min(i, 6) * 40); i++; }
               });
             });
           }).observe(grid, { childList: true });
@@ -393,3 +393,104 @@ window.qmFlyToCart = function (srcEl) {
     setTimeout(function () { if (drop.parentNode) drop.parentNode.removeChild(drop); }, 800);
   } catch (e) {}
 };
+
+// ── Quick add: a small cart button on every product card ──
+// Tapping it shows the sizes right on the card; picking one adds to the cart
+// immediately (with the usual drop-in feedback) without opening the product
+// page. Cards are matched to PRODUCTS via the id in their link.
+(function initQuickAdd() {
+  try {
+    var CART_SVG = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="10" y1="10" x2="14" y2="10"/></svg>';
+    var CHECK_SVG = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    var openPop = null;
+
+    function products() { return (typeof PRODUCTS !== 'undefined' && Array.isArray(PRODUCTS)) ? PRODUCTS : []; }
+
+    function closePop() {
+      if (openPop && openPop.parentNode) openPop.parentNode.removeChild(openPop);
+      openPop = null;
+    }
+    document.addEventListener('click', closePop);
+
+    function showPop(card, p, btn) {
+      var already = openPop && openPop.__card === card;
+      closePop();
+      if (already) return; // second tap on the same button just closes
+      var pop = document.createElement('div');
+      pop.className = 'qa-pop';
+      pop.__card = card;
+      pop.innerHTML =
+        '<div class="qa-pop-title">Vælg størrelse</div>' +
+        p.weights.map(function (w, i) {
+          return '<button type="button" class="qa-opt" data-i="' + i + '">' +
+            '<span>' + w.label + '</span><span class="qa-opt-price">' + w.price + ' kr.</span></button>';
+        }).join('');
+      pop.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var b = e.target.closest('.qa-opt');
+        if (!b) return;
+        var w = p.weights[parseInt(b.dataset.i, 10)];
+        if (!w || !window.QuartzCart) return;
+        window.QuartzCart.add({
+          productId: p.id,
+          productName: p.name,
+          productType: p.type,
+          weightLabel: w.label,
+          price: w.price,
+          image: w.image,
+          qty: 1,
+        });
+        if (window.qmFlyToCart) window.qmFlyToCart(card.querySelector('.product-card-img'));
+        closePop();
+        btn.classList.add('qa-added');
+        btn.innerHTML = CHECK_SVG;
+        setTimeout(function () { btn.classList.remove('qa-added'); btn.innerHTML = CART_SVG; }, 1400);
+      });
+      card.appendChild(pop);
+      requestAnimationFrame(function () { pop.classList.add('in'); });
+      openPop = pop;
+    }
+
+    function enhance(card) {
+      if (!card || card.nodeType !== 1 || card.__qaDone) return;
+      if (!card.classList || !card.classList.contains('product-card')) return;
+      card.__qaDone = true;
+      var m = (card.getAttribute('href') || '').match(/[?&]id=([^&]+)/);
+      if (!m) return;
+      var id = decodeURIComponent(m[1]);
+      var p = null;
+      for (var i = 0; i < products().length; i++) { if (products()[i].id === id) { p = products()[i]; break; } }
+      if (!p || !p.weights || !p.weights.length) return;
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'qa-btn';
+      btn.setAttribute('aria-label', 'Tilføj til kurv');
+      btn.innerHTML = CART_SVG;
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        showPop(card, p, btn);
+      });
+      card.appendChild(btn);
+    }
+
+    function scan(root) {
+      (root.querySelectorAll ? root.querySelectorAll('.product-card') : []).forEach(enhance);
+      if (root.classList && root.classList.contains('product-card')) enhance(root);
+    }
+
+    function run() {
+      scan(document);
+      new MutationObserver(function (muts) {
+        muts.forEach(function (mu) {
+          Array.prototype.forEach.call(mu.addedNodes, function (n) {
+            if (n.nodeType === 1) scan(n);
+          });
+        });
+      }).observe(document.body, { childList: true, subtree: true });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+    else run();
+  } catch (e) { /* never break the page */ }
+})();
