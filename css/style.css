@@ -1776,6 +1776,88 @@ body:has(.mobile-menu.open) .lang-switch-btn .lang-chevron {
   .cart-foot { border-radius: 0; }
 }
 
+/* ── Quick add on product cards ── */
+.product-card { position: relative; }
+
+.qa-btn {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: var(--brand-blue, #273071);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(39, 48, 113, 0.3);
+  transition: transform 0.15s cubic-bezier(0.22, 1, 0.36, 1), background 0.2s;
+  z-index: 2;
+}
+
+.qa-btn:hover { transform: scale(1.08); background: var(--brand-blue-light, #3a4599); }
+.qa-btn:active { transform: scale(0.95); }
+.qa-btn.qa-added { background: #2e7d32; }
+
+.qa-pop {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 58px;
+  z-index: 3;
+  background: #fff;
+  border: 1px solid #eee6d6;
+  border-radius: 14px;
+  box-shadow: 0 14px 38px rgba(26, 22, 17, 0.22);
+  padding: 0.5rem;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 0.18s ease, transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.qa-pop.in { opacity: 1; transform: translateY(0); }
+
+.qa-pop-title {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9b937f;
+  padding: 0.3rem 0.55rem 0.4rem;
+}
+
+.qa-opt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  border: none;
+  background: none;
+  border-radius: 9px;
+  padding: 0.58rem 0.55rem;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text, #1a1611);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.qa-opt:hover { background: #f3eee1; }
+
+.qa-opt > span:first-child { white-space: nowrap; }
+
+.qa-opt-price {
+  font-weight: 700;
+  color: var(--brand-blue, #273071);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 /* ── Size-selector attention flash (replaces the old toast) ── */
 .weight-selector.needs-attention h3 {
   animation: flashAttention 0.6s ease-in-out 2;
@@ -2067,7 +2149,7 @@ body:has(.mobile-menu.open) .lang-switch-btn .lang-chevron {
    All guarded by prefers-reduced-motion.
    ============================================================ */
 /* Scroll-reveal: elements tagged by main.js fade/slide up when in view */
-.qm-reveal { opacity: 0; transform: translateY(26px); transition: opacity .6s ease, transform .7s cubic-bezier(.22,1,.36,1); will-change: opacity, transform; }
+.qm-reveal { opacity: 0; transform: translateY(16px); transition: opacity .35s ease, transform .42s cubic-bezier(.22,1,.36,1); will-change: opacity, transform; }
 .qm-reveal.qm-in { opacity: 1; transform: none; }
 
 /* Hero content glides in on load (index) */
