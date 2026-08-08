@@ -1,4 +1,10 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /locker
+Disallow: /fufill
+Disallow: /packing
+Disallow: /checkout
+Disallow: /success
 
 Sitemap: https://www.quartzmolle.dk/sitemap.xml
