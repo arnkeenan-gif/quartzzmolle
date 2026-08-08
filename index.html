@@ -66,19 +66,19 @@
        strip disappears on the cream sections) - only the video layer is
        excluded there. So the sliver shows this dark section background
        instead of a foreign colour, and melts into the video above it. */
-    #videoStage .video-section { position: static; background: #191b15; }
+    #videoStage .video-section { position: static; background: #221a12; }
     #videoStage .video-bg,
     #videoStage .video-overlay {
       position: absolute !important;
       /* 12% taller than the screen with a 6% offset both ways: a one-frame
          lag in the scroll pinning can never expose the light canvas (the
          "light flash" while scrolling fast) */
-      top: -6vh !important;
-      top: -6lvh !important;
+      top: -10vh !important;
+      top: -10lvh !important;
       left: 0 !important;
       width: 100% !important;
-      height: 130vh !important;
-      height: 130lvh !important;
+      height: 150vh !important;
+      height: 150lvh !important;
       will-change: transform;
     }
     /* Modern browsers: the pin runs as a CSS scroll-driven animation on
@@ -153,44 +153,33 @@
     /* SORTIMENT section: the group photo's background is the exact same
        cream (#faf7f2) as the section, so the bags float directly on the
        page - no visible photo edges. */
-    .sortiment {
-      position: relative;
-      z-index: 2;
-      background: #faf7f2;
-      padding: 5rem 1.25rem 4.5rem;
-      text-align: center;
-    }
-    .sortiment h2 {
-      font-family: 'Inter', sans-serif;
-      font-size: clamp(2.4rem, 5vw, 3.6rem);
-      font-weight: 700;
-      color: var(--brand-blue);
-      letter-spacing: -0.01em;
-      margin: 0 0 0.55rem;
-    }
-    .sortiment .season-note {
-      font-size: 0.88rem;
-      color: #8a8378;
-      font-style: italic;
-      margin: 0 0 0.9rem;
-    }
-    .sortiment-lead {
-      color: #4a463f;
-      max-width: 560px;
-      margin: 0 auto;
-      line-height: 1.7;
-    }
-    .sortiment-img {
-      display: block;
-      width: min(1480px, 100%);
-      margin: 2.4rem auto 2.5rem;
-    }
 
     /* Cut the extra cream band: the contact section had 6rem cream padding
        below the map before the black footer. Trim the bottom so the footer
        follows the map without the cream gap. */
     .contact { padding-bottom: 1.5rem; }
   </style>
+  <link rel="canonical" href="https://www.quartzmolle.dk/" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": "Quartz Mølle",
+    "url": "https://www.quartzmolle.dk/",
+    "logo": "https://www.quartzmolle.dk/images/logopng.png",
+    "image": "https://www.quartzmolle.dk/images/og-image.jpg",
+    "email": "hello@quartzmolle.dk",
+    "vatID": "DK42117188",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Suså Landevej 101",
+      "postalCode": "4160",
+      "addressLocality": "Herlufmagle",
+      "addressCountry": "DK"
+    },
+    "description": "Økologisk mel malet på stenkværn i Danmark. Webshop med levering og Click & Collect direkte fra møllen."
+  }
+  </script>
 </head>
 <body>
   <nav class="nav" id="nav">
@@ -289,16 +278,6 @@
     </div>
   </section>
 
-  <!-- SORTIMENT - all flour bags on the exact site cream, so image and
-       section melt together as one clean block -->
-  <section class="sortiment" id="vs3">
-    <h2 class="sortiment-title">Vores sortiment</h2>
-    <p class="season-note">Varianterne skifter naturligvis efter sæsonen</p>
-    <p class="sortiment-lead">Fra Dalarna til Purpurhvede – hvert mel har sin egen karakter, smag og bagningsegenskaber.</p>
-    <img src="images/sortiment-poser.jpg" alt="Alle Quartz Mølle meltyper side om side" class="sortiment-img" loading="lazy" />
-    <a href="shop.html" class="btn-dark">Se alle produkter</a>
-  </section>
-
   <!-- CONTACT -->
   <section class="contact" id="kontakt">
     <div class="contact-inner">
@@ -358,6 +337,9 @@
         <a href="forhandlere.html">Forhandlere</a>
         <a href="om.html">Om os</a>
         <a href="#kontakt">Kontakt</a>
+        <a href="leveringspolitik.html">Levering</a>
+        <a href="refusionspolitik.html">Fortrydelse &amp; refusion</a>
+        <a href="privatlivspolitik.html">Privatlivspolitik</a>
         <a href="https://www.findsmiley.dk/1149461" class="footer-smiley-link" target="_blank" rel="noopener" title="Smileyrapport – se vores kontrolrapport fra Fødevarestyrelsen" aria-label="Smileyrapport – se vores kontrolrapport fra Fødevarestyrelsen">
           <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
             <circle cx="12" cy="12" r="9"></circle>
