@@ -17,6 +17,7 @@ function writeCart(items) {
     localStorage.setItem(CART_KEY, JSON.stringify(items));
   } catch {}
   updateCartUI();
+  schedulePrefetch();
 }
 
 function cartCount() {
@@ -250,6 +251,7 @@ function openCart() {
     drawer.classList.add('open');
     document.body.style.overflow = 'hidden';
   }
+  prefetchCheckout();
 }
 
 function closeCart() {
@@ -289,7 +291,50 @@ window.addEventListener('pageshow', () => {
   // always shows the current contents.
   _prevCartCount = -1; // don't bounce the badge over a restore
   updateCartUI();
+  _pf = { key: '', url: '', ts: 0, inflight: null }; // brugt/forældet — forbered forfra
 });
+
+
+// ── LYN-CHECKOUT: forbered Stripe-sessionen i baggrunden ─────────────────────
+// Når kurven åbnes (og når indholdet ændres, mens den er åben), oprettes
+// checkout-sessionen hos Stripe i forvejen — kunden mærker intet. Trykket på
+// "Til kassen" kan så sende direkte afsted uden ventetid. Falder altid
+// tilbage til den normale vej, hvis forberedelsen ikke er klar eller fejlede.
+const PREFETCH_TTL_MS = 25 * 60 * 1000;
+let _pf = { key: '', url: '', ts: 0, inflight: null };
+let _pfTimer = null;
+
+function cartKey(items) {
+  return items.map(it => `${it.productId}|${it.weightLabel}|${it.qty}`).join(';');
+}
+
+function prefetchCheckout() {
+  const items = readCart();
+  if (!items.length) { _pf = { key: '', url: '', ts: 0, inflight: null }; return; }
+  const key = cartKey(items);
+  if (_pf.key === key && _pf.url && Date.now() - _pf.ts < PREFETCH_TTL_MS) return;
+  if (_pf.key === key && _pf.inflight) return;
+  const inflight = fetch('/api/checkout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ items }),
+  }).then(r => (r.ok ? r.json() : null)).then(d => {
+    if (_pf.inflight === inflight) {
+      _pf = { key, url: (d && d.url) || '', ts: Date.now(), inflight: null };
+    }
+  }).catch(() => {
+    if (_pf.inflight === inflight) _pf = { key: '', url: '', ts: 0, inflight: null };
+  });
+  _pf = { key, url: '', ts: 0, inflight };
+}
+
+function schedulePrefetch() {
+  clearTimeout(_pfTimer);
+  _pfTimer = setTimeout(() => {
+    const drawer = document.getElementById('cart-drawer');
+    if (drawer && drawer.classList.contains('open')) prefetchCheckout();
+  }, 600);
+}
 
 async function checkoutCart() {
   const items = readCart();
@@ -299,6 +344,17 @@ async function checkoutCart() {
   if (errEl) errEl.textContent = '';
   if (btn) { btn.disabled = true; btn.textContent = 'Forbereder…'; }
   showCheckoutLoader();
+
+  // Forberedt i baggrunden? → afsted med det samme (0 ventetid)
+  const key = cartKey(items);
+  if (_pf.key === key) {
+    if (_pf.inflight) { try { await _pf.inflight; } catch (e) { /* falder tilbage */ } }
+    if (_pf.key === key && _pf.url && Date.now() - _pf.ts < PREFETCH_TTL_MS) {
+      window.location.href = _pf.url;
+      return;
+    }
+  }
+
   try {
     const res = await fetch('/api/checkout', {
       method: 'POST',
