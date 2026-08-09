@@ -226,7 +226,11 @@ export default async function handler(req, res) {
       }
     } catch (e) { /* KV unavailable → leave 0 */ }
 
+    let alerts = [];
+    try { alerts = (await kv.lrange('alert:log', 0, 19)) || []; } catch {}
+
     return res.status(200).json({
+      alerts,
       totalOrders,
       totalRevenue,
       ordersToday,

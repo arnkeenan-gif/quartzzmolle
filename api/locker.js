@@ -389,6 +389,11 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
     // Newsletter subscriber list for the admin (email + signup time).
+    if (action === 'alertsclear') {
+      try { await kv.del('alert:log'); } catch {}
+      return res.status(200).json({ ok: true });
+    }
+
     if (action === 'newsletterlist') {
       let all = {};
       try { all = (await kv.hgetall('newsletter:emails')) || {}; } catch {}

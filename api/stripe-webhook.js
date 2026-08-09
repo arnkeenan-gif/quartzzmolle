@@ -971,6 +971,13 @@ async function alertOwner(title, detail, orderRef) {
       if (fresh === null) return;
     } catch { /* uden throttle er en ekstra alarm bedre end ingen */ }
 
+    // log til Driftsstatus-panelet i admin (seneste 50)
+    try {
+      const { kv } = await import('./_kv.js');
+      await kv.lpush('alert:log', { t: Date.now(), title, detail: text.slice(0, 300), ref: orderRef || '' });
+      await kv.ltrim('alert:log', 0, 49);
+    } catch {}
+
     // 1) push-notifikation til ejerens enheder
     try {
       const priv = process.env.VAPID_PRIVATE_KEY || '';
