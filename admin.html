@@ -157,6 +157,42 @@
     display:flex;align-items:center;gap:8px
   }
   .panel h2 svg{color:var(--blue-light)}
+  .fb-chip{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--grey);background:var(--grey-soft);border-radius:999px;padding:4px 11px;letter-spacing:.02em}
+  .fb-grid{display:flex;justify-content:space-around;position:relative;padding:22px 6px 10px}
+  .fb-grid::before{content:"";position:absolute;left:10%;right:10%;top:51px;height:1.5px;
+    background:linear-gradient(90deg,transparent,var(--grey-soft) 14%,var(--grey-soft) 86%,transparent)}
+  .fb-step{flex:1;text-align:center;position:relative}
+  .fb-orb{position:relative;width:58px;height:58px;margin:0 auto 24px;border-radius:50%;
+    background:
+      radial-gradient(circle at 50% 26%, rgba(255,255,255,.85), rgba(255,255,255,0) 46%),
+      radial-gradient(circle at 50% 46%, #ffffff 0%, var(--a) 20%, var(--b) 56%, var(--d) 86%, var(--d) 100%);
+    box-shadow:
+      inset 0 -8px 14px -6px rgba(15,20,70,.28),
+      inset 0 3px 8px -2px rgba(255,255,255,.75),
+      0 12px 26px -10px var(--glow);
+    opacity:.35;transform:scale(.74);filter:saturate(.55);
+    transition:opacity .45s ease,transform .45s cubic-bezier(.22,1,.36,1),filter .45s ease}
+  /* blød lys-halo bag kuglen */
+  .fb-orb::before{content:"";position:absolute;inset:-46%;border-radius:50%;z-index:-1;
+    background:radial-gradient(circle, var(--glow) 0%, rgba(255,255,255,0) 62%);
+    opacity:0;transition:opacity .5s ease}
+  .fb-orb i{position:absolute;inset:0;margin:auto;width:3.5px;height:3.5px;border-radius:50%;
+    background:rgba(18,24,66,.55);box-shadow:0 0 6px 2px rgba(255,255,255,.8)}
+  .fb-orb.on{opacity:1;transform:scale(1);filter:saturate(1);animation:fbBreathe 3.2s ease-in-out infinite}
+  .fb-orb.on::before{opacity:.8;animation:fbHalo 3.2s ease-in-out infinite}
+  /* ekspanderende ring når tallet stiger */
+  .fb-orb::after{content:"";position:absolute;inset:-3px;border-radius:50%;
+    border:2.5px solid var(--b);opacity:0}
+  .fb-orb.ping::after{animation:fbPing .9s cubic-bezier(.16,1,.3,1)}
+  @keyframes fbBreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+  @keyframes fbHalo{0%,100%{opacity:.55}50%{opacity:1}}
+  @keyframes fbPing{0%{opacity:.8;transform:scale(1)}100%{opacity:0;transform:scale(2.05)}}
+  .fb-num{font-size:28px;font-weight:800;color:#1a1611;line-height:1.1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .fb-num.pop{animation:fnPop .5s cubic-bezier(.22,1,.36,1)}
+  @keyframes fnPop{0%{transform:scale(1)}35%{transform:scale(1.22)}100%{transform:scale(1)}}
+  .fb-label{font-size:12.5px;font-weight:500;color:var(--grey);margin-top:2px}
+  @media(prefers-reduced-motion:reduce){.fb-orb.on,.fb-orb.on::before{animation:none}.fb-orb.ping::after{animation:none}.fb-num.pop{animation:none}}
+  @media(max-width:560px){.fb-orb{width:48px;height:48px;margin-bottom:18px}.fb-grid::before{top:45px}.fb-num{font-size:24px}.fb-label{font-size:11px}}
   .alerts-clear{margin-left:auto;background:none;border:1.5px solid var(--grey-soft);border-radius:8px;padding:4px 12px;font-family:inherit;font-size:12px;font-weight:600;color:var(--grey);cursor:pointer}
   .alerts-clear:hover{border-color:var(--grey);color:#1a1611}
   .alert-ok{color:#2e7d32;font-weight:600;font-size:14px;padding:2px 0}
@@ -373,6 +409,28 @@
       <div id="alertsBox" class="loading">Henter status…</div>
     </div>
 
+    <!-- Kunderejse: lige nu i butikken -->
+    <div class="panel">
+      <h2><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>Lige nu i butikken<span class="fb-chip"><span class="live-dot"></span>30 min</span></h2>
+      <div class="fb-grid">
+        <div class="fb-step">
+          <div class="fb-orb" id="orbCarts" style="--a:#d6ecfd;--b:#67bef2;--d:#2b8ad2;--glow:rgba(61,157,224,.55)"><i></i></div>
+          <div class="fb-num" id="fnCarts">–</div>
+          <div class="fb-label">I kurv</div>
+        </div>
+        <div class="fb-step">
+          <div class="fb-orb" id="orbCheckouts" style="--a:#e9dfff;--b:#ab8ff2;--d:#7757dd;--glow:rgba(139,111,232,.55)"><i></i></div>
+          <div class="fb-num" id="fnCheckouts">–</div>
+          <div class="fb-label">I checkout</div>
+        </div>
+        <div class="fb-step">
+          <div class="fb-orb" id="orbDone" style="--a:#dbe0fd;--b:#7a89f0;--d:#3947cf;--glow:rgba(74,91,224,.55)"><i></i></div>
+          <div class="fb-num" id="fnDone">–</div>
+          <div class="fb-label">Købt i dag</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Recent orders -->
     <div class="panel">
       <h2><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>Ordrer</h2>
@@ -575,10 +633,39 @@
         document.getElementById('visitorsToday').textContent = data.visitorsToday || 0;
         document.getElementById('visitorsYesterday').textContent = 'I går: ' + (data.visitorsYesterday || 0);
         document.getElementById('lastUpdate').textContent = 'Opdateret kl. ' + new Date().toLocaleTimeString('da-DK');
+        renderFunnel(data.funnel);
         // Conversion rate is shown for the selected period (set in renderDashboard),
         // so we don't overwrite it here with today's live numbers.
       }
     } catch (err) { /* silent */ }
+  }
+
+  // Shopify-agtige orbs: tallet tæller op/ned, kuglen lyser når der er
+  // aktivitet, ånder roligt — og udvider sig med en ring, når tallet stiger.
+  function setFnNum(id, target, orbId) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    target = target || 0;
+    const orb = orbId ? document.getElementById(orbId) : null;
+    if (orb) orb.classList.toggle('on', target > 0);
+    const cur = parseInt(el.textContent, 10);
+    if (!Number.isFinite(cur)) { el.textContent = target; return; }
+    if (cur === target) return;
+    if (orb && target > cur) { orb.classList.remove('ping'); void orb.offsetWidth; orb.classList.add('ping'); }
+    el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+    const start = cur, diff = target - start, t0 = performance.now(), dur = 550;
+    (function tick(t) {
+      const p = Math.min(1, ((t || performance.now()) - t0) / dur);
+      const ease = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(start + diff * ease);
+      if (p < 1) requestAnimationFrame(tick);
+    })(t0);
+  }
+
+  function renderFunnel(f) {
+    if (!f) return;
+    setFnNum('fnCarts', f.cartCount, 'orbCarts');
+    setFnNum('fnCheckouts', f.checkoutCount, 'orbCheckouts');
   }
 
   function alertTimeAgo(t) {
@@ -623,6 +710,7 @@
     renderAlerts(data.alerts || []);
     // Top stats
     document.getElementById('ordersToday').textContent = data.ordersToday || 0;
+    setFnNum('fnDone', data.ordersToday || 0, 'orbDone');
     document.getElementById('ordersWeek').textContent = (data.totalOrders || 0) + ' i ' + label;
     document.getElementById('revenueToday').textContent = formatKr(data.revenueToday || 0);
     document.getElementById('revenueWeek').textContent = formatKr(data.totalRevenue || 0) + ' i ' + label;
