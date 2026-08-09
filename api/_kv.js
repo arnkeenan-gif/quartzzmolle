@@ -110,6 +110,10 @@ export const kv = {
   async zremrangebyscore(key, min, max) {
     return client().zremrangebyscore(key, min, max);
   },
+  async zrevrange(key, start, stop) {
+    return (await client().zrevrange(key, start, stop)).map(dec);
+  },
+  async zrem(key, ...members) { return client().zrem(key, ...members.map(enc)); },
 
   // key ops (used by migration)
   async exists(...keys) { return client().exists(...keys); },

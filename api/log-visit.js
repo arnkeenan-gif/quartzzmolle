@@ -35,6 +35,30 @@ export default async function handler(req, res) {
     return handleNewsletter(req, res, nlBody);
   }
 
+  // ── KUNDEREJSE: anonym "i kurv" / "gået til checkout" til admin-tragten ──
+  if (nlBody && (nlBody.action === 'cart' || nlBody.action === 'checkoutstart')) {
+    try {
+      const id = String(nlBody.id || '').replace(/[^a-z0-9]/gi, '').slice(0, 40) || 'anon';
+      const now = Date.now();
+      const count = Math.max(0, Math.min(999, parseInt(nlBody.count, 10) || 0));
+      const total = Math.max(0, Math.min(99999, parseInt(nlBody.total, 10) || 0));
+      if (nlBody.action === 'cart') {
+        if (count === 0) {
+          await kv.zrem('funnel:carts', id);
+          await kv.del('funnel:cart:' + id);
+        } else {
+          await kv.zadd('funnel:carts', { score: now, member: id });
+          await kv.set('funnel:cart:' + id, { t: now, count, total }, { ex: 3600 });
+        }
+      } else {
+        await kv.zadd('funnel:checkouts', { score: now, member: id });
+        await kv.zrem('funnel:carts', id); // videre i tragten — ikke længere "i kurv"
+        await kv.del('funnel:cart:' + id);
+      }
+    } catch (e) { console.error('funnel log failed:', e && e.message); }
+    return res.status(200).json({ ok: true });
+  }
+
   try {
     // Simple visitor ID = hash of trusted IP + user-agent (no cookies needed)
     const ip = req.headers['x-real-ip'] || req.headers['x-forwarded-for']?.split(',')[0]?.trim() || 'unknown';

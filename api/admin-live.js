@@ -45,10 +45,24 @@ export default async function handler(req, res) {
     const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
     const visitorsYesterday = await kv.scard(`visitors:${yesterday}`) || 0;
 
+    // Kunderejse-tragten: kurve + checkouts fra de sidste 30 minutter
+    let funnel = { cartCount: 0, checkoutCount: 0, carts: [] };
+    try {
+      const cutMs = Date.now() - 30 * 60000;
+      await kv.zremrangebyscore('funnel:carts', 0, cutMs);
+      await kv.zremrangebyscore('funnel:checkouts', 0, cutMs);
+      funnel.cartCount = (await kv.zcard('funnel:carts')) || 0;
+      funnel.checkoutCount = (await kv.zcard('funnel:checkouts')) || 0;
+      const ids = (await kv.zrevrange('funnel:carts', 0, 14)) || [];
+      const details = await Promise.all(ids.map(id => kv.get('funnel:cart:' + id).catch(() => null)));
+      funnel.carts = details.filter(Boolean);
+    } catch { /* tragten er pynt — må aldrig vælte live-tallene */ }
+
     return res.status(200).json({
       activeNow,
       visitorsToday,
       visitorsYesterday,
+      funnel,
     });
   } catch (err) {
     // KV not configured - return zeros gracefully
@@ -56,6 +70,7 @@ export default async function handler(req, res) {
       activeNow: 0,
       visitorsToday: 0,
       visitorsYesterday: 0,
+      funnel: { cartCount: 0, checkoutCount: 0, carts: [] },
       _note: 'Vercel KV not configured',
     });
   }
