@@ -109,7 +109,7 @@ export default async function handler(req, res) {
         shipping_rate_data: {
           type: 'fixed_amount',
           fixed_amount: { amount: getPakkeshopPrice(totalWeightKg), currency: 'dkk' },
-          display_name: 'GLS Pakkeshop (max 20 kg)',
+          display_name: 'GLS Pakkeshop – nærmeste pakkeshop vælges automatisk (max 20 kg)',
           delivery_estimate: {
             minimum: { unit: 'business_day', value: 1 },
             maximum: { unit: 'business_day', value: 3 },

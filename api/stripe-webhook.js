@@ -429,7 +429,9 @@ async function sendOrderConfirmationEmail(orderData) {
           <div style="font-size:15px;color:#222;font-weight:500;">${escapeHtmlEmail(deliveryLabel)}</div>
           <div style="font-size:13px;color:#777;margin-top:6px;">${isPickup
             ? escapeHtmlEmail(PICKUP_ADDRESS) + ' · Vi sender dig en besked når din ordre er klar til afhentning'
-            : '1–3 hverdage efter afsendelse'}</div>
+            : orderData.deliveryKey === 'gls_pakkeshop'
+              ? 'Pakken leveres til den pakkeshop, der ligger tættest på din adresse – GLS giver dig besked, når den er klar til afhentning · 1–3 hverdage efter afsendelse'
+              : '1–3 hverdage efter afsendelse'}</div>
         </td></tr>
 
         <!-- View order button -->
