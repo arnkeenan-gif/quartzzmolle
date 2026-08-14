@@ -37,12 +37,12 @@ function qmLang() {
 // ── Fragt Regler content (same for every product) ──
 function fragtReglerHTML() {
   if (qmLang() === 'en') return `
-    <p><strong>GLS</strong> Delivery to a parcel shop in Denmark – <strong>max 20 kg</strong></p>
+    <p><strong>GLS</strong> Delivery to a parcel shop in Denmark – <strong>max 20 kg</strong><br/><em>You don't pick the shop yourself – GLS automatically delivers to the parcel shop closest to your address.</em></p>
     <p><strong>GLS</strong> Delivery to a private address in Denmark – <strong>max 25 kg</strong></p>
     <p>Note: you <strong>cannot order two 12.5 kg flour bags</strong> in the same order. Our 12.5 kg bags always contain a little more flour than stated, so two of them weigh around <strong>25.2 kg</strong> – which exceeds GLS' 25 kg limit.</p>
   `;
   return `
-    <p><strong>GLS</strong> Levering til pakkeshop i Danmark – <strong>max 20 kg</strong></p>
+    <p><strong>GLS</strong> Levering til pakkeshop i Danmark – <strong>max 20 kg</strong><br/><em>Du vælger ikke selv pakkeshoppen – GLS leverer automatisk til den pakkeshop, der ligger tættest på din adresse.</em></p>
     <p><strong>GLS</strong> Levering til privatadresse i Danmark – <strong>max 25 kg</strong></p>
     <p>Bemærk: Du kan <strong>ikke bestille 2 stk. 12,5 kg melposer</strong> i samme ordre. Vores 12,5 kg poser indeholder altid lidt mere mel end angivet, så to af dem vejer omkring <strong>25,2 kg</strong> – hvilket overskrider GLS' grænse på 25 kg.</p>
   `;
