@@ -39,7 +39,7 @@ const FORHANDLERE = [
   { name: "TIR Bakery", address: "Vodroffsvej 28, 1900 Frederiksberg", url: "https://www.instagram.com/tir_bakery/?hl=da", lat: 55.67862456701327, lng: 12.555211502320596 },
   { name: "Engmosegaard", address: "Sverkilstrup Byvej 8, 3390 Hundested", url: "https://www.instagram.com/engmosegaard/", lat: 55.97294416025783, lng: 11.940071172126022 },
   { name: "Gaard Bageriet", address: "Agerøvej 14, V. Hvidbjerg, 7960 Karby", url: "https://gaardbageriet.dk/", lat: 56.7389716, lng: 8.5889263 },
-  { name: "Megans Surdej", address: "Høstbuen 73, 2750 Ballerup", phone: "+45 4272 2746", lat: 55.718317, lng: 12.35280 }
+  { name: "Megans Surdej", address: "Høstbuen 73, 2750 Ballerup", url: "https://www.meganssurdej.dk/", phone: "+45 4272 2746", lat: 55.718317, lng: 12.35280 }
 ];
 
 function escapeHTML(s) {
