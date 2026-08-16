@@ -309,8 +309,14 @@
     </div>
   </section>
 
-  <!-- NEWSLETTER: bogmærke-fane i siden + popup med logo-grafik -->
-  <button class="nl-tab" id="nlTab" type="button" aria-haspopup="dialog">10% RABAT</button>
+  <!-- NEWSLETTER: bogmærke-fane i siden + popup med logo-grafik.
+       Fanen fødes skjult og vises kun for IKKE-tilmeldte — ellers glimter den
+       ved hver genindlæsning for folk, der allerede er tilmeldt. -->
+  <button class="nl-tab hidden" id="nlTab" type="button" aria-haspopup="dialog">10% RABAT</button>
+  <script>
+    try { if (localStorage.getItem('qm_nl_sub') !== '1') document.getElementById('nlTab').classList.remove('hidden'); }
+    catch (e) { document.getElementById('nlTab').classList.remove('hidden'); }
+  </script>
   <div class="nl-modal" id="nlModal" role="dialog" aria-modal="true" aria-label="Nyhedsbrev">
     <div class="nl-backdrop" data-nl-close></div>
     <div class="nl-card">
