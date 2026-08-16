@@ -420,8 +420,6 @@ window.qmFlyToCart = function (srcEl) {
   try {
     var CART_SVG = '<span class="qa-ic" aria-hidden="true"><svg class="qa-ic-cart" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/><line x1="13.5" y1="7.75" x2="13.5" y2="12.25"/><line x1="11.25" y1="10" x2="15.75" y2="10"/></svg></span>';
     var CHECK_SVG = '<span class="qa-ic" aria-hidden="true"><svg class="qa-ic-check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>';
-    var OPT_CHECK_SVG = '<svg class="qa-opt-check" aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-
     var openPop = null;
     var openBtn = null;
 
@@ -512,7 +510,6 @@ window.qmFlyToCart = function (srcEl) {
           return '<button type="button" class="qa-opt" data-i="' + i + '">' +
             '<span>' + w.label + '</span>' +
             '<span class="qa-opt-price">' + w.price + ' kr.</span>' +
-            OPT_CHECK_SVG +
             '</button>';
         }).join('');
 
