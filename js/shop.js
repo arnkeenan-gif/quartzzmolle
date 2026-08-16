@@ -6,19 +6,25 @@
 // The search bar filters this list without re-fetching.
 let SHOP_PRODUCTS = [];
 
+let SHOP_HAS_RENDERED = false;
+
 function renderShopGrid(products) {
   const grid = document.getElementById('shopGrid');
   if (!grid) return;
+  // Efter første visning renderes kortene som allerede "afsløret", så søgning
+  // og sortering ikke genafspiller entrance-animationen ved hvert tastetryk.
+  const doneCls = SHOP_HAS_RENDERED ? ' qm-reveal qm-in' : '';
 
   if (!products || products.length === 0) {
     const q = (document.getElementById('shopSearch')?.value || '').trim();
     grid.innerHTML = q
-      ? `<div class="shop-loading">Ingen produkter matcher “${escapeHTML(q)}”.</div>`
-      : '<div class="shop-loading">Ingen produkter fundet.</div>';
+      ? `<div class="shop-loading${doneCls}">Ingen produkter matcher “${escapeHTML(q)}”.</div>`
+      : `<div class="shop-loading${doneCls}">Ingen produkter fundet.</div>`;
+    SHOP_HAS_RENDERED = true;
     return;
   }
 
-  grid.innerHTML = products.map(p => {
+  grid.innerHTML = products.map((p, idx) => {
     // Use branded preview image for cards.
     // Guard weights defensively in case a merged Supabase row lacks them.
     const weights = (p.weights && p.weights.length) ? p.weights : [];
@@ -34,8 +40,8 @@ function renderShopGrid(products) {
       : '';
 
     return `
-      <a href="product.html?id=${encodeURIComponent(p.id)}" class="product-card">
-        <img src="${escapeHTML(safeUrl(img))}" alt="${escapeHTML(p.name + ' ' + p.type)}" class="product-card-img" loading="lazy" />
+      <a href="product.html?id=${encodeURIComponent(p.id)}" class="product-card${doneCls}">
+        <img src="${escapeHTML(safeUrl(img))}" alt="${escapeHTML(p.name + ' ' + p.type)}" class="product-card-img" loading="${idx < 4 ? 'eager' : 'lazy'}"${idx < 2 ? ' fetchpriority="high"' : ''} decoding="async" />
         <div class="product-card-body">
           <div class="product-card-name">${escapeHTML(p.name)}</div>
           <div class="product-card-sub">${escapeHTML(p.type)}</div>
@@ -45,6 +51,7 @@ function renderShopGrid(products) {
       </a>
     `;
   }).join('');
+  SHOP_HAS_RENDERED = true;
 }
 
 // ── SORTERING ──

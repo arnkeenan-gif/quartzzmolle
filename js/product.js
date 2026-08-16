@@ -152,7 +152,7 @@ function renderProduct(product) {
     </div>` : '';
 
   const weightBtns = product.weights.map((wt, i) => `
-    <button class="weight-btn" data-weight-index="${i}">
+    <button class="weight-btn" data-weight-index="${i}" aria-pressed="false">
       ${esc(wt.label)}
     </button>
   `).join('');
@@ -208,7 +208,7 @@ function renderProduct(product) {
 
       <div class="accordion">
         <div class="accordion-item">
-          <button class="accordion-header" type="button">
+          <button class="accordion-header" type="button" aria-expanded="false">
             Fragt regler
             <svg class="chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -217,7 +217,7 @@ function renderProduct(product) {
           </div>
         </div>
         <div class="accordion-item">
-          <button class="accordion-header" type="button">
+          <button class="accordion-header" type="button" aria-expanded="false">
             Click &amp; Collect
             <svg class="chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -226,7 +226,7 @@ function renderProduct(product) {
           </div>
         </div>
         <div class="accordion-item">
-          <button class="accordion-header" type="button">
+          <button class="accordion-header" type="button" aria-expanded="false">
             Næringsindhold
             <svg class="chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -246,14 +246,7 @@ function renderProduct(product) {
   // Wire up gallery thumbnails (fade-swap the main image, highlight active)
   inner.querySelectorAll('.product-thumb').forEach(btn => {
     btn.addEventListener('click', () => {
-      const img = document.getElementById('productImg');
-      if (!img) return;
-      img.style.transition = 'opacity 0.25s';
-      img.style.opacity = '0';
-      setTimeout(() => {
-        img.src = btn.dataset.src;
-        img.style.opacity = '1';
-      }, 200);
+      fadeSwapImage(btn.dataset.src);
       inner.querySelectorAll('.product-thumb').forEach(b => {
         b.style.borderColor = b === btn ? '#273071' : 'transparent';
       });
@@ -283,28 +276,35 @@ function renderProduct(product) {
   qtyInput.addEventListener('blur', clampQty);
 }
 
+let _imgSwapTimer = null;
+function fadeSwapImage(src, alt) {
+  const img = document.getElementById('productImg');
+  if (!img) return;
+  img.style.transition = 'opacity 180ms cubic-bezier(0.23, 1, 0.32, 1)';
+  img.style.opacity = '0';
+  clearTimeout(_imgSwapTimer); // interruptible: rapid weight taps never restore a stale src
+  _imgSwapTimer = setTimeout(() => {
+    img.onload = () => { img.style.opacity = '1'; img.onload = null; };
+    img.src = src;
+    if (alt) img.alt = alt;
+    if (img.complete) { img.style.opacity = '1'; img.onload = null; } // cached
+  }, 180);
+}
+
 function selectWeight(index) {
   if (!currentProduct) return;
   selectedWeightIndex = index;
   const w = currentProduct.weights[index];
 
   // Fade-swap the image to the actual pack shot
-  const img = document.getElementById('productImg');
-  if (img) {
-    img.style.transition = 'opacity 0.25s';
-    img.style.opacity = '0';
-    setTimeout(() => {
-      img.src = w.image;
-      img.alt = `${currentProduct.name} ${currentProduct.type} ${w.label}`;
-      img.style.opacity = '1';
-    }, 200);
-  }
+  fadeSwapImage(w.image, `${currentProduct.name} ${currentProduct.type} ${w.label}`);
 
   const price = document.getElementById('priceDisplay');
   if (price) price.textContent = `${w.price},00 kr.`;
 
   document.querySelectorAll('.weight-btn').forEach((btn, i) => {
     btn.classList.toggle('active', i === index);
+    btn.setAttribute('aria-pressed', i === index ? 'true' : 'false');
   });
 
   // The main image now shows the size's pack shot, so no gallery thumb is active
@@ -343,9 +343,18 @@ function addSelectedToCart() {
 
 // "Tilføj til kurv" — add to cart WITHOUT opening the drawer. The badge pop +
 // fly-to-cart animation are the feedback, so the user can keep browsing.
+let _addedTimer = null;
 async function handleBuy() {
   if (!addSelectedToCart()) return;
   if (window.qmFlyToCart) window.qmFlyToCart(document.getElementById('productImg'));
+  const btn = document.getElementById('buyBtn');
+  if (btn) {
+    if (!btn.dataset.defaultHtml) btn.dataset.defaultHtml = btn.innerHTML;
+    btn.classList.add('qm-added');
+    btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Lagt i kurven';
+    clearTimeout(_addedTimer);
+    _addedTimer = setTimeout(() => { btn.classList.remove('qm-added'); btn.innerHTML = btn.dataset.defaultHtml; }, 1400);
+  }
 }
 
 // "Køb nu" — add to cart and go straight to Stripe checkout.

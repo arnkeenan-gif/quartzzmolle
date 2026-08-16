@@ -18,6 +18,7 @@ function writeCart(items) {
   } catch {}
   updateCartUI();
   schedulePrefetch();
+  reportCartState();
 }
 
 function cartCount() {
@@ -78,7 +79,7 @@ function injectCartUI() {
         <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
         <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
       </svg>
-      <span class="cart-count" data-cart-count>0</span>
+      <span class="cart-count" data-cart-count aria-hidden="true">0</span>
     `;
     btn.addEventListener('click', openCart);
     // Insert the cart before the Shop Nu button (desktop) so cart + Shop Nu sit together.
@@ -106,7 +107,7 @@ function injectCartUI() {
     drawer.className = 'cart-drawer';
     drawer.innerHTML = `
       <div class="cart-backdrop" data-cart-close></div>
-      <aside class="cart-panel" role="dialog" aria-label="Cart">
+      <aside class="cart-panel" role="dialog" aria-modal="true" aria-label="Kurv" tabindex="-1">
         <header class="cart-head">
           <div class="cart-head-titles">
             <h2>Din kurv</h2>
@@ -120,7 +121,7 @@ function injectCartUI() {
         <footer class="cart-foot">
           <div class="cart-total-row">
             <span>I alt</span>
-            <span id="cart-total">0,00 kr.</span>
+            <span id="cart-total" aria-live="polite">0,00 kr.</span>
           </div>
           <p class="cart-shipnote">Fragt beregnes ved checkout</p>
           <p id="cart-weight-note" class="cart-weight-note" hidden></p>
@@ -136,6 +137,10 @@ function injectCartUI() {
     `;
     document.body.appendChild(drawer);
 
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && drawer.classList.contains('open')) closeCart();
+    });
+
     drawer.querySelectorAll('[data-cart-close]').forEach(el => {
       el.addEventListener('click', closeCart);
     });
@@ -148,6 +153,14 @@ function injectCartUI() {
         window.location.href = 'shop.html';
       }
     });
+  }
+
+  if (!document.getElementById('cart-live')) {
+    const live = document.createElement('p');
+    live.id = 'cart-live';
+    live.className = 'sr-only';
+    live.setAttribute('aria-live', 'polite');
+    document.body.appendChild(live);
   }
 
   updateCartUI();
@@ -166,6 +179,16 @@ function updateCartUI() {
     el.classList.toggle('has-items', count > 0);
     if (bounce) { el.classList.remove('qm-bounce'); void el.offsetWidth; el.classList.add('qm-bounce'); }
   });
+
+  // Skærmlæsere: kurv-knappen fortæller antallet, og tilføjelser annonceres høfligt.
+  const enA11y = (() => { try { return localStorage.getItem('qm_lang') === 'en'; } catch (e) { return false; } })();
+  document.querySelectorAll('.cart-btn').forEach(b => b.setAttribute('aria-label',
+    count > 0 ? (enA11y ? `Cart, ${count} item${count === 1 ? '' : 's'}` : `Kurv, ${count} ${count === 1 ? 'vare' : 'varer'}`)
+              : (enA11y ? 'Cart, empty' : 'Kurv, tom')));
+  const liveEl = document.getElementById('cart-live');
+  if (bounce && liveEl) liveEl.textContent = enA11y
+    ? `Added to cart — ${count} item${count === 1 ? '' : 's'} in total`
+    : `Tilføjet til kurven — ${count} ${count === 1 ? 'vare' : 'varer'} i alt`;
 
   const headSub = document.getElementById('cart-head-sub');
   if (headSub) {
@@ -189,7 +212,7 @@ function updateCartUI() {
           <div class="cart-item-info">
             <div class="cart-item-top">
               <div class="cart-item-name">${it.productName}</div>
-              <button class="cart-item-remove" aria-label="Remove">
+              <button class="cart-item-remove" aria-label="Fjern ${it.productName} fra kurven">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
               </button>
             </div>
@@ -231,12 +254,17 @@ function updateCartUI() {
       const m = String(it.weightLabel || '').match(/(\d+(?:[.,]\d+)?)\s*kg/i);
       return sum + (m ? parseFloat(m[1].replace(',', '.')) : 0) * (it.qty || 1);
     }, 0);
-    if (totalKg > 25) {
-      const kgTxt = String(Math.round(totalKg * 10) / 10).replace('.', ',');
-      const en = (function () { try { return localStorage.getItem('qm_lang') === 'en'; } catch (e) { return false; } })();
+    const kgTxt = String(Math.round(totalKg * 10) / 10).replace('.', ',');
+    const en = (function () { try { return localStorage.getItem('qm_lang') === 'en'; } catch (e) { return false; } })();
+    if (totalKg > 24.9) { // PRIVAT_LIMIT i api/checkout.js — fanger 2×12,5 kg = 25,0
       note.innerHTML = en
         ? `Your order weighs <strong>${kgTxt} kg</strong> — above GLS' 25 kg shipping limit. It can therefore only be collected with <strong>free Click &amp; Collect</strong> at the mill (Suså Landevej 101), which is preselected at checkout.`
         : `Din ordre vejer <strong>${kgTxt} kg</strong> — over GLS' grænse på 25 kg for levering. Den kan derfor kun afhentes med <strong>gratis Click &amp; Collect</strong> på møllen (Suså Landevej 101), som er valgt på forhånd i checkout.`;
+      note.hidden = false;
+    } else if (totalKg > 19.9) { // PAKKESHOP_LIMIT i api/checkout.js
+      note.innerHTML = en
+        ? `Your order weighs <strong>${kgTxt} kg</strong> — above GLS' 20 kg limit for parcel-shop delivery. At checkout it can be shipped to a private address or collected free at the mill.`
+        : `Din ordre vejer <strong>${kgTxt} kg</strong> — over GLS' grænse på 20 kg for pakkeshop-levering. I checkout kan den sendes til privatadresse eller afhentes gratis på møllen.`;
       note.hidden = false;
     } else {
       note.hidden = true;
@@ -245,19 +273,28 @@ function updateCartUI() {
   }
 }
 
+let _lastFocus = null;
 function openCart() {
   const drawer = document.getElementById('cart-drawer');
   if (drawer) {
+    _lastFocus = document.activeElement;
     drawer.classList.add('open');
     document.body.style.overflow = 'hidden';
+    const panel = drawer.querySelector('.cart-panel');
+    if (panel) panel.focus({ preventScroll: true });
   }
   prefetchCheckout();
 }
 
 function closeCart() {
-  // Reload the page when cart is closed. Bulletproof against iOS Safari
-  // render artifacts (e.g. text bleeding through the bottom-mask).
-  window.location.reload();
+  // Genindlæsningen var en fix for iOS Safari-artefakter bag den fixerede
+  // video-scene på forsiden — behold den KUN dér.
+  if (document.getElementById('videoStage')) { window.location.reload(); return; }
+  const drawer = document.getElementById('cart-drawer');
+  if (drawer) drawer.classList.remove('open');
+  document.body.style.overflow = '';
+  if (_lastFocus && _lastFocus.focus) _lastFocus.focus();
+  window.dispatchEvent(new Event('scroll'));
 }
 
 // Full-screen Quartz spinner shown while Stripe is being prepared (same as the
@@ -267,7 +304,9 @@ function showCheckoutLoader() {
   if (!el) {
     el = document.createElement('div');
     el.id = 'qm-checkout-loader';
-    el.innerHTML = '<img src="images/logopng.png" alt="Quartz Mølle" />';
+    el.setAttribute('role', 'status');
+    el.innerHTML = '<img src="images/logopng.png" alt="" />' +
+      '<p class="qm-loader-text">Du sendes til sikker betaling…</p>';
     document.body.appendChild(el);
   }
   void el.offsetWidth;
@@ -282,8 +321,15 @@ function hideCheckoutLoader() {
 // its back/forward cache exactly as it looked — i.e. with the loader still
 // covering everything. Always hide the loader (and re-arm the checkout button)
 // when the page is shown again, so back never lands on a stuck loading screen.
-window.addEventListener('pageshow', () => {
-  hideCheckoutLoader();
+window.addEventListener('pageshow', (e) => {
+  const loader = document.getElementById('qm-checkout-loader');
+  if (loader && e.persisted) {
+    loader.style.transition = 'none'; // Tilbage skal være øjeblikkelig — ingen blå udtoning
+    loader.classList.remove('show');
+    requestAnimationFrame(() => { loader.style.transition = ''; });
+  } else {
+    hideCheckoutLoader();
+  }
   const btn = document.getElementById('cart-checkout-btn');
   if (btn) { btn.disabled = false; btn.textContent = 'Til kassen'; }
   // A back/forward restore shows the page as an old snapshot — its cart badge
@@ -292,8 +338,50 @@ window.addEventListener('pageshow', () => {
   _prevCartCount = -1; // don't bounce the badge over a restore
   updateCartUI();
   _pf = { key: '', url: '', ts: 0, inflight: null }; // brugt/forældet — forbered forfra
+  const errEl = document.getElementById('cart-error');
+  if (errEl) errEl.textContent = ''; // gammel fejl fra før Stripe skal ikke vises igen
+  schedulePrefetch(); // skuffen er stadig åben efter Tilbage fra Stripe → forbered en frisk session
 });
 
+
+
+// ── KUNDEREJSE-SIGNAL: anonymt "i kurv" / "i checkout" til admin-tragten ─────
+// Sender kun et tilfældigt id + antal varer + total — aldrig navne eller andet
+// personligt. Bruges til "Lige nu i butikken"-panelet i admin.
+function qmVid() {
+  try {
+    let v = localStorage.getItem('qm_vid');
+    if (!v) {
+      v = Math.random().toString(36).slice(2) + Date.now().toString(36);
+      localStorage.setItem('qm_vid', v);
+    }
+    return v;
+  } catch (e) { return 'anon'; }
+}
+
+function sendFunnel(step, items) {
+  const payload = JSON.stringify({
+    action: step === 'checkout' ? 'checkoutstart' : 'cart',
+    id: qmVid(),
+    count: items.reduce((s, i) => s + (i.qty || 0), 0),
+    total: Math.round(items.reduce((s, i) => s + (i.price || 0) * (i.qty || 0), 0)),
+  });
+  try {
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon('/api/log-visit', new Blob([payload], { type: 'application/json' }));
+      return;
+    }
+  } catch (e) {}
+  try {
+    fetch('/api/log-visit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(() => {});
+  } catch (e) {}
+}
+
+let _funnelTimer = null;
+function reportCartState() {
+  clearTimeout(_funnelTimer);
+  _funnelTimer = setTimeout(() => sendFunnel('cart', readCart()), 1500);
+}
 
 // ── LYN-CHECKOUT: forbered Stripe-sessionen i baggrunden ─────────────────────
 // Når kurven åbnes (og når indholdet ændres, mens den er åben), oprettes
@@ -339,6 +427,7 @@ function schedulePrefetch() {
 async function checkoutCart() {
   const items = readCart();
   if (items.length === 0) return;
+  sendFunnel('checkout', items);
   const btn = document.getElementById('cart-checkout-btn');
   const errEl = document.getElementById('cart-error');
   if (errEl) errEl.textContent = '';

@@ -114,6 +114,9 @@
     "Mindre": "Decrease",
     "Mere": "Increase",
     "Tilføj til kurv": "Add to cart",
+    "Tilføjet": "Added",
+    "Lagt i kurven": "Added to cart",
+    "Du sendes til sikker betaling…": "Taking you to secure payment…",
     "Fragt beregnes ved checkout": "Shipping calculated at checkout",
     "Sikker betaling via Stripe": "Secure payment via Stripe",
     "Fragt regler": "Shipping rules",
@@ -138,6 +141,7 @@
     "Udfyld oplysninger og vælg levering": "Fill in your details and choose delivery",
     "Tak for din ordre!": "Thank you for your order!",
     "Vi har modtaget din bestilling og pakker den hurtigst muligt. Du modtager en bekræftelse på email om kort tid.": "We have received your order and will pack it as quickly as possible. You will receive a confirmation by email shortly.",
+    "Vi har modtaget din bestilling. Når den er klar til afhentning, får du en email med en kode til automaten på Suså Landevej 101, 4160 Herlufmagle.": "We have received your order. When it is ready for collection, you will receive an email with a code for the locker at Suså Landevej 101, 4160 Herlufmagle.",
     "Ordrenummer": "Order number",
     "Din ordre": "Your order",
     "Levering": "Delivery",
@@ -356,6 +360,9 @@
     "Mindre": "Menos",
     "Mere": "Más",
     "Tilføj til kurv": "Añadir a la cesta",
+    "Tilføjet": "Añadido",
+    "Lagt i kurven": "Añadido a la cesta",
+    "Du sendes til sikker betaling…": "Se te envía al pago seguro…",
     "Fragt beregnes ved checkout": "Los gastos de envío se calculan al finalizar la compra",
     "Sikker betaling via Stripe": "Pago seguro con Stripe",
     "Fragt regler": "Normas de envío",
@@ -380,6 +387,7 @@
     "Udfyld oplysninger og vælg levering": "Rellena tus datos y elige la entrega",
     "Tak for din ordre!": "¡Gracias por tu pedido!",
     "Vi har modtaget din bestilling og pakker den hurtigst muligt. Du modtager en bekræftelse på email om kort tid.": "Hemos recibido tu pedido y lo prepararemos lo antes posible. Recibirás una confirmación por correo electrónico en breve.",
+    "Vi har modtaget din bestilling. Når den er klar til afhentning, får du en email med en kode til automaten på Suså Landevej 101, 4160 Herlufmagle.": "Hemos recibido tu pedido. Cuando esté listo para recoger, recibirás un correo electrónico con un código para el armario en Suså Landevej 101, 4160 Herlufmagle.",
     "Ordrenummer": "Número de pedido",
     "Din ordre": "Tu pedido",
     "Levering": "Entrega",
@@ -510,6 +518,8 @@
   // Substring / pattern rules applied to text nodes that don't have an exact match.
   // Used for nodes that mix static labels with dynamic values.
   var QM_RULES = [
+    [/^Fjern (.+) fra kurven$/, 'Remove $1 from the cart'],
+    [/^Ingen produkter matcher \u201c(.+)\u201d\.$/, 'No products match \u201c$1\u201d.'],
     [/^Fra (\d[\d.,]*\s*kr\.)$/, 'From $1'],          // "Fra 99,00 kr." -> "From 99,00 kr."
     [/^(\d+) varer$/, '$1 items'],                     // cart header "3 varer"
     [/^1 vare$/, '1 item'],
@@ -530,6 +540,8 @@
 
   // Spanish equivalents of the pattern rules.
   var QM_RULES_ES = [
+    [/^Fjern (.+) fra kurven$/, 'Eliminar $1 de la cesta'],
+    [/^Ingen produkter matcher \u201c(.+)\u201d\.$/, 'Ning\u00fan producto coincide con \u201c$1\u201d.'],
     [/^Fra (\d[\d.,]*\s*kr\.)$/, 'Desde $1'],
     [/^(\d+) varer$/, '$1 artículos'],
     [/^1 vare$/, '1 artículo'],
