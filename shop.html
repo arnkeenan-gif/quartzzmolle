@@ -54,6 +54,12 @@
       padding: 8px 30px 8px 12px; cursor: pointer;
     }
     .shop-sort-select:focus { outline: none; border-color: #273071; }
+    .shop-sort-select:focus-visible { outline: 2px solid #273071; outline-offset: 2px; }
+    /* Skeletons mirror the compact shop card */
+    .sk-img { aspect-ratio: 3/4; }
+    .sk-body { padding: 0.85rem 0.95rem 1rem; }
+    .sk-line { margin-bottom: 0.5rem; }
+    @media (max-width: 768px) { .shop-sort-select { font-size: 1rem; } }
 
     /* view toggle inline, compact */
     .view-toggle { display: flex; gap: 6px; margin: 0 !important; }
@@ -151,7 +157,7 @@
       <a href="index.html#kontakt">Kontakt</a>
     </div>
     <a href="shop.html" class="nav-cta">Shop Nu</a>
-    <button class="nav-burger" id="burger" aria-label="Menu">
+    <button class="nav-burger" id="burger" aria-label="Menu" aria-expanded="false" aria-controls="mobileMenu">
       <span></span><span></span><span></span>
     </button>
   </nav>
@@ -241,6 +247,8 @@
         grid.classList.toggle('view-single', v === 'single');
         bGrid.classList.toggle('active', v === 'grid');
         bSingle.classList.toggle('active', v === 'single');
+        bGrid.setAttribute('aria-pressed', v === 'grid' ? 'true' : 'false');
+        bSingle.setAttribute('aria-pressed', v === 'single' ? 'true' : 'false');
         try { localStorage.setItem('qm_shop_view', v); } catch (e) {}
       }
       var saved = 'grid';

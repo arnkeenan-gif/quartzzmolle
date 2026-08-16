@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="robots" content="noindex, nofollow" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#000000" />
+  <meta name="theme-color" content="#273071" />
   <title>Tak for din ordre! – Quartz Mølle</title>
   <link rel="icon" href="/favicon.ico" sizes="any" />
   <link rel="icon" type="image/png" href="/images/favicon.png" />
@@ -137,9 +137,9 @@
       animation: check-draw 0.5s cubic-bezier(0.65, 0, 0.45, 1) 0.55s forwards;
     }
     @keyframes check-pop {
-      0%   { transform: scale(0); }
-      60%  { transform: scale(1.12); }
-      100% { transform: scale(1); }
+      0%   { transform: scale(0.5); opacity: 0; }
+      60%  { transform: scale(1.12); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
     }
     @keyframes check-draw {
       to { stroke-dashoffset: 0; }
@@ -174,7 +174,7 @@
       animation: fade-up 0.5s ease 1s both;
     }
     .success-order-num span {
-      color: #888;
+      color: #666;
       font-weight: 500;
       letter-spacing: 0.04em;
       margin-right: 0.4rem;
@@ -245,7 +245,7 @@
     }
     .success-order-item-qty {
       font-size: 0.82rem;
-      color: #888;
+      color: #666;
     }
     .success-order-item-price {
       font-size: 0.95rem;
@@ -339,6 +339,28 @@
       .success-order-row { font-size: 0.85rem; }
       .success-order-row.success-order-total { font-size: 1rem; }
     }
+    /* Bekræftelses-koreografien venter, til loaderen er løftet (body.qm-ready) */
+    .success-check-circle, .success-check-svg path,
+    .success-box h1, .success-box p,
+    .success-order-num, .success-order-summary, .success-actions {
+      animation-play-state: paused;
+    }
+    body.qm-ready .success-check-circle, body.qm-ready .success-check-svg path,
+    body.qm-ready .success-box h1, body.qm-ready .success-box p,
+    body.qm-ready .success-order-num, body.qm-ready .success-order-summary, body.qm-ready .success-actions {
+      animation-play-state: running;
+    }
+
+    /* Ordrenummeret kan markeres med ét tryk */
+    .success-order-num strong { font-size: 1.1em; -webkit-user-select: all; user-select: all; }
+
+    @media (prefers-reduced-motion: reduce) {
+      #page-loader img { animation: none; }
+      .success-check-circle, .success-check-svg path,
+      .success-box h1, .success-box p,
+      .success-order-num, .success-order-summary, .success-actions { animation: none; }
+      .success-check-svg path { stroke-dashoffset: 0; }
+    }
   </style>
 </head>
 <body>
@@ -346,14 +368,19 @@
     <img src="images/logopng.png" alt="" />
   </div>
   <script>
-    // Hide loader once page is fully loaded (DOM, images, fonts)
-    window.addEventListener('load', function() {
-      var loader = document.getElementById('page-loader');
-      if (loader) {
-        // Brief delay so the loader is visible at least 600ms (avoids flicker on fast networks)
-        setTimeout(function() { loader.classList.add('is-hidden'); }, 600);
+    (function () {
+      function lift() {
+        var loader = document.getElementById('page-loader');
+        if (loader && !loader.classList.contains('is-hidden')) {
+          loader.classList.add('is-hidden');
+          document.body.classList.add('qm-ready'); // starter bekræftelses-animationen
+        }
       }
-    });
+      // Kort hold undgår et blink på hurtige forbindelser — 200ms er rigeligt
+      window.addEventListener('load', function () { setTimeout(lift, 200); });
+      // Failsafe: kunden må aldrig strande bag loaderen (fx ét hængende billede)
+      setTimeout(lift, 4000);
+    })();
   </script>
   <nav class="nav nav-light" id="nav">
     <a href="index.html" class="nav-logo">
@@ -369,7 +396,7 @@
       <a href="index.html#kontakt">Kontakt</a>
     </div>
     <a href="shop.html" class="nav-cta">Shop Nu</a>
-    <button class="nav-burger" id="burger" aria-label="Menu">
+    <button class="nav-burger" id="burger" aria-label="Menu" aria-expanded="false" aria-controls="mobileMenu">
       <span></span><span></span><span></span>
     </button>
   </nav>
@@ -473,13 +500,21 @@
           document.getElementById('success-shipping-name').textContent = data.shipping;
           document.getElementById('success-shipping-amount').textContent = data.shippingAmount > 0 ? fmt(data.shippingAmount) : 'Gratis';
           document.getElementById('success-shipping-row').style.display = 'flex';
+
+          // Click & Collect: pak-og-send-teksten erstattes af afhentnings-info
+          if (/click\s*&?\s*collect|afhent/i.test(String(data.shipping))) {
+            var intro = document.querySelector('.success-box > p');
+            if (intro) intro.textContent = 'Vi har modtaget din bestilling. Når den er klar til afhentning, får du en email med en kode til automaten på Suså Landevej 101, 4160 Herlufmagle.';
+          }
         }
 
         // Total
         document.getElementById('success-total-amount').textContent = fmt(data.total);
 
         // Reveal the section
-        document.getElementById('success-order-summary').style.display = 'block';
+        var box = document.getElementById('success-order-summary');
+        if (performance.now() > 1600) box.style.animationDelay = '0ms';
+        box.style.display = 'block';
       } catch (e) { console.error(e); }
     })();
   </script>
