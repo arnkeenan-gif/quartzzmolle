@@ -577,6 +577,9 @@ window.qmFlyToCart = function (srcEl) {
     function enhance(card) {
       if (!card || card.nodeType !== 1 || card.__qaDone) return;
       if (!card.classList || !card.classList.contains('product-card')) return;
+      // Ingen quick-add paa forsidens bestsellers — der skal kortet foere
+      // videre til produktsiden, ikke tilbyde et koeb paa stedet.
+      if (card.closest && card.closest('#highlightsGrid')) return;
       card.__qaDone = true;
       var m = (card.getAttribute('href') || '').match(/[?&]id=([^&]+)/);
       if (!m) return;

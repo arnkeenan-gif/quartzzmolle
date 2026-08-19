@@ -25,6 +25,31 @@
 
   // ── Danish → English dictionary (keyed on the exact, trimmed text node value) ──
   var QM_DICT = {
+    "Skabe": "Lockers",
+    "Ordrer": "Orders",
+    "Handlinger": "Actions",
+    "Skabsoversigt": "Locker overview",
+    "Ny aflevering": "New drop-off",
+    "Åbn alle": "Open all",
+    "Ryd alle": "Clear all",
+    "Opdatér": "Refresh",
+    "Optaget": "Occupied",
+    "Slet": "Delete",
+    "Sektioner": "Sections",
+    "Indtast kode": "Enter code",
+    "Læg i skab": "Place in locker",
+    "Kunne ikke slette": "Could not delete",
+    "Skriv et dør-nummer": "Enter a door number",
+    "Bekræft slet (1/2)": "Confirm delete (1/2)",
+    "Bekræft slet (2/2)": "Confirm delete (2/2)",
+    "Send koden til kunden — vælg ordren:": "Send the code to the customer — pick the order:",
+    "Kode sendt til kunden": "Code sent to the customer",
+    "Dør-nr. (fx 7, 8)": "Door no. (e.g. 7, 8)",
+    "Søg efter navn eller e-mail…": "Search by name or email…",
+    "Ingen afsendte ordrer.": "No sent orders.",
+    "/ 22 optaget ·": "/ 22 occupied ·",
+    "Valgt": "Selected",
+    "Åbner skab": "Opening locker",
     // Navigation / shared
     "Hjem": "Home",
     "Forhandlere": "Stockists",
@@ -178,8 +203,8 @@
     "Malet på stenkværn i Danmark": "Stone-milled in Denmark",
 
     // locker.html (internal staff panel)
-    "Skabsstyring · Quartz Mølle": "Cabinet Management · Quartz Mølle",
-    "Skabsstyring": "Cabinet Management",
+    "Skabsstyring · Quartz Mølle": "Locker Management · Quartz Mølle",
+    "Skabsstyring": "Locker Management",
     "Indtast adgangskode": "Enter passcode",
     "Lås op": "Unlock",
     "Log ud": "Log out",
@@ -197,38 +222,38 @@
     "Tablet offline": "Tablet offline",
     "ledige": "available",
     "Ud af drift": "Out of service",
-    "Ledig": "Available",
+    "Ledig": "Free",
     "Ingen hændelser endnu.": "No events yet.",
     "Aflevering": "Deposit",
     "Afhentning": "Pickup",
     "Dør åbnet": "Door opened",
     "Alle døre åbnet": "All doors opened",
-    "Alle skabe ryddet": "All cabinets cleared",
+    "Alle skabe ryddet": "All lockers cleared",
     "Sat ud af drift": "Set out of service",
     "Sat i drift": "Set in service",
     "Åbn dør": "Open door",
-    "Ryd skab (markér ledig)": "Clear cabinet (mark available)",
+    "Ryd skab (markér ledig)": "Clear locker (mark free)",
     "Sæt i drift": "Set in service",
     "Sæt ud af drift": "Set out of service",
     "Annullér": "Cancel",
-    "Hvor mange skabe?": "How many cabinets?",
-    "Vælg antal skabe til ordren": "Select the number of cabinets for the order",
+    "Hvor mange skabe?": "How many lockers?",
+    "Vælg antal skabe til ordren": "Select the number of lockers for the order",
     "Opret kode": "Create code",
-    "Læg pakken i skab": "Place the package in cabinet",
+    "Læg pakken i skab": "Place the package in locker",
     "Kode til kunden": "Code for the customer",
     "Kopiér kode": "Copy code",
     "Færdig": "Done",
-    "Åbn ALLE skabe?": "Open ALL cabinets?",
+    "Åbn ALLE skabe?": "Open ALL lockers?",
     "Alle 22 døre åbnes fysisk på lockeren, én ad gangen.": "All 22 doors are opened physically on the locker, one at a time.",
     "Ja, åbn alle": "Yes, open all",
-    "Åbner alle skabe…": "Opening all cabinets…",
-    "Ryd ALLE skabe?": "Clear ALL cabinets?",
-    "Alle skabe markeres ledige og koderne fjernes. Kan ikke fortrydes.": "All cabinets are marked available and the codes are removed. Cannot be undone.",
+    "Åbner alle skabe…": "Opening all lockers…",
+    "Ryd ALLE skabe?": "Clear ALL lockers?",
+    "Alle skabe markeres ledige og koderne fjernes. Kan ikke fortrydes.": "All lockers are marked available and the codes are removed. Cannot be undone.",
     "Ja, ryd alle": "Yes, clear all",
     "Døren åbnes fysisk på lockeren.": "The door is opened physically on the locker.",
     "Ja, åbn døren": "Yes, open the door",
     "Fejl": "Error",
-    "Alle skabe er optaget": "All cabinets are occupied",
+    "Alle skabe er optaget": "All lockers are occupied",
 
     // fulfill.html (staff Click & Collect fulfilment page)
     "Click & Collect – Quartz Mølle": "Click & Collect – Quartz Mølle",
@@ -237,17 +262,17 @@
     "Kodeord": "Password",
     "Afventende ordrer": "Pending orders",
     "Afsendte ordrer": "Completed orders",
-    "Aktive skab-koder": "Active cabinet codes",
+    "Aktive skab-koder": "Active locker codes",
     "Ingen afventende ordrer.": "No pending orders.",
     "Ingen aktive koder.": "No active codes.",
-    "Skab-/dør-nummer": "Cabinet/door number",
+    "Skab-/dør-nummer": "Locker/door number",
     "Send kode til kunde": "Send code to customer",
     "Opdater": "Refresh",
     "Sender…": "Sending…",
     "Sendt!": "Sent!",
     "Kunne ikke sende. Prøv igen.": "Could not send. Try again.",
-    "Skriv et skab-/dør-nummer først.": "Enter a cabinet/door number first.",
-    "Der er ingen aktiv kode for det skab. Deponer ordren i skabet på /locker først.": "There is no active code for that cabinet. Deposit the order in the cabinet on /locker first.",
+    "Skriv et skab-/dør-nummer først.": "Enter a locker/door number first.",
+    "Der er ingen aktiv kode for det skab. Deponer ordren i skabet på /locker først.": "There is no active code for that locker. Deposit the order in the locker on /locker first.",
     "Ordre": "Order",
     "Vare": "Item",
     "Varer": "Items",
@@ -271,6 +296,31 @@
 
   // ── Danish → Spanish dictionary (same keys as QM_DICT) ──
   var QM_DICT_ES = {
+    "Skabe": "Casilleros",
+    "Ordrer": "Pedidos",
+    "Handlinger": "Acciones",
+    "Skabsoversigt": "Vista de casilleros",
+    "Ny aflevering": "Nueva entrega",
+    "Åbn alle": "Abrir todos",
+    "Ryd alle": "Vaciar todos",
+    "Opdatér": "Actualizar",
+    "Optaget": "Ocupado",
+    "Slet": "Eliminar",
+    "Sektioner": "Secciones",
+    "Indtast kode": "Introduce el código",
+    "Læg i skab": "Poner en el casillero",
+    "Kunne ikke slette": "No se pudo eliminar",
+    "Skriv et dør-nummer": "Escribe un número de puerta",
+    "Bekræft slet (1/2)": "Confirmar eliminación (1/2)",
+    "Bekræft slet (2/2)": "Confirmar eliminación (2/2)",
+    "Send koden til kunden — vælg ordren:": "Envía el código al cliente — elige el pedido:",
+    "Kode sendt til kunden": "Código enviado al cliente",
+    "Dør-nr. (fx 7, 8)": "N.º de puerta (p. ej. 7, 8)",
+    "Søg efter navn eller e-mail…": "Busca por nombre o correo…",
+    "Ingen afsendte ordrer.": "No hay pedidos enviados.",
+    "/ 22 optaget ·": "/ 22 ocupados ·",
+    "Valgt": "Seleccionado",
+    "Åbner skab": "Abriendo casillero",
     // Navigation / shared
     "Hjem": "Inicio",
     "Forhandlere": "Distribuidores",
@@ -518,6 +568,16 @@
   // Substring / pattern rules applied to text nodes that don't have an exact match.
   // Used for nodes that mix static labels with dynamic values.
   var QM_RULES = [
+    [/^Dør (\d+)$/, 'Door $1'],
+    [/^Skab (\d+)$/, 'Locker $1'],
+    [/^Åbn skab (\d+)\?$/, 'Open locker $1?'],
+    [/^Kopiér kode \((\d+)\)$/, 'Copy code ($1)'],
+    [/^Optaget · kode (\d+)$/, 'Occupied · code $1'],
+    [/^(\d+) ledige$/, '$1 free'],
+    [/^(\d+) skabe?$/, '$1 lockers'],
+    [/^Vælg (\d+) skabe?$/, 'Choose $1 lockers'],
+    [/^(\d+) \/ (\d+) valgt · optagede skabe kan ikke vælges$/, '$1 / $2 selected · occupied lockers cannot be picked'],
+    [/^Ingen produkter matcher “(.+)”\.$/, 'No products match “$1”.'],
     [/^Fjern (.+) fra kurven$/, 'Remove $1 from the cart'],
     [/^Ingen produkter matcher \u201c(.+)\u201d\.$/, 'No products match \u201c$1\u201d.'],
     [/^Fra (\d[\d.,]*\s*kr\.)$/, 'From $1'],          // "Fra 99,00 kr." -> "From 99,00 kr."
@@ -529,17 +589,26 @@
     // locker dynamic strings (numbers stay in place)
     [/^(\d+) \/ (\d+) optaget$/, '$1 / $2 occupied'],
     [/^(\d+) ledige$/, '$1 available'],
-    [/^Skab (\d[\d, ]*) åbnet$/, 'Cabinet $1 opened'],
-    [/^Skabe (\d[\d, ]*) åbnet$/, 'Cabinets $1 opened'],
-    [/^Vælg (\d+) skabe?$/, 'Choose $1 cabinets'],
-    [/^Læg i skab$/, 'Place in cabinet'],
+    [/^Skab (\d[\d, ]*) åbnet$/, 'Locker $1 opened'],
+    [/^Skabe (\d[\d, ]*) åbnet$/, 'Lockers $1 opened'],
+    [/^Vælg (\d+) skabe?$/, 'Choose $1 lockers'],
+    [/^Læg i skab$/, 'Place in locker'],
     [/(\d+) min siden/, '$1 min ago'],
-    [/Afhentning · Skab/g, 'Pickup · Cabinet'],
-    [/Aflevering · Skab/g, 'Deposit · Cabinet']
+    [/Afhentning · Skab/g, 'Pickup · Locker'],
+    [/Aflevering · Skab/g, 'Deposit · Locker']
   ];
 
   // Spanish equivalents of the pattern rules.
   var QM_RULES_ES = [
+    [/^Dør (\d+)$/, 'Puerta $1'],
+    [/^Skab (\d+)$/, 'Casillero $1'],
+    [/^Åbn skab (\d+)\?$/, '¿Abrir casillero $1?'],
+    [/^Kopiér kode \((\d+)\)$/, 'Copiar código ($1)'],
+    [/^Optaget · kode (\d+)$/, 'Ocupado · código $1'],
+    [/^(\d+) ledige$/, '$1 libres'],
+    [/^(\d+) skabe?$/, '$1 casilleros'],
+    [/^Vælg (\d+) skabe?$/, 'Elige $1 casilleros'],
+    [/^(\d+) \/ (\d+) valgt · optagede skabe kan ikke vælges$/, '$1 / $2 seleccionados · los ocupados no se pueden elegir'],
     [/^Fjern (.+) fra kurven$/, 'Eliminar $1 de la cesta'],
     [/^Ingen produkter matcher \u201c(.+)\u201d\.$/, 'Ning\u00fan producto coincide con \u201c$1\u201d.'],
     [/^Fra (\d[\d.,]*\s*kr\.)$/, 'Desde $1'],
@@ -573,12 +642,14 @@
       // Preserve original surrounding whitespace
       return raw.replace(trimmed, ACTIVE_DICT[trimmed]);
     }
-    var out = raw, changed = false;
+    // Reglerne koeres paa den trimmede tekst, saa ^/$-ankre ogsaa rammer noder
+    // med mellemrum omkring (fx " Kopiér kode (115838)" efter et ikon).
+    var out = trimmed, changed = false;
     for (var i = 0; i < ACTIVE_RULES.length; i++) {
       var next = out.replace(ACTIVE_RULES[i][0], ACTIVE_RULES[i][1]);
       if (next !== out) { out = next; changed = true; }
     }
-    return changed ? out : raw;
+    return changed ? raw.replace(trimmed, out) : raw;
   }
 
   function skip(el) {
