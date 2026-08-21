@@ -251,6 +251,14 @@
     background:var(--green-tint);border:1px solid var(--green-border);
     border-radius:var(--radius-sm);padding:8px 10px
   }
+  .pickup{
+    display:flex;align-items:center;gap:7px;margin-top:8px;
+    font-size:13px;font-weight:600;border-radius:var(--radius-sm);padding:8px 10px;border:1px solid
+  }
+  .pickup .pu-ic{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
+  .pickup.is-done{color:var(--green);background:var(--green-tint);border-color:var(--green-border)}
+  .pickup.is-wait{color:var(--amber);background:var(--amber-tint);border-color:#fde68a}
+
   .order-foot{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
   .btn-print{font-size:13px;padding:8px 12px;min-height:36px}
   .btn-del{font-size:13px;padding:8px 12px;min-height:36px;color:var(--red);border-color:var(--red-border)}
@@ -451,6 +459,20 @@
     return (o.items||[]).map(function(it){ return esc(it.name)+(it.weightLabel?' ('+esc(it.weightLabel)+')':'')+' × '+(it.qty||1); }).join(', ');
   }
 
+  // Afhentet? lockers indeholder KUN optagede skabe, saa hvis ordrens
+  // doer/kode ikke laengere staar der, er pakken taget ud af skabet.
+  function pickupState(sent){
+    var slots = sent.slots || (sent.door!=null ? [{door:sent.door, code:sent.code}] : []);
+    if(!slots.length) return {done:false, left:0, total:0};
+    var active = (lastData && lastData.lockers) || [];
+    var left = slots.filter(function(s){
+      return active.some(function(l){
+        return Number(l.door) === Number(s.door) && String(l.code) === String(s.code);
+      });
+    }).length;
+    return {done:left === 0, left:left, total:slots.length};
+  }
+
   function sentText(sent){
     var slots = sent.slots || (sent.door!=null ? [{door:sent.door, code:sent.code}] : []);
     if(!slots.length) return 'Sendt';
@@ -472,7 +494,18 @@
       + '<div class="order-items">'+itemsLine(o)+'</div>';
 
     if(sent){
-      html += '<div class="sent-line">'+sentText(sent)+'</div>';
+      var ps = pickupState(sent);
+      var CHK = '<svg viewBox="0 0 24 24" class="pu-ic"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>';
+      var CLK = '<svg viewBox="0 0 24 24" class="pu-ic"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 1.8"/></svg>';
+      var label = ps.done
+        ? 'Afhentet'
+        : (ps.total > 1 && ps.left < ps.total
+            ? 'Delvist afhentet · ' + (ps.total - ps.left) + ' af ' + ps.total
+            : 'Venter på afhentning');
+      html += '<div class="sent-line">'+sentText(sent)+'</div>'
+        +  '<div class="pickup '+(ps.done?'is-done':'is-wait')+'">'
+        +    (ps.done?CHK:CLK)+'<span>'+label+'</span>'
+        +  '</div>';
     } else {
       html += '<div class="order-act">'
         + '<input class="door-in" type="text" inputmode="numeric" placeholder="Dør-nr. (fx 7, 8)" />'
