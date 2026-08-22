@@ -326,6 +326,8 @@
       </button>
       <div class="nl-formwrap">
         <form id="nlForm" class="newsletter-form" novalidate>
+          <input type="text" id="nlWebsite" name="website" tabindex="-1" autocomplete="off" aria-hidden="true"
+                 style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none" />
           <input type="email" id="nlEmail" placeholder="Din e-mailadresse" autocomplete="email" required />
           <button type="submit" id="nlBtn">Tilmeld</button>
         </form>
@@ -521,12 +523,14 @@
         invalid: 'Please enter a valid email address.',
         already: 'You are already subscribed — check your inbox for the code.',
         thanks: 'Thanks! Check your inbox — your 10% discount code is on its way.',
+        again: 'Thanks! Check your inbox — your 10% discount code is on its way.',
         fail: 'Something went wrong. Please try again.', net: 'Network error — please try again.'
       } : {
         tab: '10% RABAT', ph: 'Din e-mailadresse', btn: 'Tilmeld', busy: 'Tilmelder…',
         invalid: 'Skriv en gyldig e-mailadresse.',
         already: 'Du er allerede tilmeldt — tjek din indbakke for koden.',
         thanks: 'Tak! Tjek din indbakke — din 10%-rabatkode er på vej.',
+        again: 'Tak! Tjek din indbakke — din 10%-rabatkode er på vej.',
         fail: 'Noget gik galt. Prøv igen.', net: 'Netværksfejl — prøv igen.'
       };
       if (nlEn) {
@@ -564,16 +568,72 @@
         }
         btn.disabled = true; var t = btn.textContent; btn.textContent = NLT.busy;
         try {
-          var r = await fetch('/api/log-visit', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'newsletter', email: email, lang: nlEn ? 'en' : 'da' }),
-          });
+          // Usynlig bot-verifikation: hent en engangs-udfordring og løs en
+          // lille regneopgave i baggrunden (~1/2 sekund). Kunden mærker intet
+          // — men en bot uden beviset bliver afvist af serveren.
+          async function nlSolve() {
+            var cr = await fetch('/api/log-visit', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'nlchallenge' }),
+            });
+            var cd = await cr.json().catch(function () { return {}; });
+            if (!cd.ok || !cd.ch) return null;
+            var issued = Date.now();
+            var enc = new TextEncoder();
+            var target = cd.bits || 15;
+            function zeros(u8) {
+              var bits = 0;
+              for (var i = 0; i < u8.length; i++) {
+                var b = u8[i];
+                if (b === 0) { bits += 8; continue; }
+                for (var m = 128; m > 0; m >>= 1) { if (b & m) return bits; bits++; }
+                return bits;
+              }
+              return bits;
+            }
+            for (var nonce = 0; nonce < 4000000; nonce++) {
+              var buf = await crypto.subtle.digest('SHA-256', enc.encode(cd.ch + ':' + nonce));
+              if (zeros(new Uint8Array(buf)) >= target) {
+                // Serveren kræver at udfordringen er mindst 2 sek. gammel
+                // (mennesketempo). Hurtige telefoner løser den på under 1 sek.
+                // — så vi venter usynligt det sidste stykke før afsendelse.
+                var wait = 2400 - (Date.now() - issued);
+                if (wait > 0) await new Promise(function (res2) { setTimeout(res2, wait); });
+                return { ch: cd.ch, nonce: String(nonce) };
+              }
+              if ((nonce & 511) === 0) await new Promise(function (res2) { setTimeout(res2, 0); });
+            }
+            return null;
+          }
+          async function nlSubmit(pow) {
+            return fetch('/api/log-visit', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'newsletter', email: email, lang: nlEn ? 'en' : 'da',
+                website: (document.getElementById('nlWebsite') || {}).value || '',
+                ch: pow ? pow.ch : '', nonce: pow ? pow.nonce : '' }),
+            });
+          }
+          var pow = await nlSolve();
+          var r = await nlSubmit(pow);
           var d = await r.json().catch(function () { return {}; });
+          // Udløbet/ugyldigt bevis (fx efter lang tid i formularen): prøv én
+          // gang til med en frisk udfordring, helt automatisk.
+          if (!r.ok && d && d.retry) {
+            pow = await nlSolve();
+            r = await nlSubmit(pow);
+            d = await r.json().catch(function () { return {}; });
+          }
           if (r.ok && d.ok) {
-            msg.textContent = d.already ? NLT.already : NLT.thanks;
+            msg.textContent = d.already ? NLT.already : (d.again ? NLT.again : NLT.thanks);
             input.value = '';
-            try { localStorage.setItem('qm_nl_sub', '1'); localStorage.setItem('qm_nl_seen', '1'); } catch (err) {}
-            tab.classList.add('hidden');
+            // Marker KUN som tilmeldt/skjul fanen, når serveren faktisk gemte
+            // tilmeldingen (d.stored) eller kunden allerede er tilmeldt
+            // (d.already). Et throttlet svar giver hverken — så beholder brugeren
+            // sin mulighed for at prøve igen senere.
+            if (d.stored || d.already) {
+              try { localStorage.setItem('qm_nl_sub', '1'); localStorage.setItem('qm_nl_seen', '1'); } catch (err) {}
+              tab.classList.add('hidden');
+            }
             setTimeout(closeNl, 2600);
           } else {
             msg.classList.add('err'); msg.textContent = d.error || NLT.fail;
