@@ -161,7 +161,9 @@
   @media(max-width:560px){.upd{display:none}}
 
   /* ---------- STAT CARDS ---------- */
-  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-bottom:16px}
+  .stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+  @media(min-width:720px){.stat-grid{grid-template-columns:repeat(3,1fr)}}
+  @media(min-width:1180px){.stat-grid{grid-template-columns:repeat(6,1fr)}}
   .stat-card{
     position:relative;background:var(--surface);border:1px solid var(--border);
     border-radius:var(--radius-lg);padding:14px 15px;box-shadow:var(--sh-xs)
@@ -268,6 +270,27 @@
   .location-row:first-child{padding-top:0}
   .location-row .count{font-weight:700;color:var(--primary);font-variant-numeric:tabular-nums}
 
+  /* ---------- DAGSGRAF ---------- */
+  .tr-peak{margin-left:auto;font-size:11.5px;font-weight:600;color:var(--muted-fg);text-transform:none;letter-spacing:0;font-variant-numeric:tabular-nums}
+  .tr{display:flex;align-items:flex-end;gap:2px;height:96px;padding-top:4px}
+  .tr-col{flex:1;min-width:2px;display:flex;flex-direction:column;justify-content:flex-end;height:100%;cursor:default}
+  .tr-bar{
+    width:100%;border-radius:3px 3px 0 0;background:var(--primary);min-height:2px;
+    transition:height .5s cubic-bezier(.22,1,.36,1),background-color .15s ease
+  }
+  .tr-col:hover .tr-bar{background:var(--primary-hover)}
+  .tr-col.is-zero .tr-bar{background:var(--border)}
+  .tr-col.is-today .tr-bar{background:var(--green)}
+  .tr-axis{display:flex;justify-content:space-between;gap:8px;margin-top:8px;font-size:11.5px;font-weight:500;color:var(--muted-fg)}
+  .tr-note{margin-top:8px;font-size:11.5px;font-weight:500;color:var(--subtle-fg)}
+
+  /* proportions-bjaelker paa lister (samme moenster som stat-kortene) */
+  .bar-mini{height:4px;border-radius:999px;background:var(--muted);overflow:hidden;margin-top:5px}
+  .bar-mini i{display:block;height:100%;border-radius:999px;background:var(--primary);transition:width .5s cubic-bezier(.22,1,.36,1)}
+  .product-row .pcol{flex:1;min-width:0}
+  .location-row .lcol{flex:1;min-width:0}
+  .location-row{align-items:flex-start}
+
   /* ---------- SEARCH ---------- */
   .search-wrap{position:relative;margin-bottom:12px}
   .search-in{
@@ -346,6 +369,16 @@
   }
   .om-partial input:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-ring)}
 
+  .nl-ip{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--subtle-fg);margin-right:10px}
+  .nl-ipwrap{margin-top:16px;padding-top:14px;border-top:1px solid var(--border)}
+  .ipg{border:1px solid #fde68a;background:var(--amber-tint);border-radius:var(--radius);padding:10px 12px;margin-bottom:8px}
+  .ipg-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--amber);margin-bottom:6px}
+  .ipg-head b{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:700}
+  .ipg-head span{font-weight:600}
+  .ipg-row{display:flex;gap:8px;align-items:center;font-size:12.5px;color:var(--fg-2);padding:3px 0;flex-wrap:wrap}
+  .ipg-code{font-weight:700;color:var(--primary);font-variant-numeric:tabular-nums}
+  .ipg-date{margin-left:auto;color:var(--muted-fg);font-variant-numeric:tabular-nums}
+
   .ic-sm{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
   .empty,.loading{color:var(--muted-fg);font-size:13.5px;font-weight:500;padding:6px 0}
 
@@ -363,6 +396,8 @@
     .panel{padding:13px}
     .topbar{gap:8px;padding:0 12px}
     .dchip{font-size:12.5px;padding:6px 11px}
+    .panel h2{flex-wrap:wrap}
+    .tr-peak{margin-left:0;width:100%;padding-top:2px}
   }
   @media(prefers-reduced-motion:reduce){*{transition-duration:.01ms!important;animation-duration:.01ms!important}}
 </style>
@@ -426,6 +461,12 @@
         <div class="delta" id="revenueWeek"></div>
       </div>
       <div class="stat-card">
+        <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg></div>
+        <div class="label">Gns. ordre</div>
+        <div class="value" id="avgOrder">–</div>
+        <div class="delta" id="avgOrderNote"></div>
+      </div>
+      <div class="stat-card">
         <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
         <div class="label">Konvertering</div>
         <div class="value" id="conversionRate">–</div>
@@ -454,6 +495,12 @@
       <button class="go" onclick="applyDateRange()">Vis</button>
     </div>
     <div class="range-now" id="rangeNow"></div>
+
+    <!-- Omsætning pr. dag — beregnes i browseren ud fra ordrelisten -->
+    <div class="panel">
+      <h2><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Omsætning pr. dag<span class="tr-peak" id="trendPeak"></span></h2>
+      <div id="trendChart" class="loading">Henter…</div>
+    </div>
 
     <!-- Driftsstatus: fejl i ordrekæden (Shipmondo, mails, skab-ordrer) -->
     <div class="panel">
@@ -484,6 +531,7 @@
     <div class="panel">
       <h2><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Nyhedsbrev <span id="nlCount" style="color:var(--muted-fg);font-weight:500;font-size:13px"></span></h2>
       <div id="nlList" class="loading">Henter tilmeldinger…</div>
+      <div class="nl-ipwrap"><div class="om-section-label">IP-tjek · gentagne tilmeldinger fra samme IP</div><div id="nlIpGroups" class="loading">Henter…</div></div>
       <button id="nlCsvBtn" class="dchip" type="button" style="margin-top:10px;display:none">Hent som CSV</button>
     </div>
 
@@ -740,29 +788,46 @@
     lastOrders = data.orders || [];
     renderOrders();
 
+    renderTrend(lastOrders, data.truncated);
+
     // Top products
     const productsEl = document.getElementById('topProducts');
     if (!data.topProducts || data.topProducts.length === 0) {
       productsEl.innerHTML = '<div class="empty">Ingen data.</div>';
     } else {
+      const pMax = Math.max(...data.topProducts.map(p => Number(p.qty) || 0), 1);
       productsEl.innerHTML = data.topProducts.map((p, i) => `
         <div class="product-row">
           <div class="rank">${i + 1}</div>
-          ${p.image ? `<img src="${escapeHtml(p.image)}" alt="" />` : '<div class="product-noimg"></div>'}
-          <div class="product-name">${escapeHtml(p.name)}</div>
+          ${p.image ? `<img src="${escapeHtml(p.image)}" alt="" width="30" height="30" loading="lazy" decoding="async" />` : '<div class="product-noimg"></div>'}
+          <div class="pcol">
+            <div class="product-name">${escapeHtml(p.name)}</div>
+            <div class="bar-mini"><i style="width:${Math.round((Number(p.qty) || 0) / pMax * 100)}%"></i></div>
+          </div>
           <div class="qty">${p.qty}×</div>
         </div>
       `).join('');
     }
+
+    // Gennemsnitlig ordrevaerdi for den valgte periode
+    const nOrders = data.totalOrders || 0;
+    const avgEl = document.getElementById('avgOrder');
+    const avgNote = document.getElementById('avgOrderNote');
+    if (avgEl) avgEl.textContent = nOrders > 0 ? formatKr((data.totalRevenue || 0) / nOrders) : '–';
+    if (avgNote) avgNote.textContent = nOrders > 0 ? 'pr. ordre · ' + label : 'Ingen ordrer i perioden';
 
     // Locations
     const locEl = document.getElementById('locations');
     if (!data.locations || data.locations.length === 0) {
       locEl.innerHTML = '<div class="empty">Ingen data.</div>';
     } else {
+      const lMax = Math.max(...data.locations.map(l => Number(l.count) || 0), 1);
       locEl.innerHTML = data.locations.map(l => `
         <div class="location-row">
-          <div>${escapeHtml(l.location)}</div>
+          <div class="lcol">
+            <div>${escapeHtml(l.location)}</div>
+            <div class="bar-mini"><i style="width:${Math.round((Number(l.count) || 0) / lMax * 100)}%"></i></div>
+          </div>
           <div class="count">${l.count}</div>
         </div>
       `).join('');
@@ -835,15 +900,23 @@
       </div>
     `).join('');
 
-    // Clicking (or Enter/Space on) a row opens the full order detail.
-    ordersEl.querySelectorAll('.order-row').forEach(row => {
-      const id = row.getAttribute('data-id');
-      if (!id) return;
-      row.addEventListener('click', () => openOrderDetail(id));
-      row.addEventListener('keydown', e => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openOrderDetail(id); }
+    // En enkelt delegeret lytter paa listen i stedet for to pr. raekke
+    // (op til 100 ordrer = 200 lyttere ved hver gen-rendering).
+    if (!ordersEl.__delegated) {
+      ordersEl.__delegated = true;
+      const openFromEvent = e => {
+        const row = e.target.closest('.order-row');
+        const id = row && row.getAttribute('data-id');
+        if (id) openOrderDetail(id);
+      };
+      ordersEl.addEventListener('click', openFromEvent);
+      ordersEl.addEventListener('keydown', e => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        if (!e.target.closest('.order-row')) return;
+        e.preventDefault();
+        openFromEvent(e);
       });
-    });
+    }
   }
 
   // ── ORDER DETAIL MODAL ──
@@ -1028,6 +1101,54 @@
       });
   }
 
+  // Dagsgraf bygget af de ordrer der allerede er hentet — ingen ekstra API-kald.
+  function renderTrend(orders, truncated) {
+    const el = document.getElementById('trendChart');
+    const peakEl = document.getElementById('trendPeak');
+    if (!el) return;
+    const list = (orders || []).filter(o => o && o.date != null);
+    if (!list.length) {
+      el.className = 'empty'; el.textContent = 'Ingen ordrer i perioden.';
+      if (peakEl) peakEl.textContent = '';
+      return;
+    }
+    const DAY = 86400000;
+    const startOf = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
+    const sums = new Map();
+    let first = Infinity;
+    list.forEach(o => {
+      const k = startOf(o.date);
+      if (!Number.isFinite(k)) return;
+      sums.set(k, (sums.get(k) || 0) + (Number(o.amount) || 0));
+      if (k < first) first = k;
+    });
+    if (!Number.isFinite(first)) { el.className = 'empty'; el.textContent = 'Ingen ordrer i perioden.'; return; }
+
+    const today = startOf(Date.now());
+    const days = [];
+    for (let t = first; t <= today; t += DAY) days.push(t);
+    const max = Math.max(...days.map(t => sums.get(t) || 0), 1);
+    const fmtDay = t => new Date(t).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
+
+    el.className = '';
+    el.innerHTML =
+      '<div class="tr">' + days.map(t => {
+        const v = sums.get(t) || 0;
+        const h = Math.max(v > 0 ? 6 : 2, Math.round(v / max * 100));
+        const cls = 'tr-col' + (v === 0 ? ' is-zero' : '') + (t === today ? ' is-today' : '');
+        return '<div class="' + cls + '" title="' + fmtDay(t) + ': ' + formatKr(v) + '">'
+             +   '<i class="tr-bar" style="height:' + h + '%"></i>'
+             + '</div>';
+      }).join('') + '</div>'
+      + '<div class="tr-axis"><span>' + fmtDay(days[0]) + '</span><span>' + fmtDay(days[days.length - 1]) + '</span></div>'
+      + (truncated ? '<div class="tr-note">Kun de nyeste ordrer er med — vælg en kortere periode for et fuldt billede.</div>' : '');
+
+    if (peakEl) {
+      const peak = days.reduce((b, t) => (sums.get(t) || 0) > (sums.get(b) || 0) ? t : b, days[0]);
+      peakEl.textContent = 'Bedste dag: ' + fmtDay(peak) + ' · ' + formatKr(sums.get(peak) || 0);
+    }
+  }
+
   function formatKr(amount) {
     return Math.round(amount).toLocaleString('da-DK') + ' kr.';
   }
@@ -1075,6 +1196,7 @@
     else { searchNote.innerHTML = html; searchNote.style.display = 'block'; }
   }
 
+  let searchTimer = null;
   orderSearch.addEventListener('input', () => {
     // Any typing returns to instant range-filtering; the previous all-time
     // results are cleared until the user presses Enter again.
@@ -1082,7 +1204,9 @@
     setSearchNote('');
     orderQuery = orderSearch.value.trim().toLowerCase();
     orderSearchClear.classList.toggle('show', orderQuery.length > 0);
-    renderOrders();
+    // Listen kan indeholde 100 raekker — vent til der er ro paa tastaturet.
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(renderOrders, 120);
   });
 
   orderSearch.addEventListener('keydown', e => {
@@ -1138,6 +1262,44 @@
 
 <script>
 // ── NYHEDSBREVS-LISTE ───────────────────────────────────────────────────────
+  // IP-tjek: samler tilmeldinger pr. afsender-IP. Flere tilmeldinger fra samme
+  // IP er det staerkeste tegn paa, at én person har brugt flere adresser.
+  function renderIpGroups(emails) {
+    const box = document.getElementById('nlIpGroups');
+    if (!box) return;
+    const groups = new Map();
+    (emails || []).forEach(e => {
+      const ip = (e.ip || '').trim();
+      if (!ip || ip === 'unknown') return;
+      if (!groups.has(ip)) groups.set(ip, []);
+      groups.get(ip).push(e);
+    });
+    const multi = [...groups.entries()].filter(([, v]) => v.length > 1)
+                                       .sort((a, b) => b[1].length - a[1].length);
+    const withIp = [...groups.values()].reduce((n, v) => n + v.length, 0);
+    if (!withIp) {
+      box.className = 'empty';
+      box.textContent = 'Ingen IP gemt paa disse tilmeldinger endnu — de registreres fremover.';
+      return;
+    }
+    if (!multi.length) {
+      box.className = 'empty';
+      box.textContent = withIp + ' tilmeldinger har IP, og ingen IP gaar igen.';
+      return;
+    }
+    box.className = '';
+    box.innerHTML = multi.map(([ip, list]) => {
+      const codes = list.filter(e => e.code).length;
+      return '<div class="ipg">'
+        + '<div class="ipg-head"><b>' + escapeHtml(ip) + '</b>'
+        + '<span>' + list.length + ' tilmeldinger · ' + codes + ' koder</span></div>'
+        + list.map(e => '<div class="ipg-row">' + escapeHtml(e.email)
+            + (e.code ? '<span class="ipg-code">' + escapeHtml(e.code) + '</span>' : '')
+            + '<span class="ipg-date">' + (e.t ? new Date(e.t).toLocaleDateString('da-DK') : '') + '</span></div>').join('')
+        + '</div>';
+    }).join('');
+  }
+
 async function loadNewsletter() {
   const list = document.getElementById('nlList');
   const cnt = document.getElementById('nlCount');
@@ -1159,11 +1321,14 @@ async function loadNewsletter() {
       + '<span style="font-weight:600">' + escapeHtml(e.email) + '</span>'
       + '<span style="color:var(--muted-fg);font-size:12px;white-space:nowrap">'
       + (e.code ? '<span style="font-weight:700;color:var(--blue);margin-right:10px">' + escapeHtml(e.code) + '</span>' : '')
+      + (e.ip ? '<span class="nl-ip" title="Tilmeldings-IP">' + escapeHtml(e.ip) + '</span>' : '')
       + (e.t ? new Date(e.t).toLocaleDateString('da-DK') : '') + '</span>'
       + '</div>').join('');
+
+    renderIpGroups(d.emails);
     csvBtn.style.display = 'inline-block';
     csvBtn.onclick = () => {
-      const csv = 'email;rabatkode;dato\n' + d.emails.map(e => e.email + ';' + (e.code || '') + ';' + (e.t ? new Date(e.t).toISOString().slice(0, 10) : '')).join('\n');
+      const csv = 'email;rabatkode;dato;ip\n' + d.emails.map(e => e.email + ';' + (e.code || '') + ';' + (e.t ? new Date(e.t).toISOString().slice(0, 10) : '') + ';' + (e.ip || '')).join('\n');
       const a = document.createElement('a');
       a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
       a.download = 'nyhedsbrev-tilmeldinger.csv';
