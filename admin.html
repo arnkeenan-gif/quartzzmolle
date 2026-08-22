@@ -270,19 +270,39 @@
   .location-row:first-child{padding-top:0}
   .location-row .count{font-weight:700;color:var(--primary);font-variant-numeric:tabular-nums}
 
-  /* ---------- DAGSGRAF ---------- */
+  /* ---------- DAGSGRAF (SVG område-graf) ---------- */
   .tr-peak{margin-left:auto;font-size:11.5px;font-weight:600;color:var(--muted-fg);text-transform:none;letter-spacing:0;font-variant-numeric:tabular-nums}
-  .tr{display:flex;align-items:flex-end;gap:2px;height:96px;padding-top:4px}
-  .tr-col{flex:1;min-width:2px;display:flex;flex-direction:column;justify-content:flex-end;height:100%;cursor:default}
-  .tr-bar{
-    width:100%;border-radius:3px 3px 0 0;background:var(--primary);min-height:2px;
-    transition:height .5s cubic-bezier(.22,1,.36,1),background-color .15s ease
+  #trendChart{position:relative}
+  .trc{display:block;width:100%;height:auto;overflow:visible;touch-action:pan-y}
+  .trc-grid{stroke:var(--border);stroke-width:1;stroke-dasharray:4 4}
+  .trc-axis{stroke:var(--border);stroke-width:1}
+  .trc-ylab,.trc-xlab{fill:var(--muted-fg);font-size:11px;font-weight:500;font-variant-numeric:tabular-nums}
+  .trc-ylab{text-anchor:end}
+  .trc-area{opacity:.9}
+  .trc-line{fill:none;stroke:var(--primary);stroke-width:2.25;stroke-linejoin:round;stroke-linecap:round}
+  .trc-dot{fill:var(--primary)}
+  .trc-dot.today{fill:var(--green)}
+  .trc-cursor{stroke:var(--primary);stroke-width:1;stroke-dasharray:3 3;opacity:0;transition:opacity .12s ease}
+  .trc-hit{fill:transparent}
+  .trc-hi{fill:#fff;stroke:var(--primary);stroke-width:2.5;opacity:0;transition:opacity .1s ease}
+  .trc.show-cursor .trc-cursor,.trc.show-cursor .trc-hi{opacity:1}
+  @media(prefers-reduced-motion:no-preference){
+    .trc-line{stroke-dasharray:1600;stroke-dashoffset:1600;animation:trcDraw 1s cubic-bezier(.22,1,.36,1) forwards}
+    .trc-area{opacity:0;animation:trcFade .6s ease .35s forwards}
+    @keyframes trcDraw{to{stroke-dashoffset:0}}
+    @keyframes trcFade{to{opacity:.9}}
   }
-  .tr-col:hover .tr-bar{background:var(--primary-hover)}
-  .tr-col.is-zero .tr-bar{background:var(--border)}
-  .tr-col.is-today .tr-bar{background:var(--green)}
-  .tr-axis{display:flex;justify-content:space-between;gap:8px;margin-top:8px;font-size:11.5px;font-weight:500;color:var(--muted-fg)}
-  .tr-note{margin-top:8px;font-size:11.5px;font-weight:500;color:var(--subtle-fg)}
+  .trc-tip{
+    position:absolute;pointer-events:none;z-index:5;transform:translate(-50%,-120%);
+    background:var(--fg);color:#fff;border-radius:8px;padding:7px 10px;box-shadow:var(--sh-lg);
+    font-size:12px;line-height:1.35;white-space:nowrap;opacity:0;transition:opacity .12s ease
+  }
+  .trc-tip.show{opacity:1}
+  .trc-tip b{font-weight:700;font-variant-numeric:tabular-nums}
+  .trc-tip .d{color:rgba(255,255,255,.7);font-size:11px}
+  .trc-sum{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:12px;font-size:12px;font-weight:500;color:var(--muted-fg)}
+  .trc-sum b{color:var(--fg);font-weight:700;font-variant-numeric:tabular-nums}
+  .trc-note{margin-top:8px;font-size:11.5px;font-weight:500;color:var(--subtle-fg)}
 
   /* proportions-bjaelker paa lister (samme moenster som stat-kortene) */
   .bar-mini{height:4px;border-radius:999px;background:var(--muted);overflow:hidden;margin-top:5px}
@@ -1101,13 +1121,48 @@
       });
   }
 
-  // Dagsgraf bygget af de ordrer der allerede er hentet — ingen ekstra API-kald.
+  // Dagsgraf: interaktiv SVG-område-graf bygget af de ordrer der allerede er
+  // hentet — ingen ekstra API-kald. Design efter 21st.dev "Total Sales Chart"
+  // (glat linje + gradient-flade + stiplede gridlines + hover-tooltip).
+  function trFmtCompact(v) {
+    v = Math.round(v);
+    if (v >= 1000000) return (v / 1000000).toFixed(1).replace('.', ',').replace(',0', '') + 'M';
+    if (v >= 1000) return (v / 1000).toFixed(1).replace('.', ',').replace(',0', '') + 'k';
+    return String(v);
+  }
+  // Monoton kubisk interpolation (Fritsch–Carlson) — glat linje der ALDRIG
+  // svinger under nul, så det fyldte område aldrig ser forkert ud.
+  function trSmoothPath(pts) {
+    const n = pts.length;
+    if (n === 0) return '';
+    if (n === 1) return 'M ' + pts[0].x + ' ' + pts[0].y;
+    if (n === 2) return 'M ' + pts[0].x + ' ' + pts[0].y + ' L ' + pts[1].x + ' ' + pts[1].y;
+    const dx = [], dy = [], d = [];
+    for (let i = 0; i < n - 1; i++) { dx[i] = pts[i + 1].x - pts[i].x; dy[i] = pts[i + 1].y - pts[i].y; d[i] = dy[i] / dx[i]; }
+    const m = [d[0]];
+    for (let i = 1; i < n - 1; i++) m[i] = (d[i - 1] * d[i] <= 0) ? 0 : (d[i - 1] + d[i]) / 2;
+    m[n - 1] = d[n - 2];
+    for (let i = 0; i < n - 1; i++) {
+      if (d[i] === 0) { m[i] = 0; m[i + 1] = 0; continue; }
+      const a = m[i] / d[i], b = m[i + 1] / d[i], h = a * a + b * b;
+      if (h > 9) { const tau = 3 / Math.sqrt(h); m[i] = tau * a * d[i]; m[i + 1] = tau * b * d[i]; }
+    }
+    let p = 'M ' + pts[0].x + ' ' + pts[0].y;
+    for (let i = 0; i < n - 1; i++) {
+      const c1x = pts[i].x + dx[i] / 3, c1y = pts[i].y + m[i] * dx[i] / 3;
+      const c2x = pts[i + 1].x - dx[i] / 3, c2y = pts[i + 1].y - m[i + 1] * dx[i] / 3;
+      p += ' C ' + c1x + ' ' + c1y + ' ' + c2x + ' ' + c2y + ' ' + pts[i + 1].x + ' ' + pts[i + 1].y;
+    }
+    return p;
+  }
+
   function renderTrend(orders, truncated) {
     const el = document.getElementById('trendChart');
     const peakEl = document.getElementById('trendPeak');
     if (!el) return;
     const list = (orders || []).filter(o => o && o.date != null);
     if (!list.length) {
+      el._trend = null;
       el.className = 'empty'; el.textContent = 'Ingen ordrer i perioden.';
       if (peakEl) peakEl.textContent = '';
       return;
@@ -1115,38 +1170,128 @@
     const DAY = 86400000;
     const startOf = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
     const sums = new Map();
-    let first = Infinity;
+    let first = Infinity, total = 0;
     list.forEach(o => {
       const k = startOf(o.date);
       if (!Number.isFinite(k)) return;
-      sums.set(k, (sums.get(k) || 0) + (Number(o.amount) || 0));
+      const v = Number(o.amount) || 0;
+      sums.set(k, (sums.get(k) || 0) + v);
+      total += v;
       if (k < first) first = k;
     });
-    if (!Number.isFinite(first)) { el.className = 'empty'; el.textContent = 'Ingen ordrer i perioden.'; return; }
+    if (!Number.isFinite(first)) { el._trend = null; el.className = 'empty'; el.textContent = 'Ingen ordrer i perioden.'; return; }
 
     const today = startOf(Date.now());
     const days = [];
     for (let t = first; t <= today; t += DAY) days.push(t);
     const max = Math.max(...days.map(t => sums.get(t) || 0), 1);
-    const fmtDay = t => new Date(t).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
+    const peak = days.reduce((b, t) => (sums.get(t) || 0) > (sums.get(b) || 0) ? t : b, days[0]);
 
     el.className = '';
-    el.innerHTML =
-      '<div class="tr">' + days.map(t => {
-        const v = sums.get(t) || 0;
-        const h = Math.max(v > 0 ? 6 : 2, Math.round(v / max * 100));
-        const cls = 'tr-col' + (v === 0 ? ' is-zero' : '') + (t === today ? ' is-today' : '');
-        return '<div class="' + cls + '" title="' + fmtDay(t) + ': ' + formatKr(v) + '">'
-             +   '<i class="tr-bar" style="height:' + h + '%"></i>'
-             + '</div>';
-      }).join('') + '</div>'
-      + '<div class="tr-axis"><span>' + fmtDay(days[0]) + '</span><span>' + fmtDay(days[days.length - 1]) + '</span></div>'
-      + (truncated ? '<div class="tr-note">Kun de nyeste ordrer er med — vælg en kortere periode for et fuldt billede.</div>' : '');
-
+    el._trend = { days, sums, max, today, total, peak, truncated };
+    drawTrend(el);
+    if (!el._ro && typeof ResizeObserver !== 'undefined') {
+      let raf = 0;
+      el._ro = new ResizeObserver(() => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => drawTrend(el)); });
+      el._ro.observe(el);
+    }
     if (peakEl) {
-      const peak = days.reduce((b, t) => (sums.get(t) || 0) > (sums.get(b) || 0) ? t : b, days[0]);
+      const fmtDay = t => new Date(t).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
       peakEl.textContent = 'Bedste dag: ' + fmtDay(peak) + ' · ' + formatKr(sums.get(peak) || 0);
     }
+  }
+
+  function drawTrend(el) {
+    const st = el._trend; if (!st) return;
+    const { days, sums, max, today, total } = st;
+    const N = days.length;
+    const W = Math.max(240, Math.round(el.clientWidth || el.getBoundingClientRect().width || 600));
+    const H = 200, padL = 46, padR = 12, padT = 12, padB = 26;
+    const iw = W - padL - padR, ih = H - padT - padB;
+    const xOf = i => N <= 1 ? padL + iw / 2 : padL + (i / (N - 1)) * iw;
+    const yOf = v => padT + ih - (Math.max(0, v) / max) * ih;
+    const pts = days.map((t, i) => ({ x: xOf(i), y: yOf(sums.get(t) || 0), t, v: sums.get(t) || 0, i }));
+    const base = padT + ih;
+    const linePath = trSmoothPath(pts);
+    const areaPath = pts.length > 1
+      ? linePath + ' L ' + pts[pts.length - 1].x + ' ' + base + ' L ' + pts[0].x + ' ' + base + ' Z'
+      : '';
+    const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+    const fmtDay = t => new Date(t).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
+
+    // gridlines + y-akse-labels ved 0, 50%, 100%
+    let grid = '';
+    for (let g = 0; g <= 2; g++) {
+      const gy = padT + (ih * g) / 2, val = max * (1 - g / 2);
+      grid += '<line class="trc-grid" x1="' + padL + '" y1="' + gy + '" x2="' + (W - padR) + '" y2="' + gy + '"/>'
+            + '<text class="trc-ylab" x="' + (padL - 8) + '" y="' + (gy + 3.5) + '">' + trFmtCompact(val) + '</text>';
+    }
+    // x-akse-labels: første, midt, sidste
+    const xi = N <= 1 ? [0] : (N === 2 ? [0, N - 1] : [0, Math.floor((N - 1) / 2), N - 1]);
+    let xlab = '';
+    xi.forEach(i => {
+      const anchor = i === 0 ? 'start' : (i === N - 1 ? 'end' : 'middle');
+      xlab += '<text class="trc-xlab" x="' + xOf(i) + '" y="' + (H - 8) + '" text-anchor="' + anchor + '">' + fmtDay(days[i]) + '</text>';
+    });
+    // faste punkt-prikker (kun ved få dage, ellers for tæt)
+    let dots = '';
+    if (N <= 14) pts.forEach(p => {
+      dots += '<circle class="trc-dot' + (p.t === today ? ' today' : '') + '" cx="' + p.x + '" cy="' + p.y + '" r="' + (p.t === today ? 3.5 : 2.5) + '"/>';
+    }); else {
+      const tp = pts.find(p => p.t === today);
+      if (tp) dots += '<circle class="trc-dot today" cx="' + tp.x + '" cy="' + tp.y + '" r="3.5"/>';
+    }
+
+    const gid = 'trcGrad';
+    const svg =
+      '<svg class="trc" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="Omsætning pr. dag">'
+      + '<defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1">'
+      +   '<stop offset="0%" stop-color="var(--primary)" stop-opacity="0.20"/>'
+      +   '<stop offset="100%" stop-color="var(--primary)" stop-opacity="0"/>'
+      + '</linearGradient></defs>'
+      + grid
+      + (areaPath ? '<path class="trc-area" d="' + areaPath + '" fill="url(#' + gid + ')"/>' : '')
+      + '<path class="trc-line" d="' + linePath + '"/>'
+      + dots
+      + '<line class="trc-cursor" x1="0" y1="' + padT + '" x2="0" y2="' + base + '"/>'
+      + '<circle class="trc-hi" cx="0" cy="0" r="4.5"/>'
+      + xlab
+      + '<rect class="trc-hit" x="' + padL + '" y="' + padT + '" width="' + Math.max(1, iw) + '" height="' + ih + '"/>'
+      + '</svg>';
+
+    const days1 = fmtDay(days[0]), daysN = fmtDay(days[N - 1]);
+    const avg = total / N;
+    const sum = '<div class="trc-sum"><span>I alt <b>' + formatKr(total) + '</b></span>'
+      + '<span>Gns. <b>' + formatKr(avg) + '</b>/dag</span>'
+      + '<span><b>' + N + '</b> dage</span></div>'
+      + (st.truncated ? '<div class="trc-note">Kun de nyeste ordrer er med — vælg en kortere periode for et fuldt billede.</div>' : '');
+
+    el.innerHTML = svg + '<div class="trc-tip" id="trcTip"></div>' + sum;
+
+    // interaktivitet
+    const svgEl = el.querySelector('svg');
+    const cursor = svgEl.querySelector('.trc-cursor');
+    const hi = svgEl.querySelector('.trc-hi');
+    const tip = el.querySelector('#trcTip');
+    const move = (clientX) => {
+      const rect = svgEl.getBoundingClientRect();
+      const scale = W / rect.width;
+      const px = (clientX - rect.left) * scale;
+      let idx = N <= 1 ? 0 : Math.round(((px - padL) / iw) * (N - 1));
+      idx = Math.max(0, Math.min(N - 1, idx));
+      const p = pts[idx];
+      svgEl.classList.add('show-cursor');
+      cursor.setAttribute('x1', p.x); cursor.setAttribute('x2', p.x);
+      hi.setAttribute('cx', p.x); hi.setAttribute('cy', p.y);
+      tip.innerHTML = '<b>' + esc(formatKr(p.v)) + '</b><div class="d">' + esc(fmtDay(p.t)) + (p.t === today ? ' · i dag' : '') + '</div>';
+      const leftPct = (p.x / W) * 100;
+      tip.style.left = Math.max(8, Math.min(el.clientWidth - 8, (leftPct / 100) * el.clientWidth)) + 'px';
+      tip.style.top = ((p.y / H) * (svgEl.getBoundingClientRect().height)) + 'px';
+      tip.classList.add('show');
+    };
+    svgEl.addEventListener('pointermove', e => move(e.clientX));
+    svgEl.addEventListener('pointerdown', e => move(e.clientX));
+    svgEl.addEventListener('pointerleave', () => { svgEl.classList.remove('show-cursor'); tip.classList.remove('show'); });
   }
 
   function formatKr(amount) {
@@ -1328,7 +1473,17 @@ async function loadNewsletter() {
     renderIpGroups(d.emails);
     csvBtn.style.display = 'inline-block';
     csvBtn.onclick = () => {
-      const csv = 'email;rabatkode;dato;ip\n' + d.emails.map(e => e.email + ';' + (e.code || '') + ';' + (e.t ? new Date(e.t).toISOString().slice(0, 10) : '') + ';' + (e.ip || '')).join('\n');
+      // Sikr mod CSV-formel-injektion: et felt der starter med = + - @ (eller
+      // tab/CR) kan udføre en formel i Excel/Sheets. Præfiks med ' og pak i
+      // anførselstegn.
+      const csvCell = (v) => {
+        let x = String(v == null ? '' : v);
+        if (/^[=+\-@\t\r]/.test(x)) x = "'" + x;
+        return '"' + x.replace(/"/g, '""') + '"';
+      };
+      const csv = 'email;rabatkode;dato;ip\n' + d.emails.map(e =>
+        [csvCell(e.email), csvCell(e.code || ''), csvCell(e.t ? new Date(e.t).toISOString().slice(0, 10) : ''), csvCell(e.ip || '')].join(';')
+      ).join('\n');
       const a = document.createElement('a');
       a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
       a.download = 'nyhedsbrev-tilmeldinger.csv';
