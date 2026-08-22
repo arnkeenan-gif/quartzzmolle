@@ -62,6 +62,17 @@ export const kv = {
     return client().set(...args); // 'OK' when set, null when NX/XX prevents it
   },
   async del(...keys) { return client().del(...keys); },
+  // Atomisk hent-og-slet: kun ét samtidigt kald faar vaerdien tilbage, resten
+  // faar null. Bruges til at claime et engangs-token uden race (Redis 6.2+),
+  // med en get-derefter-del-fallback paa aeldre servere.
+  async getdel(key) {
+    const c = client();
+    if (typeof c.getdel === 'function') { try { return dec(await c.getdel(key)); } catch {} }
+    const v = dec(await c.get(key));
+    if (v == null) return null;
+    const removed = await c.del(key); // atomisk: kun vinderen faar 1
+    return removed === 1 ? v : null;
+  },
   async expire(key, seconds) { return client().expire(key, seconds); },
   async incr(key) { return client().incr(key); },
 

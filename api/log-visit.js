@@ -4,7 +4,7 @@
 // Stores: visitor IDs with timestamps for "active now" + daily counters.
 
 import { kv } from './_kv.js';
-import { randomInt } from 'crypto';
+import { randomInt, randomBytes, createHash } from 'crypto';
 
 // Only allow the site's own origins to post visitor heartbeats (reduces
 // off-site abuse / metric pollution). '*' previously let anyone write.
@@ -22,6 +22,11 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
+  // Bekræftelseslinket i mailen er et alm. GET — vis "bekræft"-siden.
+  if (req.method === 'GET') {
+    if ((req.query && req.query.action) === 'nlconfirm') return confirmSignup(req, res, cleanToken(req.query.t));
+    return res.status(405).end();
+  }
   if (req.method !== 'POST') return res.status(405).end();
   // Reject cross-origin callers (requests with an Origin that isn't ours).
   // Same-origin fetches from our own pages typically omit Origin or send ours.
@@ -33,6 +38,9 @@ export default async function handler(req, res) {
   if (typeof nlBody === 'string') { try { nlBody = JSON.parse(nlBody); } catch { nlBody = {}; } }
   if (nlBody && nlBody.action === 'newsletter') {
     return handleNewsletter(req, res, nlBody);
+  }
+  if (nlBody && nlBody.action === 'nlchallenge') {
+    return handleNlChallenge(req, res);
   }
 
   // ── KUNDEREJSE: anonym "i kurv" / "gået til checkout" til admin-tragten ──
@@ -86,12 +94,11 @@ export default async function handler(req, res) {
   }
 }
 
-// ── NEWSLETTER SIGNUP ────────────────────────────────────────────────────────
-// Stores the email in Redis (newsletter:emails hash) together with a UNIQUE
-// single-use 10% discount code created in Stripe for that subscriber, and sends
-// the welcome email with the code via Resend. Duplicate signups return ok
-// without re-sending, so the form can't be abused to spam someone's inbox.
-const FALLBACK_CODE = 'VELKOMMEN10';
+// ── NEWSLETTER SIGNUP (dobbelt opt-in) ───────────────────────────────────────
+// En tilmelding gemmes som AFVENTENDE og udløser en bekræftelses-mail. Først
+// når kunden klikker bekræftelseslinket, udstedes en UNIK engangs-rabatkode i
+// Stripe og velkomstmailen sendes. Der findes ingen delt fælles-kode: fejler
+// den unikke kode, tilmeldes kunden uden kode (ingen kode kan misbruges).
 
 // Normalise an address so alias tricks can't harvest extra codes:
 // everything after "+" in the local part is dropped for all domains, and dots
@@ -106,11 +113,89 @@ function normalizeEmail(email) {
   return local + '@' + domain;
 }
 
-const MAX_CODES_PER_IP = 3;          // per 30 days
+const MAX_SIGNUPS_PER_IP_DAY = 3;    // tilmeldinger pr. IP pr. døgn
+const MAX_SIGNUPS_PER_HOUR = 25;     // global nødbremse på tilmeldinger
+const MAX_CODES_PER_DAY = 60;        // globalt loft på udstedte koder pr. døgn
+                                     // (organisk ~5-20; over dette = angreb → tilmeldt uden kode)
+const MAX_CODES_PER_IP = 3;          // koder pr. IP pr. 30 dage
 const IP_WINDOW_SECONDS = 30 * 86400;
+const POW_BITS = 15;                 // usynlig verifikation: ~0,5 sek. regnearbejde i browseren
+const POW_TTL = 900;                 // udfordringen gælder 15 minutter
+const POW_MIN_AGE_MS = 2000;         // et menneske bruger mindst et par sekunder på formularen
+const DAYSEC = 86400;
+const dayStamp = () => new Date().toISOString().slice(0, 10);
+const hourStamp = () => new Date().toISOString().slice(0, 13);
+const SITE = 'https://www.quartzmolle.dk';
+
+function clientIp(req) {
+  return String(req.headers['x-real-ip'] || req.headers['x-forwarded-for'] || '')
+    .split(',')[0].trim() || 'unknown';
+}
+
+function escapeHtmlNl(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// ── USYNLIG BOT-VERIFIKATION (proof-of-work) ────────────────────────────────
+// Browseren henter en engangs-udfordring og løser i baggrunden en lille
+// regneopgave (~0,5 sek., usynlig for kunden). Serveren kræver beviset før
+// tilmeldingen accepteres. En bot der bare POST'er direkte til API'et har
+// intet bevis — og en bot der VIL løse opgaven, betaler CPU-tid pr. forsøg,
+// hvilket sammen med IP- og døgn-lofterne gør masse-tilmelding urentabel.
+function leadingZeroBits(buf) {
+  let bits = 0;
+  for (let i = 0; i < buf.length; i++) {
+    const b = buf[i];
+    if (b === 0) { bits += 8; continue; }
+    for (let m = 128; m > 0; m >>= 1) { if (b & m) return bits; bits++; }
+  }
+  return bits;
+}
+
+async function handleNlChallenge(req, res) {
+  try {
+    // Let loft på udstedte udfordringer pr. IP (fair for delte netværk).
+    const ip = clientIp(req);
+    const day = dayStamp();
+    let issued = 0;
+    try {
+      issued = await kv.incr(`newsletter:powip:${ip}:${day}`);
+      await kv.expire(`newsletter:powip:${ip}:${day}`, DAYSEC + 3600);
+    } catch {}
+    if (issued > 30) return res.status(429).json({ ok: false });
+
+    const ch = randomBytes(18).toString('base64url');
+    await kv.set(`newsletter:pow:${ch}`, { t: Date.now() }, { ex: POW_TTL });
+    return res.status(200).json({ ok: true, ch, bits: POW_BITS });
+  } catch (e) {
+    console.error('nlchallenge error:', e && e.message);
+    return res.status(500).json({ ok: false });
+  }
+}
+
+// Verificér beviset: udfordringen skal findes (engangs — atomisk getdel),
+// være mindst POW_MIN_AGE_MS gammel (mennesker taster ikke på 0 sek.) og
+// hashen skal have de krævede foranstillede nul-bits.
+async function verifyPow(ch, nonce) {
+  const c = String(ch || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40);
+  const n = String(nonce || '').slice(0, 20);
+  if (!c || !n) return false;
+  let rec = null;
+  try { rec = await kv.getdel(`newsletter:pow:${c}`); } catch {}
+  if (!rec || !rec.t) return false;
+  if (Date.now() - rec.t < POW_MIN_AGE_MS) return false;
+  const hash = createHash('sha256').update(c + ':' + n).digest();
+  return leadingZeroBits(hash) >= POW_BITS;
+}
 
 async function handleNewsletter(req, res, body) {
   try {
+    // Honningkrukke: usynligt felt. Udfyldt = bot. Svar pænt, gør intet.
+    if (String(body.website || '').trim()) {
+      return res.status(200).json({ ok: true });
+    }
+
     const email = String(body.email || '').trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) || email.length > 120) {
       return res.status(400).json({ ok: false, error: 'Skriv en gyldig e-mailadresse.' });
@@ -118,47 +203,210 @@ async function handleNewsletter(req, res, body) {
     const key = normalizeEmail(email);
     const lang = String(body.lang || 'da') === 'en' ? 'en' : 'da';
 
-    // Dedupe on the NORMALISED address: name+2@gmail.com can't harvest a second
-    // code for name@gmail.com.
+    // Allerede tilmeldt (normaliseret adresse — punktum/plus-tricks kan ikke
+    // hente en kode nummer to).
     let existing = null;
     try { existing = await kv.hget('newsletter:emails', key); } catch {}
     if (existing) return res.status(200).json({ ok: true, already: true });
 
-    // IP throttle: collect the signup IP and only mint codes for the first few
-    // signups per IP per 30 days. Further signups still join the list but get
-    // no code (the response stays ok so abusers learn nothing).
-    const ip = String(req.headers['x-real-ip'] || req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown';
-    let ipCount = 0;
+    // USYNLIG VERIFIKATION: uden gyldigt engangs-bevis afvises tilmeldingen.
+    // Rigtige kunder mærker intet — deres browser har løst opgaven i
+    // baggrunden. Fejler beviset (fx udløbet), beder vi pænt om et nyt forsøg.
+    const powOk = await verifyPow(body.ch, body.nonce);
+    if (!powOk) {
+      return res.status(400).json({ ok: false, retry: true, error: 'Bekræftelsen udløb — prøv igen.' });
+    }
+
+    // IP-loft: max 3 tilmeldinger pr. IP pr. døgn.
+    const ip = clientIp(req);
+    const day = dayStamp();
+    let sigIp = 0;
     try {
-      ipCount = await kv.incr(`newsletter:ipcount:${ip}`);
-      if (ipCount === 1) await kv.expire(`newsletter:ipcount:${ip}`, IP_WINDOW_SECONDS);
+      sigIp = await kv.incr(`newsletter:sig:${ip}:${day}`);
+      await kv.expire(`newsletter:sig:${ip}:${day}`, DAYSEC + 3600);
     } catch {}
-    const allowCode = ipCount <= MAX_CODES_PER_IP;
+
+    // Global nødbremse: organisk er 1-5 tilmeldinger om dagen.
+    const hour = hourStamp();
+    let sigAll = 0;
+    try {
+      sigAll = await kv.incr(`newsletter:sigg:${hour}`);
+      await kv.expire(`newsletter:sigg:${hour}`, 7200);
+    } catch {}
+    if (sigIp > MAX_SIGNUPS_PER_IP_DAY || sigAll > MAX_SIGNUPS_PER_HOUR) {
+      console.warn('newsletter: signup throttled', { ip, sigIp, sigAll });
+      return res.status(200).json({ ok: true });
+    }
+
+    // Atomisk NX-lås pr. adresse: to samtidige tilmeldinger af samme adresse
+    // bliver til én.
+    let gotLock = null;
+    try { gotLock = await kv.set(`newsletter:siglock:${key}`, '1', { nx: true, ex: 60 }); } catch {}
+    if (gotLock !== 'OK') return res.status(200).json({ ok: true, already: true });
+
+    // Kode-lofter: globalt pr. døgn + pr. IP pr. 30 dage. Rammes et loft,
+    // tilmeldes man stadig — bare uden kode. Fail CLOSED ved tæller-fejl.
+    let allowCode = true;
+    try {
+      const minted = await kv.incr(`newsletter:mintday:${day}`);
+      await kv.expire(`newsletter:mintday:${day}`, DAYSEC + 3600);
+      if (minted > MAX_CODES_PER_DAY) allowCode = false;
+    } catch (e) { allowCode = false; console.error('mint counter failed — failing closed', e && e.message); }
+    if (allowCode) {
+      try {
+        const ipMint = await kv.incr(`newsletter:ipcount:${ip}`);
+        await kv.expire(`newsletter:ipcount:${ip}`, IP_WINDOW_SECONDS);
+        if (ipMint > MAX_CODES_PER_IP) allowCode = false;
+      } catch (e) { allowCode = false; console.error('ip mint counter failed — failing closed', e && e.message); }
+    }
 
     let code = null;
     if (allowCode) {
-      try { code = await createUniqueDiscountCode(); } catch (e) { console.error('unique code failed:', (e && e.raw && e.raw.message) || (e && e.message), '| type:', e && e.type, '| code:', e && e.code); }
-      if (!code) {
-        try { await ensureFallbackPromo(); code = FALLBACK_CODE; }
-        catch (e) { console.error('fallback promo failed too:', (e && e.raw && e.raw.message) || (e && e.message)); code = null; }
-      }
+      try { code = await createUniqueDiscountCode(); } catch (e) { console.error('unique code failed:', (e && e.raw && e.raw.message) || (e && e.message)); }
     } else {
-      console.warn('newsletter: IP over code limit, no code minted', ip);
+      console.warn('newsletter: code cap reached, subscribing without code', { ip });
     }
 
-    try { await kv.hset('newsletter:emails', { [key]: { t: Date.now(), code, email, ip } }); } catch (e) {
+    try {
+      await kv.hset('newsletter:emails', { [key]: { t: Date.now(), code, email, ip } });
+    } catch (e) {
+      try { await kv.del(`newsletter:siglock:${key}`); } catch {}
       console.error('newsletter store failed:', e.message);
       return res.status(500).json({ ok: false, error: 'Kunne ikke gemme tilmeldingen. Prøv igen.' });
     }
+    try { await kv.del(`newsletter:siglock:${key}`); } catch {}
 
-    // Welcome email (best-effort — the signup itself is saved). Over-limit
-    // signups get the welcome WITHOUT a discount code.
+    // Velkomstmail med koden — med det samme, som før.
     try { await sendWelcomeEmail(email, code, lang); } catch (e) { console.error('welcome email failed:', e.message); }
 
-    return res.status(200).json({ ok: true });
+    return res.status(200).json({ ok: true, stored: true });
   } catch (e) {
     console.error('newsletter error:', e);
     return res.status(500).json({ ok: false, error: 'Noget gik galt. Prøv igen.' });
+  }
+}
+
+// ── BEKRÆFTELSE ──────────────────────────────────────────────────────────────
+function cleanToken(t) {
+  return String(t || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 64);
+}
+
+function nlPage(lang, title, bodyHtml) {
+  const en = lang === 'en';
+  return `<!DOCTYPE html><html lang="${en ? 'en' : 'da'}"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>${escapeHtmlNl(title)} · Quartz Mølle</title>
+<style>
+  body{margin:0;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#faf7f2;color:#1a1611;
+       min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px;line-height:1.6}
+  .card{background:#fff;border:1px solid #e7e1d6;border-radius:18px;box-shadow:0 4px 18px rgba(39,48,113,.10);
+        padding:34px 28px;max-width:420px;width:100%;text-align:center}
+  .card img{width:64px;height:64px;border-radius:50%;margin-bottom:14px}
+  h1{font-size:20px;color:#273071;margin:0 0 10px}
+  p{margin:0 0 12px;color:#4a463f;font-size:14.5px}
+  .code{background:#fff;border:2px dashed #3a4599;border-radius:14px;padding:16px;margin:16px 0 6px}
+  .code b{font-size:26px;font-weight:800;letter-spacing:2px;color:#273071}
+  button,a.btn{display:inline-block;background:#273071;color:#fff;border:0;cursor:pointer;text-decoration:none;
+        font-family:inherit;font-weight:600;font-size:15px;padding:13px 30px;border-radius:10px;margin-top:8px}
+  .sub{font-size:12px;color:#9b9488;margin-top:16px}
+</style></head><body><div class="card">
+<img src="${SITE}/images/qm-icon-192.png" alt="" onerror="this.style.display='none'">
+${bodyHtml}
+<div class="sub">Quartz Mølle · Suså Landevej 101, 4160 Herlufmagle</div>
+</div></body></html>`;
+}
+
+function sendHtml(res, status, html) {
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-store');
+  return res.status(status).send(html);
+}
+
+// Bekræftelseslinket i mailen (GET) fører hertil og bekræfter med det samme
+// — som et normalt nyhedsbrev. Det atomiske getdel-claim gør det idempotent,
+// så en mail-scanner der pre-henter linket ikke kan minte to koder; kunden
+// får uanset hvad koden i velkomstmailen.
+async function confirmSignup(req, res, t) {
+  try {
+    // Kig FØRST på tokenet uden at slette (vi skal bruge sprog/adresse til
+    // svarsiden og allerede-tilmeldt-tjekket).
+    let peek = null;
+    if (t) { try { peek = await kv.get(`newsletter:pending:${t}`); } catch {} }
+    if (!peek) {
+      return sendHtml(res, 410, nlPage('da', 'Linket er udløbet',
+        '<h1>Linket er udløbet</h1><p>Bekræftelsen gælder ikke længere — eller er allerede gennemført. Tilmeld dig igen på quartzmolle.dk, hvis du ikke har fået din kode.</p><a class="btn" href="' + SITE + '">Tilbage til quartzmolle.dk</a>'));
+    }
+    const lang = peek.lang === 'en' ? 'en' : 'da';
+    const en = lang === 'en';
+
+    // Idempotent: allerede bekræftet -> ryd op og sig pænt til.
+    let existing = null;
+    try { existing = await kv.hget('newsletter:emails', peek.key); } catch {}
+    if (existing) {
+      try { await kv.del(`newsletter:pending:${t}`, `newsletter:pendingkey:${peek.key}`); } catch {}
+      return sendHtml(res, 200, nlPage(lang, en ? 'Already subscribed' : 'Allerede tilmeldt',
+        en ? '<h1>You are already subscribed</h1><p>Your signup was already confirmed — check your inbox for your discount code.</p><a class="btn" href="' + SITE + '/shop">Shop our flour</a>'
+           : '<h1>Du er allerede tilmeldt</h1><p>Din tilmelding er allerede bekræftet — tjek din indbakke for din rabatkode.</p><a class="btn" href="' + SITE + '/shop">Se vores mel</a>'));
+    }
+
+    // ATOMISK CLAIM: hent-og-slet tokenet. Ved dobbeltklik/race faar KUN ét
+    // kald pending tilbage — resten faar null og afvises. Så ét token kan
+    // aldrig minte to koder.
+    let pending = null;
+    try { pending = await kv.getdel(`newsletter:pending:${t}`); } catch {}
+    if (!pending) {
+      return sendHtml(res, 200, nlPage(lang, en ? 'Signup confirmed' : 'Tilmelding bekræftet',
+        (en ? '<h1>Thank you — you are subscribed</h1><p>Your signup is confirmed. Check your inbox for your discount code.</p>'
+            : '<h1>Tak — du er tilmeldt</h1><p>Din tilmelding er bekræftet. Tjek din indbakke for din rabatkode.</p>')
+        + '<a class="btn" href="' + SITE + '/shop">' + (en ? 'Shop our flour' : 'Se vores mel') + '</a>'));
+    }
+    // Resend-låsen frigives — tokenet er nu forbrugt.
+    try { await kv.del(`newsletter:pendingkey:${pending.key}`); } catch {}
+
+    // GLOBALT dagligt kode-loft: organisk udstedes ~5-20 koder/dag. Rammer vi
+    // loftet, er det et angreb — brugeren tilmeldes stadig, men uden kode.
+    // Fail CLOSED: kan tælleren ikke laeses, udsteder vi ikke (beskyt budget).
+    const day = dayStamp();
+    let minted = null, allowCode = true;
+    try {
+      minted = await kv.incr(`newsletter:mintday:${day}`);
+      await kv.expire(`newsletter:mintday:${day}`, DAYSEC + 3600);
+      allowCode = minted <= MAX_CODES_PER_DAY;
+    } catch (e) { allowCode = false; console.error('mint counter failed — failing closed', e && e.message); }
+
+    let code = null;
+    if (allowCode) {
+      try { code = await createUniqueDiscountCode(); } catch (e) { console.error('unique code failed:', (e && e.raw && e.raw.message) || (e && e.message)); }
+    } else {
+      console.warn('newsletter: global daily code cap reached, no code minted', { day, minted });
+    }
+
+    try {
+      await kv.hset('newsletter:emails', { [pending.key]: {
+        t: Date.now(), code, email: pending.email, ip: pending.ip, cip: clientIp(req),
+      } });
+    } catch (e) {
+      console.error('newsletter store failed:', e.message);
+      return sendHtml(res, 500, nlPage(lang, en ? 'Something went wrong' : 'Noget gik galt',
+        en ? '<h1>Something went wrong</h1><p>Please try the link again in a moment.</p>'
+           : '<h1>Noget gik galt</h1><p>Prøv linket igen om et øjeblik.</p>'));
+    }
+
+    try { await sendWelcomeEmail(pending.email, code, lang); } catch (e) { console.error('welcome email failed:', e.message); }
+
+    const codeHtml = code
+      ? '<div class="code"><b>' + escapeHtmlNl(code) + '</b></div><p>'
+        + (en ? 'Your personal code — 10% off your next order. We have also emailed it to you.'
+              : 'Din personlige kode — 10% på din næste ordre. Vi har også sendt den på mail.') + '</p>'
+      : '<p>' + (en ? 'Welcome! You are now subscribed.' : 'Velkommen! Du er nu tilmeldt.') + '</p>';
+    return sendHtml(res, 200, nlPage(lang, en ? 'Signup confirmed' : 'Tilmelding bekræftet',
+      (en ? '<h1>Thank you — you are subscribed</h1>' : '<h1>Tak — du er tilmeldt</h1>')
+      + codeHtml
+      + '<a class="btn" href="' + SITE + '/shop">' + (en ? 'Shop our flour' : 'Se vores mel') + '</a>'));
+  } catch (e) {
+    console.error('newsletter confirm error:', e);
+    return sendHtml(res, 500, nlPage('da', 'Noget gik galt',
+      '<h1>Noget gik galt</h1><p>Prøv linket igen om et øjeblik.</p>'));
   }
 }
 
@@ -201,16 +449,6 @@ async function createUniqueDiscountCode() {
     }
   }
   return null;
-}
-
-// Shared fallback code (multi-use) — only used if unique-code creation fails.
-async function ensureFallbackPromo() {
-  if (!process.env.STRIPE_SECRET_KEY) return;
-  const stripe = (await import('stripe')).default(process.env.STRIPE_SECRET_KEY);
-  const found = await stripe.promotionCodes.list({ code: FALLBACK_CODE, limit: 1 });
-  if (found.data && found.data.length) return;
-  const couponId = await getSharedCouponId(stripe);
-  await stripe.promotionCodes.create({ coupon: couponId, code: FALLBACK_CODE });
 }
 
 async function sendWelcomeEmail(email, code, lang) {
