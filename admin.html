@@ -215,6 +215,15 @@
   }
   .dchip:hover{background:var(--muted);border-color:var(--border-strong)}
   .dchip.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .fold-btn{
+    display:flex;align-items:center;justify-content:center;gap:7px;width:100%;
+    margin-top:10px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;
+    background:var(--bg);color:var(--fg);font:inherit;font-size:13px;font-weight:600;
+    cursor:pointer;transition:background .12s ease,border-color .12s ease;
+  }
+  .fold-btn:hover{background:var(--panel);border-color:var(--primary)}
+  .fold-btn svg{width:14px;height:14px;stroke:currentColor;stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round;transition:transform .15s ease}
+  .fold-btn.open svg{transform:rotate(180deg)}
 
   /* ---------- PANELS ---------- */
   .panel{
@@ -228,6 +237,8 @@
   .panel h2 svg{width:15px;height:15px;color:var(--muted-fg)}
   .two-col{display:grid;grid-template-columns:1fr;gap:0}
   @media(min-width:860px){.two-col{grid-template-columns:1fr 1fr;gap:16px}.two-col>.panel{margin-bottom:0}}
+  .panel{content-visibility:auto;contain-intrinsic-size:auto 340px}
+  .panel-chart{content-visibility:visible;contain-intrinsic-size:none}
 
   /* ---------- ORDER ROWS ---------- */
   .order-row{
@@ -517,7 +528,7 @@
     <div class="range-now" id="rangeNow"></div>
 
     <!-- Omsætning pr. dag — beregnes i browseren ud fra ordrelisten -->
-    <div class="panel">
+    <div class="panel panel-chart">
       <h2><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Omsætning pr. dag<span class="tr-peak" id="trendPeak"></span></h2>
       <div id="trendChart" class="loading">Henter…</div>
     </div>
@@ -631,11 +642,26 @@
     document.getElementById('loginWrap').classList.add('hide');
     document.getElementById('dashboard').classList.remove('hide');
     loadDashboard();
-    if (typeof loadNewsletter === 'function') loadNewsletter();
+    // Nyhedsbrevslisten haster ikke — hent den i browserens ledige tid, saa
+    // ordrer og statistik faar netvaerket foerst.
+    const idle = window.requestIdleCallback || (fn => setTimeout(fn, 400));
+    if (typeof loadNewsletter === 'function') idle(() => loadNewsletter());
     // Refresh active users every 15 sec
     if (pollTimer) clearInterval(pollTimer);
     pollTimer = setInterval(refreshLiveStats, 15000);
   }
+
+  // Spar batteri og API-kald: stop 15-sek.-pollingen naar fanen er skjult,
+  // og genoptag med det samme (inkl. frisk hent) naar man vender tilbage.
+  document.addEventListener('visibilitychange', () => {
+    const dashOpen = !document.getElementById('dashboard').classList.contains('hide');
+    if (document.hidden) {
+      if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    } else if (dashOpen && !pollTimer) {
+      refreshLiveStats();
+      pollTimer = setInterval(refreshLiveStats, 15000);
+    }
+  });
 
   function showLogin() {
     if (pollTimer) clearInterval(pollTimer);
@@ -702,20 +728,37 @@
     loadDashboard();
   }
 
+  // Cache pr. periode (60 sek.): skift mellem "I dag"/"7 dage"/"30 dage" er
+  // øjeblikkeligt — friske tal hentes stadig i baggrunden. Sekvensnummeret
+  // sikrer, at et langsomt svar aldrig overskriver et nyere valg (race).
+  const dashCache = new Map();
+  let dashSeq = 0;
+
   async function loadDashboard() {
     // Leaving any all-time search when a new date range is loaded.
     globalResults = null;
+    ordersExpanded = false;
     const sn = document.getElementById('searchNote');
     if (sn) { sn.style.display = 'none'; sn.innerHTML = ''; }
-    document.getElementById('ordersList').className = 'loading';
-    document.getElementById('ordersList').textContent = 'Henter ordrer…';
+    const seq = ++dashSeq;
+    const q = currentQuery;
+    const cached = dashCache.get(q);
+    if (cached && Date.now() - cached.t < 60000) {
+      renderDashboard(cached.data);
+    } else {
+      document.getElementById('ordersList').className = 'loading';
+      document.getElementById('ordersList').textContent = 'Henter ordrer…';
+    }
     try {
-      const res = await fetch('/api/admin-stats?' + currentQuery);
+      const res = await fetch('/api/admin-stats?' + q);
+      if (seq !== dashSeq) return;
       if (!res.ok) {
         if (res.status === 401) { showLogin(); return; }
         throw new Error('API error ' + res.status);
       }
       const data = await res.json();
+      if (seq !== dashSeq) return;
+      dashCache.set(q, { t: Date.now(), data });
       renderDashboard(data);
     } catch (err) {
       console.error(err);
@@ -855,13 +898,18 @@
   }
 
   let orderFilter = 'all'; // 'all' | 'pickup' | 'gls'
-  document.querySelectorAll('.dchip').forEach(ch => {
+  // KUN leverings-chips — CSV-knappen deler .dchip-klassen og maa ikke
+  // saette filteret (ellers blev listen tom ved klik paa "Hent som CSV").
+  document.querySelectorAll('.dfilter .dchip').forEach(ch => {
     ch.addEventListener('click', () => {
       orderFilter = ch.dataset.df;
-      document.querySelectorAll('.dchip').forEach(c => c.classList.toggle('on', c === ch));
+      document.querySelectorAll('.dfilter .dchip').forEach(c => c.classList.toggle('on', c === ch));
       renderOrders();
     });
   });
+
+  const ORDERS_FOLD = 8;
+  let ordersExpanded = false;
 
   function renderOrders() {
     const ordersEl = document.getElementById('ordersList');
@@ -907,6 +955,10 @@
     }
 
     ordersEl.className = '';
+    // Fold: vis de nyeste 8 — resten bag "Vis alle", saa siden ikke bliver
+    // en kilometer lang at scrolle.
+    const foldTotal = list.length;
+    if (!ordersExpanded && foldTotal > ORDERS_FOLD) list = list.slice(0, ORDERS_FOLD);
     ordersEl.innerHTML = list.map(o => `
       <div class="order-row" data-id="${escapeHtml(o.id || '')}" role="button" tabindex="0">
         <div class="ref">#${escapeHtml(o.ref)}</div>
@@ -918,13 +970,26 @@
         <div class="amount">${formatKr(o.amount)}</div>
         <div class="date">${formatDate(o.date)}</div>
       </div>
-    `).join('');
+    `).join('') + (foldTotal > ORDERS_FOLD
+      ? `<button type="button" class="fold-btn${ordersExpanded ? ' open' : ''}" data-fold>` +
+        (ordersExpanded ? 'Vis færre' : 'Vis alle ' + foldTotal + ' ordrer') +
+        '<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>'
+      : '');
 
     // En enkelt delegeret lytter paa listen i stedet for to pr. raekke
     // (op til 100 ordrer = 200 lyttere ved hver gen-rendering).
     if (!ordersEl.__delegated) {
       ordersEl.__delegated = true;
       const openFromEvent = e => {
+        const fold = e.target.closest('[data-fold]');
+        if (fold) {
+          ordersExpanded = !ordersExpanded;
+          renderOrders();
+          // Ved sammenfold: hop tilbage til toppen af ordrepanelet, saa man
+          // ikke strander langt nede paa siden.
+          if (!ordersExpanded) ordersEl.closest('.panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+          return;
+        }
         const row = e.target.closest('.order-row');
         const id = row && row.getAttribute('data-id');
         if (id) openOrderDetail(id);
@@ -1460,15 +1525,41 @@ async function loadNewsletter() {
     const nc = Number(d.count) || 0;
     cnt.textContent = '· ' + nc + ' tilmeldt' + (nc === 1 ? '' : 'e');
     if (!d.emails.length) { list.className = 'empty'; list.textContent = 'Ingen tilmeldinger endnu.'; return; }
-    list.className = '';
-    list.innerHTML = d.emails.map(e =>
-      '<div style="display:flex;justify-content:space-between;gap:10px;padding:8px 2px;border-bottom:1px solid var(--border);font-size:13.5px;flex-wrap:wrap">'
-      + '<span style="font-weight:600">' + escapeHtml(e.email) + '</span>'
-      + '<span style="color:var(--muted-fg);font-size:12px;white-space:nowrap">'
-      + (e.code ? '<span style="font-weight:700;color:var(--blue);margin-right:10px">' + escapeHtml(e.code) + '</span>' : '')
-      + (e.ip ? '<span class="nl-ip" title="Tilmeldings-IP">' + escapeHtml(e.ip) + '</span>' : '')
-      + (e.t ? new Date(e.t).toLocaleDateString('da-DK') : '') + '</span>'
-      + '</div>').join('');
+    // Fold: vis de nyeste 12 — flere hundrede raekker gjorde siden meget
+    // lang og tung at rendere. "Vis alle" folder resten ud.
+    const NL_FOLD = 12;
+    let nlOpen = false;
+    const renderNl = () => {
+      const rows = nlOpen ? d.emails : d.emails.slice(0, NL_FOLD);
+      list.className = '';
+      list.innerHTML = rows.map(e =>
+        '<div style="display:flex;justify-content:space-between;gap:10px;padding:8px 2px;border-bottom:1px solid var(--border);font-size:13.5px;flex-wrap:wrap">'
+        + '<span style="font-weight:600">' + escapeHtml(e.email) + '</span>'
+        + '<span style="color:var(--muted-fg);font-size:12px;white-space:nowrap">'
+        + (e.code ? '<span style="font-weight:700;color:var(--blue);margin-right:10px">' + escapeHtml(e.code) + '</span>' : '')
+        + (e.ip ? '<span class="nl-ip" title="Tilmeldings-IP">' + escapeHtml(e.ip) + '</span>' : '')
+        + (e.t ? new Date(e.t).toLocaleDateString('da-DK') : '') + '</span>'
+        + '</div>').join('')
+        + (d.emails.length > NL_FOLD
+          ? '<button type="button" class="fold-btn' + (nlOpen ? ' open' : '') + '" data-nlfold>'
+            + (nlOpen ? 'Vis færre' : 'Vis alle ' + d.emails.length + ' tilmeldte')
+            + '<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>'
+          : '');
+    };
+    renderNl();
+    // Gemmes paa elementet, saa lytteren altid rammer NYESTE data — ogsaa
+    // efter log ud/ind, hvor loadNewsletter koerer igen.
+    list.__toggleNl = () => {
+      nlOpen = !nlOpen;
+      renderNl();
+      if (!nlOpen) list.closest('.panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    if (!list.__delegated) {
+      list.__delegated = true;
+      list.addEventListener('click', e => {
+        if (e.target.closest('[data-nlfold]') && list.__toggleNl) list.__toggleNl();
+      });
+    }
 
     renderIpGroups(d.emails);
     csvBtn.style.display = 'inline-block';
