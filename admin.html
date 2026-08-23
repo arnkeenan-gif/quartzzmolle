@@ -265,6 +265,7 @@
   }
   .dtag.pickup{background:var(--primary-tint);color:var(--primary);border-color:#d5dcf2}
 
+
   /* ---------- PRODUCT / LOCATION ROWS ---------- */
   .product-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
   .product-row:last-child{border-bottom:0;padding-bottom:0}
@@ -1221,6 +1222,18 @@
     return p;
   }
 
+  function setTrendTitle(perHour) {
+    const peakEl = document.getElementById('trendPeak');
+    const h2 = peakEl && peakEl.parentNode;
+    if (!h2) return;
+    for (const n of h2.childNodes) {
+      if (n.nodeType === 3 && /Omsætning/.test(n.nodeValue)) {
+        n.nodeValue = perHour ? 'Omsætning pr. time' : 'Omsætning pr. dag';
+        return;
+      }
+    }
+  }
+
   function renderTrend(orders, truncated) {
     const el = document.getElementById('trendChart');
     const peakEl = document.getElementById('trendPeak');
@@ -1249,10 +1262,46 @@
     const today = startOf(Date.now());
     const days = [];
     for (let t = first; t <= today; t += DAY) days.push(t);
+
+    // ÉN dag valgt ("I dag" eller én dato): samme kurve som altid — bare
+    // med et punkt pr. time i stedet for pr. dag.
+    if (days.length === 1) {
+      const HOUR = 3600000;
+      const day0 = days[0];
+      const hsums = new Map();
+      let firstH = 24, lastH = 0;
+      list.forEach(o => {
+        const h = new Date(o.date).getHours();
+        hsums.set(h, (hsums.get(h) || 0) + (Number(o.amount) || 0));
+        if (h < firstH) firstH = h; if (h > lastH) lastH = h;
+      });
+      const isToday = day0 === today;
+      const nowH = new Date().getHours();
+      const startH = Math.min(firstH, 8);
+      const endH = Math.max(lastH, isToday ? nowH : 17);
+      const hxs = [], hmap = new Map();
+      for (let h = startH; h <= endH; h++) { const t = day0 + h * HOUR; hxs.push(t); hmap.set(t, hsums.get(h) || 0); }
+      const hmax = Math.max(...hxs.map(t => hmap.get(t) || 0), 1);
+      const hpeak = hxs.reduce((b, t) => (hmap.get(t) || 0) > (hmap.get(b) || 0) ? t : b, hxs[0]);
+      el.className = '';
+      setTrendTitle(true);
+      el._trend = { days: hxs, sums: hmap, max: hmax, today: isToday ? day0 + nowH * HOUR : -1,
+        total, peak: hpeak, truncated, hourly: true, count: list.length };
+      drawTrend(el);
+      if (!el._ro && typeof ResizeObserver !== 'undefined') {
+        let raf0 = 0;
+        el._ro = new ResizeObserver(() => { cancelAnimationFrame(raf0); raf0 = requestAnimationFrame(() => drawTrend(el)); });
+        el._ro.observe(el);
+      }
+      if (peakEl) peakEl.textContent = (hmap.get(hpeak) || 0) > 0
+        ? 'Travlest: kl. ' + new Date(hpeak).getHours() + '–' + (new Date(hpeak).getHours() + 1) + ' · ' + formatKr(hmap.get(hpeak)) : '';
+      return;
+    }
     const max = Math.max(...days.map(t => sums.get(t) || 0), 1);
     const peak = days.reduce((b, t) => (sums.get(t) || 0) > (sums.get(b) || 0) ? t : b, days[0]);
 
     el.className = '';
+    setTrendTitle(false);
     el._trend = { days, sums, max, today, total, peak, truncated };
     drawTrend(el);
     if (!el._ro && typeof ResizeObserver !== 'undefined') {
@@ -1269,6 +1318,7 @@
   function drawTrend(el) {
     const st = el._trend; if (!st) return;
     const { days, sums, max, today, total } = st;
+    const hourly = !!st.hourly;
     const N = days.length;
     const W = Math.max(240, Math.round(el.clientWidth || el.getBoundingClientRect().width || 600));
     const H = 200, padL = 46, padR = 12, padT = 12, padB = 26;
@@ -1282,7 +1332,9 @@
       ? linePath + ' L ' + pts[pts.length - 1].x + ' ' + base + ' L ' + pts[0].x + ' ' + base + ' Z'
       : '';
     const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
-    const fmtDay = t => new Date(t).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
+    const fmtDay = t => hourly
+      ? 'kl. ' + new Date(t).getHours()
+      : new Date(t).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
 
     // gridlines + y-akse-labels ved 0, 50%, 100%
     let grid = '';
@@ -1300,7 +1352,7 @@
     });
     // faste punkt-prikker (kun ved få dage, ellers for tæt)
     let dots = '';
-    if (N <= 14) pts.forEach(p => {
+    if (N <= 14 || hourly) pts.forEach(p => {
       dots += '<circle class="trc-dot' + (p.t === today ? ' today' : '') + '" cx="' + p.x + '" cy="' + p.y + '" r="' + (p.t === today ? 3.5 : 2.5) + '"/>';
     }); else {
       const tp = pts.find(p => p.t === today);
@@ -1309,7 +1361,7 @@
 
     const gid = 'trcGrad';
     const svg =
-      '<svg class="trc" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="Omsætning pr. dag">'
+      '<svg class="trc" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' + (hourly ? 'Omsætning pr. time' : 'Omsætning pr. dag') + '">'
       + '<defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1">'
       +   '<stop offset="0%" stop-color="var(--primary)" stop-opacity="0.20"/>'
       +   '<stop offset="100%" stop-color="var(--primary)" stop-opacity="0"/>'
@@ -1324,11 +1376,13 @@
       + '<rect class="trc-hit" x="' + padL + '" y="' + padT + '" width="' + Math.max(1, iw) + '" height="' + ih + '"/>'
       + '</svg>';
 
-    const days1 = fmtDay(days[0]), daysN = fmtDay(days[N - 1]);
     const avg = total / N;
     const sum = '<div class="trc-sum"><span>I alt <b>' + formatKr(total) + '</b></span>'
-      + '<span>Gns. <b>' + formatKr(avg) + '</b>/dag</span>'
-      + '<span><b>' + N + '</b> dage</span></div>'
+      + (hourly
+        ? '<span><b>' + (st.count === 1 ? '1 ordre' : st.count + ' ordrer') + '</b></span>'
+          + '<span>Travlest <b>' + fmtDay(st.peak) + '–' + (new Date(st.peak).getHours() + 1) + '</b></span>'
+        : '<span>Gns. <b>' + formatKr(avg) + '</b>/dag</span>'
+          + '<span><b>' + N + '</b> dage</span>') + '</div>'
       + (st.truncated ? '<div class="trc-note">Kun de nyeste ordrer er med — vælg en kortere periode for et fuldt billede.</div>' : '');
 
     el.innerHTML = svg + '<div class="trc-tip" id="trcTip"></div>' + sum;
@@ -1348,7 +1402,10 @@
       svgEl.classList.add('show-cursor');
       cursor.setAttribute('x1', p.x); cursor.setAttribute('x2', p.x);
       hi.setAttribute('cx', p.x); hi.setAttribute('cy', p.y);
-      tip.innerHTML = '<b>' + esc(formatKr(p.v)) + '</b><div class="d">' + esc(fmtDay(p.t)) + (p.t === today ? ' · i dag' : '') + '</div>';
+      tip.innerHTML = '<b>' + esc(formatKr(p.v)) + '</b><div class="d">'
+        + (hourly ? 'kl. ' + new Date(p.t).getHours() + '–' + (new Date(p.t).getHours() + 1) + (p.t === today ? ' · nu' : '')
+                  : esc(fmtDay(p.t)) + (p.t === today ? ' · i dag' : ''))
+        + '</div>';
       const leftPct = (p.x / W) * 100;
       tip.style.left = Math.max(8, Math.min(el.clientWidth - 8, (leftPct / 100) * el.clientWidth)) + 'px';
       tip.style.top = ((p.y / H) * (svgEl.getBoundingClientRect().height)) + 'px';
