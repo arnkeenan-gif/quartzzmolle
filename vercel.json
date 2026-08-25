@@ -1,12 +1,6 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
-  "crons": [
-    {
-      "path": "/api/daily-check",
-      "schedule": "0 6 * * *"
-    }
-  ],
   "redirects": [
     {
       "source": "/butik/:path*",
@@ -115,6 +109,28 @@
           "value": "text/plain; charset=utf-8"
         }
       ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/.well-known/security.txt",
+      "destination": "/security.txt"
+    },
+    {
+      "source": "/api/stripe-webhook",
+      "destination": "/api/stripewebhook"
+    },
+    {
+      "source": "/api/admin-order",
+      "destination": "/api/adminorder"
+    },
+    {
+      "source": "/api/log-visit",
+      "destination": "/api/logvisit"
+    },
+    {
+      "source": "/api/find-pakkeshops",
+      "destination": "/api/findpakkeshops"
     }
   ]
 }
