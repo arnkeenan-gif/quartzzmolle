@@ -8,17 +8,17 @@
 // Prices are in DKK (kroner). Keys are the product id + exact weight label.
 
 export const CATALOG = {
-  'mariagertoba-type70': { weights: { '3 kg': 99,  '12,5 kg': 315 } },
-  'dalarna-type85':      { weights: { '3 kg': 99,  '12,5 kg': 315 } },
-  'dalarna-fuldkorn':    { weights: { '3 kg': 99,  '12,5 kg': 315 } },
-  'olands-fuldkorn':     { weights: { '3 kg': 99,  '12,5 kg': 300 } },
-  'olands-type85':       { weights: { '3 kg': 99,  '12,5 kg': 315 } },
-  'purpurhvede-fuldkorn':{ weights: { '3 kg': 108, '12,5 kg': 330 } },
-  'rod-hvede-fuldkorn':  { weights: { '3 kg': 99,  '12,5 kg': 300 } },
-  'rod-hvede-type70':    { weights: { '3 kg': 99,  '12,5 kg': 315 } },
-  'rod-hvede-type85':    { weights: { '3 kg': 99,  '12,5 kg': 315 } },
-  'rug-fuldkorn':        { weights: { '3 kg': 85,  '11 kg': 250 } },
-  'spelt-fuldkorn':      { weights: { '3 kg': 108, '12,5 kg': 330 } },
+  'mariagertoba-type70':   { name: "Mariagertoba", type: "Fintsigtet hvedemel – Type 70", weights: { '3 kg': 99,  '12,5 kg': 315 } },
+  'dalarna-type85':        { name: "Dalarna", type: "Mellemsigtet hvedemel – Type 85", weights: { '3 kg': 99,  '12,5 kg': 315 } },
+  'dalarna-fuldkorn':      { name: "Dalarna", type: "Fuldkornshvedemel", weights: { '3 kg': 99,  '12,5 kg': 315 } },
+  'olands-fuldkorn':       { name: "Ølands / Quarna", type: "Fuldkornshvedemel", weights: { '3 kg': 99,  '12,5 kg': 300 } },
+  'olands-type85':         { name: "Ølands / Quarna", type: "Mellemsigtet hvedemel – Type 85", weights: { '3 kg': 99,  '12,5 kg': 315 } },
+  'purpurhvede-fuldkorn':  { name: "Purpurhvede", type: "Fuldkornshvedemel", weights: { '3 kg': 108, '12,5 kg': 330 } },
+  'rod-hvede-fuldkorn':    { name: "Rød hvede", type: "Fuldkornshvedemel", weights: { '3 kg': 99,  '12,5 kg': 300 } },
+  'rod-hvede-type70':      { name: "Rød hvede", type: "Fintsigtet hvedemel – Type 70", weights: { '3 kg': 99,  '12,5 kg': 315 } },
+  'rod-hvede-type85':      { name: "Rød hvede", type: "Mellemsigtet hvedemel – Type 85", weights: { '3 kg': 99,  '12,5 kg': 315 } },
+  'rug-fuldkorn':          { name: "Rug", type: "Rugmel fuldkorn", weights: { '3 kg': 85,  '11 kg': 250 } },
+  'spelt-fuldkorn':        { name: "Spelt", type: "Fuldkornsmel", weights: { '3 kg': 108, '12,5 kg': 330 } },
 };
 
 // Parse the kg value from a weight label like "12,5 kg" -> 12.5

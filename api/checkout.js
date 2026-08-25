@@ -20,8 +20,22 @@ export default async function handler(req, res) {
   try {
     const stripe = (await import('stripe')).default(process.env.STRIPE_SECRET_KEY);
 
-    // Use known production URL since req.headers.origin may be missing on POST from cross-origin
-    const origin = 'https://quartzzmolle-dusky.vercel.app';
+    // SIKKERHED: success_url/cancel_url må aldrig bygges på en rå Origin-header.
+    // Uden allowliste kan enhver kalde dette endpoint med Origin: evil.com og få en
+    // ægte Stripe-betalingsside, der sender den betalende kunde videre til deres
+    // eget domæne (og afleverer session_id undervejs). Vi accepterer kun vores egne
+    // domæner og falder ellers tilbage til det kanoniske site.
+    const CANONICAL = 'https://www.quartzmolle.dk';
+    const ALLOWED_ORIGINS = new Set([
+      'https://www.quartzmolle.dk',
+      'https://quartzmolle.dk',
+      'https://quartzzmolle-dusky.vercel.app',
+    ]);
+    // Kun praecise, kendte domaener. Et wildcard paa *.vercel.app ville ikke
+    // duge: hvem som helst kan oprette et gratis projekt der og dermed pege
+    // vores betalingsside hen paa sig selv.
+    const reqOrigin = String(req.headers.origin || '');
+    const origin = ALLOWED_ORIGINS.has(reqOrigin) ? reqOrigin : CANONICAL;
 
     // ── SERVER-SIDE VALIDATION: authoritative price + weight per line ──
     const priceMap = buildPriceMap();
@@ -37,13 +51,17 @@ export default async function handler(req, res) {
       let qty = parseInt(it.qty, 10);
       if (!Number.isFinite(qty) || qty < 1) qty = 1;
       if (qty > 99) qty = 99; // sane cap
+      // Visningsfelterne tages fra vores EGET katalog. Kom de fra kurven, kunne
+      // hvem som helst kalde dette endpoint og faa en aegte Stripe-betalingsside
+      // under Quartz Moelles konto med selvvalgt varetekst og et fremmed billede.
+      const cat = CATALOG[id] || {};
       validated.push({
         id, label, qty,
         price,                              // authoritative kr price
         kg: weightKgFromLabel(label),       // authoritative weight
-        productName: String(it.productName || ''),
-        productType: String(it.productType || ''),
-        image: typeof it.image === 'string' ? it.image : '',
+        productName: String(cat.name || id),
+        productType: String(cat.type || ''),
+        image: `images/pose-${id}.jpg`,
       });
     }
 
@@ -55,14 +73,9 @@ export default async function handler(req, res) {
         description: `${it.label} · Malet på stenkværn i Danmark · Certificeret Økologisk`,
       };
       if (it.image) {
-        let imgUrl;
-        if (it.image.startsWith('http')) {
-          imgUrl = it.image;
-        } else {
-          const path = it.image.replace(/^\//, '').split('/').map(encodeURIComponent).join('/');
-          imgUrl = `${origin}/${path}`;
-        }
-        product_data.images = [imgUrl];
+        // Altid vores eget domaene - aldrig en URL fra kaldet.
+        const path = it.image.replace(/^\//, '').split('/').map(encodeURIComponent).join('/');
+        product_data.images = [`${origin}/${path}`];
       }
       return {
         price_data: {
@@ -161,8 +174,8 @@ export default async function handler(req, res) {
       payment_method_types: ['card', 'mobilepay'],
       line_items,
       mode: 'payment',
-      success_url: `${req.headers.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.origin}/shop`,
+      success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/shop`,
       shipping_address_collection: {
         // Only these countries can complete checkout in Stripe.
         allowed_countries: ['DK', 'DE', 'SE', 'NL', 'NO'],

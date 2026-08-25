@@ -5,7 +5,7 @@
 //   sync                                                    -> tablet (device-secret auth)
 
 import { kv } from './_kv.js';
-import { createHmac, timingSafeEqual, randomUUID } from 'crypto';
+import { createHmac, createHash, timingSafeEqual, randomUUID, randomInt } from 'crypto';
 
 // SECURITY: never fall back to a guessable default. If these env vars are not
 // set in Vercel the system fails closed (no login possible) instead of trusting
@@ -25,9 +25,11 @@ const LOCK_SECONDS = 900;
 
 // Constant-time string comparison (avoids timing leaks on the passcode).
 function safeEqual(a, b) {
-  const ba = Buffer.from(String(a)), bb = Buffer.from(String(b));
-  if (ba.length !== bb.length) return false;
-  try { return timingSafeEqual(ba, bb); } catch { return false; }
+  // Sammenlign HASHES, ikke raa strenge: saa er sammenligningen altid lige lang,
+  // og et forkert gaet roeber ikke laengden af den rigtige kode.
+  const ha = createHash('sha256').update(String(a)).digest();
+  const hb = createHash('sha256').update(String(b)).digest();
+  try { return timingSafeEqual(ha, hb); } catch { return false; }
 }
 
 function sign(expMs) {
@@ -73,7 +75,7 @@ async function queueOpen(door) {
 function genCode(lockers) {
   const used = new Set(lockers.filter(l => l.occ && l.code).map(l => l.code));
   let c;
-  do { c = String(Math.floor(100000 + Math.random() * 900000)); } while (used.has(c));
+  do { c = String(randomInt(100000, 1000000)); } while (used.has(c));
   return c;
 }
 
@@ -105,105 +107,16 @@ export default async function handler(req, res) {
     // function (Vercel Hobby allows max 12). Idempotent and safe: it only ever
     // copies keys that are NOT already in the new DB (so it can never clobber
     // fresh locker/heartbeat data) and self-disables once finished.
-    if (action === 'migrate') {
-      const code = (body.code || (req.query && req.query.code) || '').toString();
-      if (!CODE || !safeEqual(code, CODE)) return res.status(401).json({ error: 'Unauthorized' });
-      // ?force=1 RESTORES the old snapshot even if the new DB already holds fresh
-      // (empty) keys written by syncs since the switch. It only overwrites the
-      // data-bearing keys below — never the live heartbeat (locker:device) or the
-      // open-command queue (locker:cmds), which must stay current.
-      const force = String((req.query && req.query.force) || body.force || '') === '1';
-      if (!force) {
-        try { if (await kv.get('migrate:done')) return res.status(200).json({ ok: true, alreadyDone: true, note: 'Allerede migreret. Tilføj &force=1 for at gennemtvinge gendannelse.' }); } catch {}
-      }
-      let oldkv;
-      try { ({ kv: oldkv } = await import('@vercel/kv')); }
-      catch (e) { return res.status(500).json({ error: 'Kunne ikke indlæse @vercel/kv (gammel database)', detail: String(e && e.message || e) }); }
-      const report = { forced: force, copied: {}, skipped: [], errors: {} };
-      const existsNew = async (k) => { try { return !!(await kv.exists(k)); } catch { return false; } };
-      // [key, restorable] — restorable keys are overwritten when force=1.
-      // locker:device (heartbeat) and locker:cmds (open queue) are never forced.
-      // strings / json
-      for (const [key, restorable] of [['locker:state', true], ['locker:device', false]]) {
-        try {
-          if ((!force || !restorable) && await existsNew(key)) { report.skipped.push(key + ' (findes allerede)'); continue; }
-          const v = await oldkv.get(key);
-          if (v == null) { report.skipped.push(key + ' (tom i gammel)'); continue; }
-          await kv.set(key, v); report.copied[key] = 'værdi';
-        } catch (e) { report.errors[key] = String(e && e.message || e); }
-      }
-      // lists (preserve order)
-      for (const [key, restorable] of [['pickup:orders', true], ['locker:history', true], ['locker:cmds', false]]) {
-        try {
-          if ((!force || !restorable) && await existsNew(key)) { report.skipped.push(key + ' (findes allerede)'); continue; }
-          const items = (await oldkv.lrange(key, 0, -1)) || [];
-          if (!items.length) { report.skipped.push(key + ' (tom i gammel)'); continue; }
-          await kv.del(key); for (const it of items) await kv.rpush(key, it);
-          report.copied[key] = items.length + ' items';
-        } catch (e) { report.errors[key] = String(e && e.message || e); }
-      }
-      // hash (hset merges fields, so fulfilment marks are never lost)
-      for (const key of ['pickup:fulfilled']) {
-        try {
-          if (!force && await existsNew(key)) { report.skipped.push(key + ' (findes allerede)'); continue; }
-          const obj = (await oldkv.hgetall(key)) || {};
-          if (!Object.keys(obj).length) { report.skipped.push(key + ' (tom i gammel)'); continue; }
-          await kv.hset(key, obj); report.copied[key] = Object.keys(obj).length + ' felter';
-        } catch (e) { report.errors[key] = String(e && e.message || e); }
-      }
-      // optional: visitor-stats sets (best-effort, never forced)
-      try {
-        const vkeys = (await oldkv.keys('visitors:*')) || [];
-        let days = 0;
-        for (const key of vkeys) {
-          try {
-            if (await existsNew(key)) continue;
-            const m = (await oldkv.smembers(key)) || [];
-            if (!m.length) continue;
-            await kv.sadd(key, ...m);
-            const ttl = await oldkv.ttl(key); if (ttl && ttl > 0) await kv.expire(key, ttl);
-            days++;
-          } catch { /* skip this day */ }
-        }
-        if (days) report.copied['visitors:* (statistik)'] = days + ' dage';
-      } catch (e) { report.errors['visitors:*'] = String(e && e.message || e); }
-      try { await kv.set('migrate:done', { at: Date.now() }); } catch {}
-      report.ok = true;
-      report.note = force
-        ? 'Gennemtvunget gendannelse færdig — skab-status og ordrer er hentet fra den gamle database.'
-        : 'Migrering færdig. Ingenting at slette — endpointet er selv-deaktiveret.';
-      return res.status(200).json(report);
-    }
+    // FJERNET (sikkerhed): 'migrate' og 'promotest' var engangs-vedligeholdelses-
+    // grene, der godkendte den samme LOCKER_CODE som logins - men UDEN forsoegs-
+    // taeller og FOER session-gaten nedenfor. De var dermed ubegraensede orakler,
+    // hvor koden kunne gaettes uden nogensinde at udloese laasningen paa login.
+    // Migreringen er forlaengst gennemfoert, og promotest var ren diagnostik.
 
     // ---------------- DIAGNOSE: kan Stripe oprette rabatkoder? ----------------
     // /api/locker?action=promotest&code=LOCKER_CODE — runs the exact same Stripe
     // calls the newsletter uses and reports each step's precise error, so a
     // failing unique-code pipeline can be diagnosed from the browser.
-    if (action === 'promotest') {
-      const codeParam = (body.code || (req.query && req.query.code) || '').toString();
-      if (!CODE || !safeEqual(codeParam, CODE)) return res.status(401).json({ error: 'Unauthorized' });
-      const report = { keyPresent: !!process.env.STRIPE_SECRET_KEY, keyPrefix: (process.env.STRIPE_SECRET_KEY || '').slice(0, 8), steps: {} };
-      if (!process.env.STRIPE_SECRET_KEY) return res.status(200).json(report);
-      const errMsg = (e) => (e && e.raw && e.raw.message) || (e && e.message) || String(e);
-      let stripe, coupon = null, promo = null;
-      try { stripe = (await import('stripe')).default(process.env.STRIPE_SECRET_KEY); report.steps.load = 'ok'; }
-      catch (e) { report.steps.load = 'FEJL: ' + errMsg(e); return res.status(200).json(report); }
-      try {
-        coupon = await stripe.coupons.create({ percent_off: 10, duration: 'once', name: 'DIAGNOSE-TEST (slettes)' });
-        report.steps.couponCreate = 'ok (' + coupon.id + ')';
-      } catch (e) { report.steps.couponCreate = 'FEJL: ' + errMsg(e); return res.status(200).json(report); }
-      const testCode = 'QMDIAG' + Math.floor(Math.random() * 90000 + 10000);
-      try {
-        promo = await stripe.promotionCodes.create({ coupon: coupon.id, code: testCode, max_redemptions: 1 });
-        report.steps.promoCreate = 'ok (' + promo.code + ')';
-      } catch (e) { report.steps.promoCreate = 'FEJL: ' + errMsg(e); }
-      try { if (promo) { await stripe.promotionCodes.update(promo.id, { active: false }); report.steps.promoDeactivate = 'ok'; } } catch (e) { report.steps.promoDeactivate = 'FEJL: ' + errMsg(e); }
-      try { await stripe.coupons.del(coupon.id); report.steps.couponDelete = 'ok'; } catch (e) { report.steps.couponDelete = 'FEJL: ' + errMsg(e); }
-      report.conclusion = report.steps.promoCreate && report.steps.promoCreate.startsWith('ok')
-        ? 'ALT VIRKER — nyhedsbrevet vil lave unikke koder. Test med en NY e-mailadresse.'
-        : 'Fejlen står ovenfor — send den til Claude.';
-      return res.status(200).json(report);
-    }
 
     // ---------------- TABLET SYNC ----------------
     if (action === 'sync') {
@@ -235,15 +148,25 @@ export default async function handler(req, res) {
         if (events.length) {
           lockers = await getLockers();
           for (const ev of events) {
-            const t = lockers.find(l => l.door === ev.locker);
+            // VALIDÉR ved skrivning. Felterne kom foer ind uaendret fra tabletten
+            // og blev gemt raat - og panelet skriver dem direkte ud i sin HTML.
+            // En vilkaarlig streng kunne dermed blive til kode, der koerer i
+            // ejerens browser, naeste gang skabsoversigten aabnes.
+            const evType = ['in', 'out', 'oos'].includes(ev && ev.type) ? ev.type : null;
+            if (!evType) continue;
+            const evDoor = Number.isInteger(ev.locker) && ev.locker >= 1 && ev.locker <= DOORS ? ev.locker : null;
+            const evCode = String((ev && ev.code) || '').replace(/\D/g, '').slice(0, 6);
+            const evT = Number.isFinite(Number(ev && ev.t)) ? Number(ev.t) : Date.now();
+
+            const t = evDoor ? lockers.find(l => l.door === evDoor) : null;
             if (t) {
-              if (ev.type === 'in') { t.occ = true; t.code = ev.code; t.since = ev.t || Date.now(); }
-              else if (ev.type === 'out') { t.occ = false; t.code = null; t.since = 0; }
-              else if (ev.type === 'oos') { t.oos = !!ev.value; }
+              if (evType === 'in') { t.occ = true; t.code = evCode || null; t.since = evT; }
+              else if (evType === 'out') { t.occ = false; t.code = null; t.since = 0; }
+              else if (evType === 'oos') { t.oos = !!ev.value; }
             }
             try {
               await kv.lpush('locker:history', {
-                t: ev.t || Date.now(), type: ev.type, locker: ev.locker, code: ev.code || '', source: 'kiosk',
+                t: evT, type: evType, locker: evDoor, code: evCode, source: 'kiosk',
               });
             } catch (e) { /* history is best-effort; never fail the sync over it */ }
           }
@@ -272,16 +195,34 @@ export default async function handler(req, res) {
       const ip = (req.headers['x-real-ip'] || req.headers['x-forwarded-for']?.split(',').pop() || 'unknown').toString().trim();
       const failKey = `locker:fails:${ip}`;
       const globalKey = 'locker:fails:global';
-      let fails = 0, gfails = 0;
-      try { fails = (await kv.get(failKey)) || 0; } catch {}
-      try { gfails = (await kv.get(globalKey)) || 0; } catch {}
-      if (fails >= MAX_FAILS || gfails >= GLOBAL_MAX_FAILS) {
+
+      // ATOMISK taelling. Tidligere blev taelleren laest, lagt 1 til i JavaScript
+      // og skrevet tilbage - saa 500 samtidige gaet alle laeste 0, alle slap
+      // igennem, og alle skrev 1. Laasningen kunne dermed omgaas fuldstaendigt med
+      // parallelle kald. kv.incr er atomisk, saa hvert kald i luften ser de andre.
+      let fails = 0;
+      try {
+        fails = await kv.incr(failKey);
+        if (fails === 1) await kv.expire(failKey, LOCK_SECONDS);
+      } catch { fails = MAX_FAILS + 1; }   // kan taelleren ikke naas, fejler vi LUKKET
+      if (fails > MAX_FAILS) {
         return res.status(429).json({ error: 'For mange forsøg. Prøv igen om lidt.' });
       }
+
+      // Global nødbremse mod header-rotation. Den maa ALDRIG kunne laase ejeren
+      // ude: kun kald fra en IP, der SELV har fejlet, rammes af den globale graense.
+      let gfails = 0;
+      try { gfails = Number(await kv.get(globalKey)) || 0; } catch {}
+      if (gfails >= GLOBAL_MAX_FAILS && fails > 1) {
+        return res.status(429).json({ error: 'For mange forsøg. Prøv igen om lidt.' });
+      }
+
       const code = (body?.code ?? '').toString();
-      if (!code || code.length !== CODE.length || !safeEqual(code, CODE)) {
-        try { await kv.set(failKey, fails + 1, { ex: LOCK_SECONDS }); } catch {}
-        try { await kv.set(globalKey, gfails + 1, { ex: LOCK_SECONDS }); } catch {}
+      if (!code || !safeEqual(code, CODE)) {
+        try {
+          const g = await kv.incr(globalKey);
+          if (g === 1) await kv.expire(globalKey, LOCK_SECONDS);
+        } catch {}
         return res.status(401).json({ error: 'Forkert kode' });
       }
       try { await kv.del(failKey); } catch {}
@@ -398,7 +339,7 @@ export default async function handler(req, res) {
       let all = {};
       try { all = (await kv.hgetall('newsletter:emails')) || {}; } catch {}
       const emails = Object.entries(all)
-        .map(([key, v]) => ({ email: (v && v.email) || key, t: (v && v.t) || 0, code: (v && v.code) || '' }))
+        .map(([key, v]) => ({ email: (v && v.email) || key, t: (v && v.t) || 0, code: (v && v.code) || '', ip: (v && v.ip) || '' }))
         .sort((a, b) => b.t - a.t);
       return res.status(200).json({ ok: true, count: emails.length, emails });
     }
