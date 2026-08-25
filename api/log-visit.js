@@ -46,8 +46,21 @@ export default async function handler(req, res) {
   // ── KUNDEREJSE: anonym "i kurv" / "gået til checkout" til admin-tragten ──
   if (nlBody && (nlBody.action === 'cart' || nlBody.action === 'checkoutstart')) {
     try {
+      // Loft pr. IP: uden det kan enhver skrive ubegraenset mange kurv-noegler
+      // ind i Redis og fylde databasen op.
+      const fip = clientIp(req);
+      const fday = dayStamp();
+      let fn = 0;
+      try {
+        fn = await kv.incr(`funnel:ip:${fip}:${fday}`);
+        if (fn === 1) await kv.expire(`funnel:ip:${fip}:${fday}`, DAYSEC);
+      } catch {}
+      if (fn > 300) return res.status(200).json({ ok: true });
+
       const id = String(nlBody.id || '').replace(/[^a-z0-9]/gi, '').slice(0, 40) || 'anon';
       const now = Date.now();
+      // Ryd kurve aeldre end en time ud af det sorterede saet ved hver skrivning.
+      try { await kv.zremrangebyscore('funnel:carts', 0, now - 3600000); } catch {}
       const count = Math.max(0, Math.min(999, parseInt(nlBody.count, 10) || 0));
       const total = Math.max(0, Math.min(99999, parseInt(nlBody.total, 10) || 0));
       if (nlBody.action === 'cart') {
@@ -203,19 +216,21 @@ async function handleNewsletter(req, res, body) {
     const key = normalizeEmail(email);
     const lang = String(body.lang || 'da') === 'en' ? 'en' : 'da';
 
-    // Allerede tilmeldt (normaliseret adresse — punktum/plus-tricks kan ikke
-    // hente en kode nummer to).
-    let existing = null;
-    try { existing = await kv.hget('newsletter:emails', key); } catch {}
-    if (existing) return res.status(200).json({ ok: true, already: true });
-
-    // USYNLIG VERIFIKATION: uden gyldigt engangs-bevis afvises tilmeldingen.
-    // Rigtige kunder mærker intet — deres browser har løst opgaven i
-    // baggrunden. Fejler beviset (fx udløbet), beder vi pænt om et nyt forsøg.
+    // USYNLIG VERIFIKATION FØRST. Tjekket for "allerede tilmeldt" laa tidligere
+    // foer dette punkt, og svarede {already:true} uden noget bevis - det gjorde
+    // endpointet til et gratis orakel, hvor man kunne slaa vilkaarlige mail-
+    // adresser op og faa at vide, om de var kunder hos os. Nu koster hvert
+    // opslag et regnestykke, og svaret er det samme uanset udfald.
     const powOk = await verifyPow(body.ch, body.nonce);
     if (!powOk) {
       return res.status(400).json({ ok: false, retry: true, error: 'Bekræftelsen udløb — prøv igen.' });
     }
+
+    // Allerede tilmeldt (normaliseret adresse — punktum/plus-tricks kan ikke
+    // hente en kode nummer to). Tjekket ligger EFTER beviset ovenfor.
+    let existing = null;
+    try { existing = await kv.hget('newsletter:emails', key); } catch {}
+    if (existing) return res.status(200).json({ ok: true, already: true });
 
     // IP-loft: max 3 tilmeldinger pr. IP pr. døgn.
     const ip = clientIp(req);

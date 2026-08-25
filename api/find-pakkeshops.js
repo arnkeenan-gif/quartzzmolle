@@ -62,8 +62,11 @@ export default async function handler(req, res) {
     console.log('GLS method:', methodName, 'status:', glsRes.status);
 
     if (!glsRes.ok) {
+      // Det raa svar fra GLS bliver i serverloggen. Sendes det videre til
+      // browseren, kan en fremmed hente interne fejlbeskeder, endpoint-navne og
+      // kontodetaljer ud af vores integration.
       console.error('GLS SOAP error', glsRes.status, xml.slice(0, 500));
-      return res.status(502).json({ error: 'GLS service error', status: glsRes.status, body: xml.slice(0, 500), shops: [] });
+      return res.status(502).json({ error: 'Kunne ikke hente pakkeshops', shops: [] });
     }
 
     const shops = [];
@@ -94,7 +97,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ shops });
   } catch (err) {
     console.error('Pakkeshop proxy error:', err);
-    return res.status(500).json({ error: err.message, shops: [] });
+    return res.status(500).json({ error: 'Kunne ikke hente pakkeshops', shops: [] });
   }
 }
 

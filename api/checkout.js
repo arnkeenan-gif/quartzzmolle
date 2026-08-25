@@ -1,0 +1,197 @@
+// api/checkout.js — Vercel Serverless Function
+// Creates a Stripe-hosted Checkout Session for the cart and returns the redirect URL.
+//
+// SECURITY: prices, weights and quantities are validated server-side against the
+// authoritative catalog (api/_catalog.js, merged with Supabase). Client-supplied
+// prices are NEVER trusted — a manipulated price/weight is rejected.
+
+import { CATALOG, buildPriceMap, weightKgFromLabel } from './_catalog.js';
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const { items } = req.body || {};
+  if (!Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ error: 'Cart is empty' });
+  }
+
+  try {
+    const stripe = (await import('stripe')).default(process.env.STRIPE_SECRET_KEY);
+
+    // SIKKERHED: success_url/cancel_url må aldrig bygges på en rå Origin-header.
+    // Uden allowliste kan enhver kalde dette endpoint med Origin: evil.com og få en
+    // ægte Stripe-betalingsside, der sender den betalende kunde videre til deres
+    // eget domæne (og afleverer session_id undervejs). Vi accepterer kun vores egne
+    // domæner og falder ellers tilbage til det kanoniske site.
+    const CANONICAL = 'https://www.quartzmolle.dk';
+    const ALLOWED_ORIGINS = new Set([
+      'https://www.quartzmolle.dk',
+      'https://quartzmolle.dk',
+      'https://quartzzmolle-dusky.vercel.app',
+    ]);
+    // Kun praecise, kendte domaener. Et wildcard paa *.vercel.app ville ikke
+    // duge: hvem som helst kan oprette et gratis projekt der og dermed pege
+    // vores betalingsside hen paa sig selv.
+    const reqOrigin = String(req.headers.origin || '');
+    const origin = ALLOWED_ORIGINS.has(reqOrigin) ? reqOrigin : CANONICAL;
+
+    // ── SERVER-SIDE VALIDATION: authoritative price + weight per line ──
+    const priceMap = buildPriceMap();
+    const validated = [];
+    for (const it of items) {
+      const id = String(it.productId || '');
+      const label = String(it.weightLabel || '');
+      const key = `${id}|${label}`;
+      const price = priceMap[key];
+      if (price == null) {
+        return res.status(400).json({ error: 'Ugyldig vare i kurven' });
+      }
+      let qty = parseInt(it.qty, 10);
+      if (!Number.isFinite(qty) || qty < 1) qty = 1;
+      if (qty > 99) qty = 99; // sane cap
+      // Visningsfelterne tages fra vores EGET katalog. Kom de fra kurven, kunne
+      // hvem som helst kalde dette endpoint og faa en aegte Stripe-betalingsside
+      // under Quartz Moelles konto med selvvalgt varetekst og et fremmed billede.
+      const cat = CATALOG[id] || {};
+      validated.push({
+        id, label, qty,
+        price,                              // authoritative kr price
+        kg: weightKgFromLabel(label),       // authoritative weight
+        productName: String(cat.name || id),
+        productType: String(cat.type || ''),
+        image: `images/pose-${id}.jpg`,
+      });
+    }
+
+    const line_items = validated.map(it => {
+      // Build name: "Rød hvede – Type 70" so it shows in Stripe AND Shipmondo
+      const typeStr = it.productType ? ` – ${it.productType}` : '';
+      const product_data = {
+        name: `${it.productName}${typeStr}`,
+        description: `${it.label} · Malet på stenkværn i Danmark · Certificeret Økologisk`,
+      };
+      if (it.image) {
+        // Altid vores eget domaene - aldrig en URL fra kaldet.
+        const path = it.image.replace(/^\//, '').split('/').map(encodeURIComponent).join('/');
+        product_data.images = [`${origin}/${path}`];
+      }
+      return {
+        price_data: {
+          currency: 'dkk',
+          product_data,
+          unit_amount: Math.round(it.price * 100), // authoritative price
+        },
+        quantity: it.qty,
+      };
+    });
+
+    // Total cart weight (kg) from the AUTHORITATIVE per-line weight
+    const totalWeightKg = validated.reduce((sum, it) => sum + it.kg * it.qty, 0);
+
+    // GLS shipping limits. Orders heavier than GLS can carry are NOT blocked
+    // anymore — they can still be completed with Click & Collect (pickup), which
+    // has no carrier weight limit. See shippingOptions below.
+    const PAKKESHOP_LIMIT = 19.9;
+    const PRIVAT_LIMIT = 24.9;
+
+    // GLS ShopDelivery prices by weight (øre)
+    function getPakkeshopPrice(kg) {
+      if (kg <= 5)  return 4600;
+      if (kg <= 10) return 5500;
+      if (kg <= 15) return 6600;
+      return 8100; // 15-20 kg
+    }
+
+    // GLS PrivateDelivery prices by weight (øre)
+    function getPrivatPrice(kg) {
+      if (kg <= 5)  return 6300;
+      if (kg <= 10) return 7500;
+      if (kg <= 15) return 9000;
+      if (kg <= 20) return 10500;
+      return 13900; // 20-25 kg
+    }
+
+    // Build shipping options based on weight.
+    // GLS options are only offered within carrier limits; Click & Collect is always
+    // available — and is the ONLY option for orders heavier than GLS can carry.
+    const shippingOptions = [];
+    if (totalWeightKg <= PAKKESHOP_LIMIT) {
+      shippingOptions.push({
+        shipping_rate_data: {
+          type: 'fixed_amount',
+          fixed_amount: { amount: getPakkeshopPrice(totalWeightKg), currency: 'dkk' },
+          display_name: 'GLS Pakkeshop – nærmeste pakkeshop vælges automatisk (max 20 kg)',
+          delivery_estimate: {
+            minimum: { unit: 'business_day', value: 1 },
+            maximum: { unit: 'business_day', value: 3 },
+          },
+        },
+      });
+    }
+    if (totalWeightKg <= PRIVAT_LIMIT) {
+      shippingOptions.push({
+        shipping_rate_data: {
+          type: 'fixed_amount',
+          fixed_amount: { amount: getPrivatPrice(totalWeightKg), currency: 'dkk' },
+          display_name: 'GLS Privatadresse (max 25 kg)',
+          delivery_estimate: {
+            minimum: { unit: 'business_day', value: 1 },
+            maximum: { unit: 'business_day', value: 3 },
+          },
+        },
+      });
+    }
+
+    // Click & Collect — gratis afhentning på møllen. The display_name must stay
+    // recognisable to the webhook (it matches "afhent"/"collect") and must NOT
+    // contain "pakkeshop"/"privat", so it is never misread as a GLS delivery.
+    shippingOptions.push({
+      shipping_rate_data: {
+        type: 'fixed_amount',
+        fixed_amount: { amount: 0, currency: 'dkk' },
+        display_name: 'Click & Collect – Afhentning på møllen (Suså Landevej 101)',
+        delivery_estimate: {
+          minimum: { unit: 'business_day', value: 1 },
+          maximum: { unit: 'business_day', value: 3 },
+        },
+      },
+    });
+
+    // Embed items in metadata (format: name|type|weight|qty|price) so the webhook
+    // can always recover productType even if the Stripe product name parsing fails.
+    const itemsSummary = validated.map(it =>
+      `${it.productName}|${it.productType}|${it.label}|${it.qty}|${it.price}`
+    ).join(';').slice(0, 490);
+
+    // Record the buyer's IP so it shows on the order in the admin panel.
+    // Behind Vercel the real client IP is the first entry in x-forwarded-for.
+    const clientIp = String(req.headers['x-forwarded-for'] || '')
+      .split(',')[0].trim() || req.socket?.remoteAddress || '';
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card', 'mobilepay'],
+      line_items,
+      mode: 'payment',
+      success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/shop`,
+      shipping_address_collection: {
+        // Only these countries can complete checkout in Stripe.
+        allowed_countries: ['DK', 'DE', 'SE', 'NL', 'NO'],
+      },
+      phone_number_collection: { enabled: true },
+      shipping_options: shippingOptions,
+      // Show the "Add promotion code" field in Stripe (used by the newsletter's
+      // VELKOMMEN10 welcome code, and any future campaign codes).
+      allow_promotion_codes: true,
+      locale: 'da',
+      metadata: { items_summary: itemsSummary, client_ip: clientIp },
+    });
+
+    return res.status(200).json({ url: session.url });
+  } catch (err) {
+    console.error('Stripe Checkout session error:', err);
+    return res.status(500).json({ error: 'Kunne ikke oprette betaling. Prøv igen.' });
+  }
+}

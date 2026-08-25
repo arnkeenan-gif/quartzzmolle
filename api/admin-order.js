@@ -9,7 +9,7 @@
 // Auth: shares the /locker session cookie (lk_sess) — same passcode as /locker,
 //       /fulfill and the admin dashboard.
 
-import { createHmac, timingSafeEqual } from 'crypto';
+import { createHmac, timingSafeEqual, createHash } from 'crypto';
 
 const SESSION_SECRET = process.env.LOCKER_SESSION_SECRET || '';
 // Refund security code — lives ONLY in the Vercel env, never in the source.
@@ -185,10 +185,30 @@ async function handleRefund(req, res, stripe) {
   if (!REFUND_CODE) {
     return res.status(500).json({ error: 'Refund-kode er ikke konfigureret. Sæt REFUND_CODE i Vercel.' });
   }
+  // Konstant-tids sammenligning + forsoegstaeller. Uden taelleren kunne en
+  // angriber, der allerede havde admin-cookien, gaette den 6-cifrede refund-kode
+  // igennem i det uendelige og dermed sende butikkens penge retur.
+  const { kv: rkv } = await import('./_kv.js');
+  const rip = String(req.headers['x-real-ip'] || 'unknown').trim();
+  const rKey = `refund:fails:${rip}`;
+  let rFails = 0;
+  try {
+    rFails = await rkv.incr(rKey);
+    if (rFails === 1) await rkv.expire(rKey, 900);
+  } catch { rFails = 99; }              // taelleren utilgaengelig -> fejl LUKKET
+  if (rFails > 5) {
+    return res.status(429).json({ error: 'For mange forsøg. Prøv igen om 15 minutter.' });
+  }
   const code = String((req.body && req.body.code) || '').trim();
-  if (code !== REFUND_CODE) {
+  const okCode = (() => {
+    const a = createHash('sha256').update(code).digest();
+    const b = createHash('sha256').update(String(REFUND_CODE)).digest();
+    try { return timingSafeEqual(a, b); } catch { return false; }
+  })();
+  if (!okCode) {
     return res.status(403).json({ error: 'Forkert sikkerhedskode.' });
   }
+  try { await rkv.del(rKey); } catch {}
 
   const id = String((req.body && req.body.id) || '');
   if (!/^cs_[A-Za-z0-9_]{10,}$/.test(id)) {

@@ -65,9 +65,10 @@ export default async function handler(req, res) {
   //   /api/stripe-webhook?action=recover&code=LOCKER_CODE[&days=21]
   // Idempotent: skips any order already listed or already fulfilled. Writes only
   // pickup:orders. The live webhook (POST) path below is completely untouched.
-  if (req.method === 'GET' && req.query && req.query.action === 'recover') {
-    return recoverPickupOrders(req, res);
-  }
+  // FJERNET (sikkerhed): GET ?action=recover laa FOER signaturtjekket og godkendte
+  // LOCKER_CODE med en simpel !==-sammenligning uden forsoegstaeller - altsaa et
+  // ubegraenset gaette-orakel paa hele admin-adgangskoden. Den var engangs-
+  // genopretning efter et databasenedbrud og bruges ikke laengere.
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -646,176 +647,11 @@ async function savePickupOrder(orderData) {
   await kv.ltrim('pickup:orders', 0, 199);
 }
 
-// One-off recovery: pull orders back from Stripe (the payment record) and re-add
-// any missing from pickup:orders — e.g. orders placed while the old database was
-// down, which never got saved. Passcode-protected and idempotent.
-//
-//   /api/stripe-webhook?action=recover&code=CODE
-//     &days=21   how far back to scan (default 21, max 120)
-//     &all=1     restore EVERY paid order, not only Click & Collect ones
-//     &dry=1     diagnose only — list what would be restored, write nothing
-//
-// It is SELF-DIAGNOSING: the JSON response lists every Stripe order it saw, its
-// resolved deliveryKey / shipping name, and the decision — so if nothing shows
-// up we can see exactly why (wrong window, non-pickup, already had it, etc.).
-async function recoverPickupOrders(req, res) {
-  try {
-    const code = (req.query.code || '').toString();
-    if (!process.env.LOCKER_CODE || code !== process.env.LOCKER_CODE) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const days = Math.min(120, Math.max(1, parseInt(req.query.days || '21', 10)));
-    const all = String(req.query.all || '') === '1';
-    const dry = String(req.query.dry || '') === '1';
-    const since = Math.floor(Date.now() / 1000) - days * 86400;
-    const stripe = (await import('stripe')).default(process.env.STRIPE_SECRET_KEY);
-    const { kv } = await import('./_kv.js');
+// FJERNET (sikkerhed): recoverPickupOrders() indeholdt en SEED_ORDERS-liste med
+// RIGTIGE kunders navne, e-mailadresser, telefonnumre og live Stripe-session-id'er
+// haardkodet i kildekoden - og repository'et er offentligt. Funktionen var en
+// engangs-genopretning efter et databasenedbrud og er ikke laengere i brug.
 
-    // Everything we already have (saved or already fulfilled) — dedupe against it.
-    const have = new Set();
-    try {
-      (await kv.lrange('pickup:orders', 0, -1) || []).forEach(o => {
-        if (o && o.externalId) have.add(String(o.externalId));
-        if (o && o.ref) have.add(String(o.ref));
-      });
-    } catch {}
-    try {
-      const f = (await kv.hgetall('pickup:fulfilled')) || {};
-      Object.keys(f).forEach(k => have.add(String(k)));
-    } catch {}
-
-    const report = {
-      ok: true, window_days: days, mode: { all, dry },
-      seen: { paymentIntents: 0, checkoutSessions: 0 },
-      recovered: [], recovered_count: 0,
-      diagnostics: [], errors: [],
-      have_now: have.size,
-    };
-    const refOf = (extId) => String(extId).slice(-12).toUpperCase();
-
-    // 0a) SEED: insert known orders straight from their email data — NO Stripe call
-    //     at all, so this cannot fail on an API hiccup. Trigger with ?seed=1.
-    if (String(req.query.seed || '') === '1') {
-      const SEED_ORDERS = [
-        {
-          externalId: 'cs_live_b1JW5FwCLB2AYDRLeN92nvEum1lt2O9VDO27dPCWbC5SAhcgRxCM1Tb6aG',
-          customerName: 'Ann-Britt Frøstrup', customerEmail: '6021affe@gmail.com', customerPhone: '+4551844485',
-          amountKr: 646, items: [
-            { productName: 'Rød hvede – Fintsigtet hvedemel – Type 70', weightLabel: '3 kg', qty: 2 },
-            { productName: 'Mariagertoba – Fintsigtet hvedemel – Type 70', weightLabel: '3 kg', qty: 2 },
-            { productName: 'Rug – Rugmel fuldkorn', weightLabel: '11 kg', qty: 1 },
-          ],
-        },
-        {
-          externalId: 'cs_live_b1vpt2RBMCAO89MolbGUpE4xF8vqpjEZ97LY5vtshXR6Tw2BaMxR7Y72MQ',
-          customerName: 'Camilla Hansen', customerEmail: 'camilla@tovborg.com', customerPhone: '+4520216621',
-          amountKr: 837, items: [
-            { productName: 'Mariagertoba – Fintsigtet hvedemel – Type 70', weightLabel: '12,5 kg', qty: 2 },
-            { productName: 'Ølands / Quarna – Fuldkornshvedemel', weightLabel: '3 kg', qty: 1 },
-            { productName: 'Purpurhvede – Fuldkornshvedemel', weightLabel: '3 kg', qty: 1 },
-          ],
-        },
-      ];
-      for (const od of SEED_ORDERS) {
-        const ref = refOf(od.externalId);
-        const row = { kind: 'seed', ref, name: od.customerName, amountKr: od.amountKr, decision: '' };
-        try {
-          if (have.has(String(od.externalId)) || have.has(ref)) { row.decision = 'already had'; report.diagnostics.push(row); continue; }
-          await savePickupOrder(od);
-          have.add(String(od.externalId)); have.add(ref);
-          row.decision = 'RESTORED';
-          report.recovered.push({ ref, name: od.customerName, total: od.amountKr });
-        } catch (e) { row.decision = 'error: ' + (e && e.message || e); }
-        report.diagnostics.push(row);
-      }
-      report.recovered_count = report.recovered.length;
-      report.note = report.recovered.length
-        ? `${report.recovered.length} ordre(r) lagt direkte ind i afhentningslisten (uden Stripe).`
-        : 'Begge seed-ordrer var der allerede.';
-      return res.status(200).json(report);
-    }
-
-    const consider = async (kind, id, od) => {
-      const row = { kind, id, deliveryKey: od && od.deliveryKey, shipping: od && od.shippingDisplayName || '', amountKr: od && od.amountKr, name: od && od.customerName, decision: '' };
-      if (!od) { row.decision = 'no order data'; report.diagnostics.push(row); return; }
-      const isPickup = od.deliveryKey === 'pickup';
-      if (!all && !isPickup) { row.decision = 'skipped (not pickup)'; report.diagnostics.push(row); return; }
-      const ref = refOf(od.externalId);
-      row.ref = ref;
-      if (have.has(String(od.externalId)) || have.has(ref)) { row.decision = 'already had'; report.diagnostics.push(row); return; }
-      if (dry) { row.decision = 'WOULD restore'; report.diagnostics.push(row); return; }
-      await savePickupOrder(od);
-      have.add(String(od.externalId)); have.add(ref);
-      row.decision = 'RESTORED';
-      report.recovered.push({ ref, name: od.customerName || '', total: od.amountKr || 0, deliveryKey: od.deliveryKey });
-      report.diagnostics.push(row);
-    };
-
-    // 0) DIRECT recovery by explicit Stripe id(s): ?ids=cs_live_...,pi_...
-    //    Saves exactly those orders as pickup orders, regardless of how they'd
-    //    otherwise be classified — used when you know the exact orders to restore
-    //    (e.g. from the confirmation emails). Bypasses the deliveryKey filter.
-    const ids = (req.query.ids || '').split(',').map(s => s.trim()).filter(Boolean);
-    if (ids.length) {
-      for (const id of ids) {
-        const row = { kind: 'direct', id, decision: '' };
-        try {
-          let od = null;
-          if (id.startsWith('cs_')) od = await parseCheckoutSession({ id });
-          else if (id.startsWith('pi_')) od = parsePaymentIntent(await stripe.paymentIntents.retrieve(id));
-          else { row.decision = 'unknown id type (need cs_ or pi_)'; report.diagnostics.push(row); continue; }
-          row.deliveryKey = od && od.deliveryKey; row.name = od && od.customerName; row.amountKr = od && od.amountKr;
-          if (!od || !od.externalId) { row.decision = 'no order data from Stripe'; report.diagnostics.push(row); continue; }
-          const ref = refOf(od.externalId); row.ref = ref;
-          if (have.has(String(od.externalId)) || have.has(ref)) { row.decision = 'already had'; report.diagnostics.push(row); continue; }
-          if (dry) { row.decision = 'WOULD restore'; report.diagnostics.push(row); continue; }
-          await savePickupOrder(od);
-          have.add(String(od.externalId)); have.add(ref);
-          row.decision = 'RESTORED';
-          report.recovered.push({ ref, name: od.customerName || '', total: od.amountKr || 0, deliveryKey: od.deliveryKey });
-          report.diagnostics.push(row);
-        } catch (e) { row.decision = 'error: ' + (e && e.message || e); report.diagnostics.push(row); }
-      }
-      report.recovered_count = report.recovered.length;
-      report.note = report.recovered.length
-        ? `${report.recovered.length} ordre(r) hentet direkte ind via id.`
-        : 'Ingen af de angivne id(er) blev gemt — se diagnostics.';
-      return res.status(200).json(report);
-    }
-
-    // 1) PaymentIntents (Elements flow)
-    try {
-      for await (const pi of stripe.paymentIntents.list({ created: { gte: since }, limit: 100 })) {
-        report.seen.paymentIntents++;
-        if (pi.status !== 'succeeded') continue;
-        try { await consider('pi', pi.id, parsePaymentIntent(pi)); }
-        catch (e) { report.errors.push('pi ' + pi.id + ': ' + (e && e.message || e)); }
-        if (report.seen.paymentIntents > 1500) break;
-      }
-    } catch (e) { report.errors.push('list PI: ' + (e && e.message || e)); }
-
-    // 2) Checkout Sessions (redirect flow)
-    try {
-      for await (const s of stripe.checkout.sessions.list({ created: { gte: since }, limit: 100 })) {
-        report.seen.checkoutSessions++;
-        if (s.payment_status !== 'paid') continue;
-        try { await consider('cs', s.id, await parseCheckoutSession(s)); }
-        catch (e) { report.errors.push('cs ' + s.id + ': ' + (e && e.message || e)); }
-        if (report.seen.checkoutSessions > 1500) break;
-      }
-    } catch (e) { report.errors.push('list CS: ' + (e && e.message || e)); }
-
-    report.recovered_count = report.recovered.length;
-    report.note = report.recovered.length
-      ? `${report.recovered.length} ordre(r) hentet tilbage og lagt i fulfillment-listen.`
-      : (report.diagnostics.length
-          ? 'Ingen nye ordrer gemt. Se "diagnostics" for hvorfor (fx not pickup / already had / uden for vinduet). Prøv &all=1 for at hente ALLE betalte ordrer, eller &days=60.'
-          : 'Stripe returnerede ingen ordrer i vinduet. Prøv et større &days-tal.');
-    return res.status(200).json(report);
-  } catch (e) {
-    return res.status(200).json({ ok: false, fatal: String(e && e.message || e) });
-  }
-}
 
 // Human-readable delivery label for emails.
 function deliveryLabelFor(key) {
