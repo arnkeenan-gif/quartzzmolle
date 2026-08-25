@@ -1,0 +1,7 @@
+# Quartz Mølle — sikkerhedskontakt
+# Har du fundet en sårbarhed? Skriv til os, så vender vi tilbage.
+
+Contact: mailto:hello@quartzmolle.dk
+Preferred-Languages: da, en
+Canonical: https://www.quartzmolle.dk/.well-known/security.txt
+Expires: 2027-08-25T00:00:00.000Z
