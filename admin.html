@@ -380,6 +380,15 @@
   .om-section-label{font-size:11px;font-weight:700;color:var(--muted-fg);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 8px}
   .om-section-label:first-child{margin-top:0}
   .om-info{font-size:13.5px;font-weight:500;color:var(--fg-2);line-height:1.6}
+  .om-line{display:flex;justify-content:space-between;gap:14px;padding:5px 0}
+  .om-k{color:var(--muted-fg);font-weight:600;flex:none}
+  .om-v{text-align:right;word-break:break-word;font-weight:600;color:var(--fg)}
+  .om-info a{color:var(--primary);font-weight:600;text-decoration:none}
+  .om-grand{font-weight:800;color:var(--fg);font-size:15px;border-top:1px solid var(--border);margin-top:6px;padding-top:9px}
+  .om-i-name{flex:1;min-width:0;font-weight:700;font-size:13.5px}
+  .om-i-sub{color:var(--muted-fg);font-weight:500;font-size:12px;margin-top:1px}
+  .om-i-price{font-weight:700;color:var(--primary);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .om-noimg{width:46px;height:46px;border-radius:10px;background:var(--muted);flex-shrink:0}
   .om-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13.5px}
   .om-item:last-child{border-bottom:0}
   .om-totals{margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:13.5px;font-weight:500}
@@ -1058,7 +1067,7 @@
       const img = /^https?:\/\//.test(String(it.image || '')) ? it.image : '';
       return `
         <div class="om-item">
-          ${img ? `<img src="${escapeHtml(img)}" alt="" />` : '<div class="om-noimg"></div>'}
+          ${img ? `<img src="${escapeHtml(img)}" alt="" width="46" height="46" loading="lazy" decoding="async" style="width:46px;height:46px;object-fit:cover;border-radius:10px;flex-shrink:0" />` : '<div class="om-noimg"></div>'}
           <div class="om-i-name">${escapeHtml(it.name)}<div class="om-i-sub">${sub}</div></div>
           <div class="om-i-price">${formatKr(it.lineTotal)}</div>
         </div>`;
