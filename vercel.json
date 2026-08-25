@@ -2,11 +2,119 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "crons": [
-    { "path": "/api/daily-check", "schedule": "0 6 * * *" }
+    {
+      "path": "/api/daily-check",
+      "schedule": "0 6 * * *"
+    }
   ],
   "redirects": [
-    { "source": "/butik/:path*", "destination": "/shop?from=:path*", "permanent": true },
-    { "source": "/about", "destination": "/om", "permanent": true },
-    { "source": "/forhandler", "destination": "/forhandlere", "permanent": true }
+    {
+      "source": "/butik/:path*",
+      "destination": "/shop?from=:path*",
+      "permanent": true
+    },
+    {
+      "source": "/about",
+      "destination": "/om",
+      "permanent": true
+    },
+    {
+      "source": "/forhandler",
+      "destination": "/forhandlere",
+      "permanent": true
+    },
+    {
+      "source": "/checkout",
+      "destination": "/shop",
+      "permanent": false
+    },
+    {
+      "source": "/checkout.html",
+      "destination": "/shop",
+      "permanent": false
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; script-src 'self' 'unsafe-inline' https://js.stripe.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://pub-a9fcbb930b0c4014b8286f9c245143a9.r2.dev https://*.tile.openstreetmap.org https://unpkg.com https://*.stripe.com; connect-src 'self' https://api.stripe.com; frame-src https://js.stripe.com https://hooks.stripe.com https://www.google.com; media-src 'self' https://pub-a9fcbb930b0c4014b8286f9c245143a9.r2.dev; manifest-src 'self'; worker-src 'self'; form-action 'self'; upgrade-insecure-requests"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=(self), payment=(self), interest-cohort=()"
+        },
+        {
+          "key": "Cross-Origin-Opener-Policy",
+          "value": "same-origin-allow-popups"
+        },
+        {
+          "key": "X-Permitted-Cross-Domain-Policies",
+          "value": "none"
+        }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    },
+    {
+      "source": "/(admin|locker|fufill|packing|erhverv|erhvervsportal|success)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive, nosnippet"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    },
+    {
+      "source": "/(admin|locker|fufill|packing|erhverv|erhvervsportal|success).html",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive, nosnippet"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    },
+    {
+      "source": "/.well-known/security.txt",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
+        }
+      ]
+    }
   ]
 }

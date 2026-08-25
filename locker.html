@@ -392,6 +392,7 @@
   <nav class="subnav" aria-label="Sektioner">
     <a class="subnav-item is-active" href="/locker" aria-current="page"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Skabe</a>
     <a class="subnav-item" href="/fufill"><svg viewBox="0 0 24 24"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>Ordrer</a>
+    <a class="subnav-item" href="/erhvervsportal"><svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>Erhverv</a>
   </nav>
 
   <div class="wrap">
@@ -578,7 +579,7 @@ function render(d){
       dr.className='door '+(l.oos?'oos':l.occ?'occ':'free');
       let inner='<span class="dn">'+l.door+'</span>';
       if(l.oos){ inner+='<span class="dlbl">Ud af drift</span>'; }
-      else if(l.occ){ inner+='<span class="dcode">'+fmtDoorCode(l.code)+'</span>'; }
+      else if(l.occ){ inner+='<span class="dcode">'+fmtDoorCode(esc(l.code))+'</span>'; }
       else { inner+='<span class="dlbl">Ledig</span>'; }
       dr.innerHTML=inner;
       dr.addEventListener('click',()=>openActions(l));
@@ -593,12 +594,14 @@ function render(d){
   d.history.forEach(o=>{
     const isIn=o.type==='in', isOut=o.type==='out';
     const cls=isIn?'in':isOut?'out':'sys';
-    const label=isIn?'Aflevering':isOut?'Afhentning':o.type==='open'?'Dør åbnet':o.type==='openall'?'Alle døre åbnet':o.type==='clearall'?'Alle skabe ryddet':o.type==='oos_on'?'Sat ud af drift':o.type==='oos_off'?'Sat i drift':o.type;
+    const label=isIn?'Aflevering':isOut?'Afhentning':o.type==='open'?'Dør åbnet':o.type==='openall'?'Alle døre åbnet':o.type==='clearall'?'Alle skabe ryddet':o.type==='oos_on'?'Sat ud af drift':o.type==='oos_off'?'Sat i drift':esc(o.type);
     const row=document.createElement('div'); row.className='hrow';
     const src=o.source==='web'?'web':o.source==='kiosk'?'tablet':'';
-    const loc=(o.locker>0)?' · Skab '+o.locker:'';
+    const loc=(o.locker>0)?' · Skab '+esc(o.locker):'';
+    // Alt der stammer fra tabletten escapes her, saa en maerkelig vaerdi aldrig
+    // kan blive til kode i ejerens browser (serveren validerer ogsaa ved skrivning).
     row.innerHTML='<div class="l1 '+cls+'">'+label+loc+'</div>'+
-      '<div class="l2">'+fmt(o.t)+(o.code?' · kode '+o.code:'')+(src?' · '+src:'')+'</div>';
+      '<div class="l2">'+fmt(o.t)+(o.code?' · kode '+esc(o.code):'')+(src?' · '+src:'')+'</div>';
     h.appendChild(row);
   });
 }

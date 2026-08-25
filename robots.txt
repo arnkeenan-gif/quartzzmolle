@@ -1,10 +1,10 @@
 User-agent: *
 Allow: /
-Disallow: /admin
-Disallow: /locker
-Disallow: /fufill
-Disallow: /packing
-Disallow: /checkout
-Disallow: /success
+
+# Interne sider (admin, skabsstyring, fulfillment, erhvervsportal) står bevidst
+# IKKE her: robots.txt er offentlig, så en liste over dem ville blot udlevere
+# stierne. De er i stedet markeret noindex både i sidernes <meta> og via
+# X-Robots-Tag-headeren i vercel.json — det holder dem ude af søgemaskinerne
+# uden at afsløre, hvor de ligger.
 
 Sitemap: https://www.quartzmolle.dk/sitemap.xml
