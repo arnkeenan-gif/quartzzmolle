@@ -1540,6 +1540,7 @@
 // ── NYHEDSBREVS-LISTE ───────────────────────────────────────────────────────
   // IP-tjek: samler tilmeldinger pr. afsender-IP. Flere tilmeldinger fra samme
   // IP er det staerkeste tegn paa, at én person har brugt flere adresser.
+  const IP_FOLD = 3;
   function renderIpGroups(emails) {
     const box = document.getElementById('nlIpGroups');
     if (!box) return;
@@ -1564,7 +1565,8 @@
       return;
     }
     box.className = '';
-    box.innerHTML = multi.map(([ip, list]) => {
+    let ipOpen = false;
+    const groupHtml = ([ip, list]) => {
       const codes = list.filter(e => e.code).length;
       return '<div class="ipg">'
         + '<div class="ipg-head"><b>' + escapeHtml(ip) + '</b>'
@@ -1573,7 +1575,24 @@
             + (e.code ? '<span class="ipg-code">' + escapeHtml(e.code) + '</span>' : '')
             + '<span class="ipg-date">' + (e.t ? new Date(e.t).toLocaleDateString('da-DK') : '') + '</span></div>').join('')
         + '</div>';
-    }).join('');
+    };
+    const renderIp = () => {
+      const shown = ipOpen ? multi : multi.slice(0, IP_FOLD);
+      box.innerHTML = shown.map(groupHtml).join('')
+        + (multi.length > IP_FOLD
+          ? '<button type="button" class="fold-btn' + (ipOpen ? ' open' : '') + '" data-ipfold>'
+            + (ipOpen ? 'Vis færre' : 'Vis alle ' + multi.length + ' IP-adresser')
+            + '<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>'
+          : '');
+    };
+    renderIp();
+    box.__toggleIp = () => { ipOpen = !ipOpen; renderIp(); };
+    if (!box.__delegated) {
+      box.__delegated = true;
+      box.addEventListener('click', e => {
+        if (e.target.closest('[data-ipfold]') && box.__toggleIp) box.__toggleIp();
+      });
+    }
   }
 
 async function loadNewsletter() {
