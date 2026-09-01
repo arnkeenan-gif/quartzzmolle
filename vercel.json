@@ -3,6 +3,12 @@
   "trailingSlash": false,
   "redirects": [
     {
+      "source": "/:path((?!api/).*)",
+      "has": [{ "type": "host", "value": "quartzmolle.dk" }],
+      "destination": "https://www.quartzmolle.dk/:path",
+      "permanent": true
+    },
+    {
       "source": "/butik/:path*",
       "destination": "/shop?from=:path*",
       "permanent": true
@@ -121,12 +127,12 @@
       "destination": "/api/stripewebhook"
     },
     {
-      "source": "/api/admin-order",
-      "destination": "/api/adminorder"
-    },
-    {
       "source": "/api/log-visit",
       "destination": "/api/logvisit"
+    },
+    {
+      "source": "/api/admin-order",
+      "destination": "/api/adminorder"
     },
     {
       "source": "/api/find-pakkeshops",

@@ -81,6 +81,15 @@
       height: 150lvh !important;
       will-change: transform;
     }
+    /* Videoen har filter:blur(2px) (style.css): de yderste par pixels af
+       elementet bliver halvgennemsigtige, og med left:0/width:100% ville det
+       vise sig som en tynd mørk streg i begge sidekanter. Derfor er videoen
+       8px bredere end skærmen i hver side — #videoStage (overflow:hidden)
+       klipper den slørede kant væk. Overlayet behøver det ikke. */
+    #videoStage .video-bg {
+      left: -8px !important;
+      width: calc(100% + 16px) !important;
+    }
     /* Modern browsers: the pin runs as a CSS scroll-driven animation on
        the compositor - perfectly in sync with the scroll, no JS lag. The
        stage height is measured by JS and provided as a plain pixel value
@@ -232,7 +241,7 @@
   <!-- VIDEO 2 - STORY -->
   <section class="video-section" id="vs2">
     <video class="video-bg" id="vid2" autoplay muted loop playsinline webkit-playsinline preload="auto" disablepictureinpicture disableremoteplayback controlslist="nodownload nofullscreen noremoteplayback noplaybackrate" tabindex="-1">
-      <source src="https://pub-a9fcbb930b0c4014b8286f9c245143a9.r2.dev/two.mp4" type="video/mp4" />
+      <source src="https://pub-a9fcbb930b0c4014b8286f9c245143a9.r2.dev/DJI_20250503120750_0017_D%20(1).mp4" type="video/mp4" />
     </video>
     <div class="video-overlay overlay-dark"></div>
     <div class="text-block text-left">
