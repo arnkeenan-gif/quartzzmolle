@@ -254,14 +254,37 @@ body {
   height: 100vh;
   height: 100lvh;
   z-index: 1;
-  background: rgba(0,0,0,0.26);
+  /* Filmisk grade: lodret gradient der er mørkest i top og bund (så nav,
+     titel og scroll-hint altid kan læses), lysere på midten så marken
+     skinner igennem — plus en varm brand-tone og en blød vignette lagt
+     ovenpå. Flere baggrunde stables i ét lag, ingen ekstra DOM. */
+  background:
+    radial-gradient(120% 80% at 50% 42%, transparent 44%, rgba(26,22,17,0.34) 100%),
+    linear-gradient(180deg,
+      rgba(20,16,11,0.52) 0%,
+      rgba(20,16,11,0.18) 26%,
+      rgba(20,16,11,0.10) 52%,
+      rgba(20,16,11,0.30) 80%,
+      rgba(20,16,11,0.60) 100%),
+    linear-gradient(0deg, rgba(58,42,20,0.14), rgba(58,42,20,0.14));
   opacity: 0;
   will-change: opacity;
   transition: opacity 600ms cubic-bezier(0.4, 0.0, 0.2, 1);
   pointer-events: none;
 }
 
-.overlay-dark   { background: rgba(0,0,0,0.30); }
+/* Story-videoen har venstrestillet tekst: læg ekstra tyngde i venstre side,
+   så overskrift og brødtekst står knivskarpt oven på videoen. */
+.overlay-dark {
+  background:
+    linear-gradient(90deg,
+      rgba(20,16,11,0.66) 0%,
+      rgba(20,16,11,0.42) 34%,
+      rgba(20,16,11,0.16) 62%,
+      rgba(20,16,11,0.10) 100%),
+    linear-gradient(180deg, rgba(20,16,11,0.30) 0%, rgba(20,16,11,0.20) 50%, rgba(20,16,11,0.40) 100%),
+    linear-gradient(0deg, rgba(58,42,20,0.14), rgba(58,42,20,0.14));
+}
 .overlay-medium { background: rgba(0,0,0,0.30); }
 
 .video-section.is-active .video-bg,
