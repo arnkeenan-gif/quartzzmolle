@@ -86,6 +86,29 @@ function nutritionTableHTML(n) {
   `;
 }
 
+// Én officiel adresse pr. produkt (www + kun id-parameteren). Bruges som
+// canonical og i schema, så Google ikke ser samme side under flere URL'er
+// (apex/www, ekstra parametre, .html-endelse).
+function canonicalUrl(product) {
+  return 'https://www.quartzmolle.dk/product?id=' + encodeURIComponent(product.id);
+}
+
+// <link rel="canonical"> sættes fra JS, fordi id'et kommer fra query-strengen.
+// Googlebot renderer JS, så tagget bliver læst. Ingen statisk fallback i
+// product.html — en forkert statisk canonical (fx til /shop) ville være værre
+// end ingen.
+function setCanonical(product) {
+  try {
+    const url = canonicalUrl(product);
+    let link = document.querySelector('link[rel="canonical"]');
+    if (!link) { link = document.createElement('link'); link.rel = 'canonical'; document.head.appendChild(link); }
+    link.href = url;
+    let og = document.querySelector('meta[property="og:url"]');
+    if (!og) { og = document.createElement('meta'); og.setAttribute('property', 'og:url'); document.head.appendChild(og); }
+    og.content = url;
+  } catch (e) { /* best-effort */ }
+}
+
 // Inject Product structured data (JSON-LD) so Google can show price, brand and
 // availability as a rich result. Googlebot renders JS, so a dynamically added
 // tag is read.
@@ -107,7 +130,7 @@ function injectProductSchema(product) {
       '@type': 'Offer',
       priceCurrency: 'DKK',
       availability: 'https://schema.org/InStock',
-      url: (typeof location !== 'undefined' ? location.href : 'https://www.quartzmolle.dk/')
+      url: canonicalUrl(product)
     };
     if (low != null) data.offers.price = low.toFixed(2);
     let el = document.getElementById('qm-product-schema');
@@ -118,6 +141,7 @@ function injectProductSchema(product) {
 
 function renderProduct(product) {
   currentProduct = product;
+  setCanonical(product);
   injectProductSchema(product);
   const inner = document.getElementById('productInner');
   document.title = `${product.name} – ${product.type} | Quartz Mølle`;
