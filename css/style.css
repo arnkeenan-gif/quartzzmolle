@@ -259,14 +259,19 @@ body {
      skinner igennem — plus en varm brand-tone og en blød vignette lagt
      ovenpå. Flere baggrunde stables i ét lag, ingen ekstra DOM. */
   background:
-    radial-gradient(120% 80% at 50% 42%, transparent 44%, rgba(26,22,17,0.34) 100%),
+    radial-gradient(120% 80% at 50% 42%, transparent 38%, rgba(20,16,11,0.48) 100%),
     linear-gradient(180deg,
-      rgba(20,16,11,0.52) 0%,
-      rgba(20,16,11,0.18) 26%,
-      rgba(20,16,11,0.10) 52%,
-      rgba(20,16,11,0.30) 80%,
-      rgba(20,16,11,0.60) 100%),
-    linear-gradient(0deg, rgba(58,42,20,0.14), rgba(58,42,20,0.14));
+      rgba(16,12,8,0.68) 0%,
+      rgba(16,12,8,0.40) 26%,
+      rgba(16,12,8,0.34) 52%,
+      rgba(16,12,8,0.50) 80%,
+      rgba(16,12,8,0.74) 100%),
+    linear-gradient(0deg, rgba(58,42,20,0.16), rgba(58,42,20,0.16));
+  /* Let sløring af videoen bagved, så den bliver et blødt, roligt tæppe
+     bag teksten i stedet for et skarpt, larmende klip. -webkit- er med,
+     så det også virker på iPhone/Safari. */
+  -webkit-backdrop-filter: blur(3px) saturate(105%);
+  backdrop-filter: blur(3px) saturate(105%);
   opacity: 0;
   will-change: opacity;
   transition: opacity 600ms cubic-bezier(0.4, 0.0, 0.2, 1);
@@ -278,12 +283,12 @@ body {
 .overlay-dark {
   background:
     linear-gradient(90deg,
-      rgba(20,16,11,0.66) 0%,
-      rgba(20,16,11,0.42) 34%,
-      rgba(20,16,11,0.16) 62%,
-      rgba(20,16,11,0.10) 100%),
-    linear-gradient(180deg, rgba(20,16,11,0.30) 0%, rgba(20,16,11,0.20) 50%, rgba(20,16,11,0.40) 100%),
-    linear-gradient(0deg, rgba(58,42,20,0.14), rgba(58,42,20,0.14));
+      rgba(16,12,8,0.80) 0%,
+      rgba(16,12,8,0.58) 34%,
+      rgba(16,12,8,0.34) 62%,
+      rgba(16,12,8,0.28) 100%),
+    linear-gradient(180deg, rgba(16,12,8,0.42) 0%, rgba(16,12,8,0.32) 50%, rgba(16,12,8,0.52) 100%),
+    linear-gradient(0deg, rgba(58,42,20,0.16), rgba(58,42,20,0.16));
 }
 .overlay-medium { background: rgba(0,0,0,0.30); }
 
