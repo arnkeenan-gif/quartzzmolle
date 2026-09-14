@@ -260,6 +260,28 @@ const PRODUCTS = [
       { label: '3 kg', price: 108, image: 'images/Spelt-fuldkorn-3kg-Webshop.jpg' },
       { label: '12,5 kg', price: 330, image: 'images/Spelt-fuldkorn-12_5_Webshop.jpg' }
     ]
+  },
+  {
+    id: 'bla-hvede-fuldkorn',
+    name: 'Blå hvede',
+    type: 'Fuldkornshvedemel',
+    color: '#2f5bff',
+    previewImage: 'images/pose-bla-hvede-fuldkorn.jpg',
+    altImage: 'images/blaahvede_3kg.jpg',
+    description: 'Blå hvede er en sjælden hvedesort, hvis kerner har et blåligt skær fra naturlige farvestoffer (anthocyaniner) i kernens yderste lag. Fuldkornsmelet har en nøddeagtig, let sødlig smag og giver saftige, karakterfulde brød – oplagt til surdejsbrød, boller og grovbrød.',
+    certifications: ['DK-ØKO-100', 'Dansk jordbrug', 'EU-jordbrug', 'Statskontrolleret Økologisk'],
+    origin: 'Dyrket i Norden & malet på stenkværn',
+    nutrition: {
+      energy: '1440 kJ / 343 kcal',
+      fat: '2,4 g', saturated: '0,4 g',
+      carbs: '62 g', sugars: '1,0 g',
+      fiber: '11 g', protein: '13 g',
+      salt: '0,01 g'
+    },
+    weights: [
+      { label: '3 kg', price: 122, image: 'images/blaahvede_3kg.jpg' },
+      { label: '12,5 kg', price: 350, image: 'images/blaahvede_12_5kg.jpg' }
+    ]
   }
 ];
 
