@@ -4,7 +4,12 @@
   "redirects": [
     {
       "source": "/:path((?!api/).*)",
-      "has": [{ "type": "host", "value": "quartzmolle.dk" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "quartzmolle.dk"
+        }
+      ],
       "destination": "https://www.quartzmolle.dk/:path",
       "permanent": true
     },
@@ -137,6 +142,10 @@
     {
       "source": "/api/find-pakkeshops",
       "destination": "/api/findpakkeshops"
+    },
+    {
+      "source": "/images/pose-bla-hvede-fuldkorn.jpg",
+      "destination": "/images/poseblahvedefuldkorn.jpg"
     }
   ]
 }
