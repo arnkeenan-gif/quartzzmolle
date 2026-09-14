@@ -19,6 +19,7 @@ export const CATALOG = {
   'rod-hvede-type85':      { name: "Rød hvede", type: "Mellemsigtet hvedemel – Type 85", weights: { '3 kg': 99,  '12,5 kg': 315 } },
   'rug-fuldkorn':          { name: "Rug", type: "Rugmel fuldkorn", weights: { '3 kg': 85,  '11 kg': 250 } },
   'spelt-fuldkorn':        { name: "Spelt", type: "Fuldkornsmel", weights: { '3 kg': 108, '12,5 kg': 330 } },
+  'bla-hvede-fuldkorn':    { name: "Blå hvede", type: "Fuldkornshvedemel", weights: { '3 kg': 122, '12,5 kg': 350 } },
 };
 
 // Parse the kg value from a weight label like "12,5 kg" -> 12.5
