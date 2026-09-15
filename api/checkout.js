@@ -5,7 +5,7 @@
 // authoritative catalog (api/_catalog.js, merged with Supabase). Client-supplied
 // prices are NEVER trusted — a manipulated price/weight is rejected.
 
-import { CATALOG, buildPriceMap, weightKgFromLabel } from './_catalog.js';
+import { CATALOG, buildPriceMap, weightKgFromLabel, labelImage } from './_catalog.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -61,7 +61,7 @@ export default async function handler(req, res) {
         kg: weightKgFromLabel(label),       // authoritative weight
         productName: String(cat.name || id),
         productType: String(cat.type || ''),
-        image: `images/pose-${id}.jpg`,
+        image: labelImage(id, label),   // etiketten, ikke posefotoet
       });
     }
 

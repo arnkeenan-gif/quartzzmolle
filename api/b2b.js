@@ -23,7 +23,7 @@
 
 import { kv } from './_kv.js';
 import { createHmac, createHash, timingSafeEqual, randomInt, randomBytes } from 'crypto';
-import { CATALOG, weightKgFromLabel } from './_catalog.js';
+import { CATALOG, weightKgFromLabel, labelImage } from './_catalog.js';
 
 const SECRET = process.env.LOCKER_SESSION_SECRET || '';
 const RESEND_KEY = process.env.RESEND_API_KEY || '';
@@ -111,7 +111,7 @@ function productList(prices) {
       out.push({
         key, id, label,
         name: NAMES[id] || id,
-        image: `images/pose-${id}.jpg`,
+        image: labelImage(id, label),   // etiketten, ikke posefotoet
         kg: weightKgFromLabel(label),
         price: typeof prices[key] === 'number' ? prices[key] : null,
       });

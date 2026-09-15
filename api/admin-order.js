@@ -49,6 +49,7 @@ function getProductImage(productName) {
   if (n.includes('rød hvede') && n.includes('type 85')) return `${base}/images/Rod-Type85-3kg.jpg`;
   if (n.includes('rug')) return `${base}/images/RugGreen-3Kg-fuldkorn-96x139mm-outlined.jpg`;
   if (n.includes('spelt')) return `${base}/images/Spelt-fuldkorn-3kg-Webshop.jpg`;
+  if (n.includes('blå hvede') || n.includes('bla hvede')) return `${base}/images/blaahvede_3kg.jpg`;
   return null;
 }
 
