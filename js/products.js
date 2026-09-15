@@ -267,7 +267,7 @@ const PRODUCTS = [
     type: 'Fuldkornshvedemel',
     color: '#2f5bff',
     previewImage: 'images/pose-bla-hvede-fuldkorn.jpg',
-    altImage: 'images/blaahvede_3kg.jpg',
+    altImage: 'images/blaahvede_label.jpg',
     description: 'Blå hvede er en sjælden hvedesort, hvis kerner har et blåligt skær fra naturlige farvestoffer (anthocyaniner) i kernens yderste lag. Fuldkornsmelet har en nøddeagtig, let sødlig smag og giver saftige, karakterfulde brød – oplagt til surdejsbrød, boller og grovbrød.',
     certifications: ['DK-ØKO-100', 'Dansk jordbrug', 'EU-jordbrug', 'Statskontrolleret Økologisk'],
     origin: 'Dyrket i Norden & malet på stenkværn',

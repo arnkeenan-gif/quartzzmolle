@@ -156,12 +156,14 @@ function initVideoFade() {
       sections.forEach((s, i) => {
         s.classList.toggle('is-active', i === idx);
         const vid = s.querySelector('.video-bg');
-        const ov = s.querySelector('.video-overlay');
+        // Overlayet er delt i to halvdele på forsiden (se index.html) — begge
+        // skal følges ad, derfor querySelectorAll.
+        const ovs = s.querySelectorAll('.video-overlay');
         // Earlier videos stay visible UNDER the active one (later sections sit
         // on top in stacking order). If the incoming video hasn't finished
         // loading yet, the previous video shows through instead of black.
         if (vid) vid.style.opacity = i <= idx ? '1' : '0';
-        if (ov) ov.style.opacity = i === idx ? '1' : '0';
+        ovs.forEach(ov => { ov.style.opacity = i === idx ? '1' : '0'; });
       });
       activeSection = closest;
     }
@@ -620,4 +622,45 @@ window.qmFlyToCart = function (srcEl) {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
     else run();
   } catch (e) { /* never break the page */ }
+})();
+
+// ── FOTO-GALLERI ────────────────────────────────────────────────────────────
+// Skjuler en flise, hvis billedet mangler (fx endnu ikke uploadet), og hele
+// sektionen, hvis der er under to billeder tilbage. Så kan galleriet ligge
+// klar i koden, uden at siden viser brudte billeder.
+(function () {
+  function prune(section) {
+    var items = section.querySelectorAll('.pg-item');
+    var alive = 0, pending = items.length;
+    if (!pending) { section.style.display = 'none'; return; }
+
+    function settle() {
+      if (--pending > 0) return;
+      if (alive < 2) { section.style.display = 'none'; return; }
+      // Mangler det store billede, forfremmes det første tilbageværende
+      if (!section.querySelector('.pg-item.pg-big')) {
+        var first = section.querySelector('.pg-item');
+        if (first) first.classList.add('pg-big');
+      }
+    }
+
+    Array.prototype.forEach.call(items, function (item) {
+      var img = item.querySelector('img');
+      if (!img) { item.remove(); settle(); return; }
+      if (img.complete) {
+        if (img.naturalWidth > 0) { alive++; } else { item.remove(); }
+        settle();
+      } else {
+        img.addEventListener('load', function () { alive++; settle(); }, { once: true });
+        img.addEventListener('error', function () { item.remove(); settle(); }, { once: true });
+      }
+    });
+  }
+
+  function init() {
+    Array.prototype.forEach.call(document.querySelectorAll('.photo-gallery'), prune);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else { init(); }
 })();

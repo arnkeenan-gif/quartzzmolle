@@ -90,6 +90,32 @@
       left: -8px !important;
       width: calc(100% + 16px) !important;
     }
+    /* Overlayet er delt i to halvdele (.ov-a øverst, .ov-b nederst) på 75lvh
+       hver. iOS Safari deler et malet lag højere end 1280 CSS-px (1024 ved
+       lav hukommelse) op i "tiles" på 512 device-px, og hvilke tiles der er
+       malet afgøres på hovedtråden ud fra en gammel scroll-position, mens
+       compositor-tråden flytter laget (scroll-drevet animation, iOS 26.4+).
+       Resultat: et vandret bånd uden gradient = den hårde kant på iPhone.
+       Et 150lvh-overlay er 1398px på en 932pt-iPhone; 75lvh er altid under
+       grænsen, så hver halvdel er ét ikke-opdelt lag, der altid er malet
+       fuldt ud. Gradienten strækkes over begge halvdele med background-size,
+       så de to dele tilsammen ser ud som ét overlay. Videoen er et
+       contents-lag (ikke malet) og bliver aldrig opdelt. */
+    #videoStage .video-overlay.ov-a,
+    #videoStage .video-overlay.ov-b {
+      height: 75vh !important;
+      height: 75lvh !important;
+      background-size: 100% 150vh;
+      background-size: 100% 150lvh;
+      background-repeat: no-repeat;
+      background-position: 0 0;
+    }
+    #videoStage .video-overlay.ov-b {
+      top: 65vh !important;
+      top: 65lvh !important;
+      background-position: 0 -75vh;
+      background-position: 0 -75lvh;
+    }
     /* Modern browsers: the pin runs as a CSS scroll-driven animation on
        the compositor - perfectly in sync with the scroll, no JS lag. The
        stage height is measured by JS and provided as a plain pixel value
@@ -225,7 +251,8 @@
     <video class="video-bg" id="vid1" autoplay muted loop playsinline webkit-playsinline preload="auto" disablepictureinpicture disableremoteplayback controlslist="nodownload nofullscreen noremoteplayback noplaybackrate" tabindex="-1">
       <source src="https://pub-a9fcbb930b0c4014b8286f9c245143a9.r2.dev/three.mp4" type="video/mp4" />
     </video>
-    <div class="video-overlay"></div>
+    <div class="video-overlay ov-a"></div>
+    <div class="video-overlay ov-b"></div>
     <div class="hero-content" id="heroContent">
       <img src="images/logopng.png" alt="Quartz Mølle" class="hero-logo" />
       <h1 class="hero-title">Quartz Mølle</h1>
@@ -243,7 +270,8 @@
     <video class="video-bg" id="vid2" autoplay muted loop playsinline webkit-playsinline preload="auto" disablepictureinpicture disableremoteplayback controlslist="nodownload nofullscreen noremoteplayback noplaybackrate" tabindex="-1">
       <source src="https://pub-a9fcbb930b0c4014b8286f9c245143a9.r2.dev/DJI_20250503120750_0017_D%20(1).mp4" type="video/mp4" />
     </video>
-    <div class="video-overlay overlay-dark"></div>
+    <div class="video-overlay overlay-dark ov-a"></div>
+    <div class="video-overlay overlay-dark ov-b"></div>
     <div class="text-block text-left">
       <span class="eyebrow">Vores historie</span>
       <h2>Fra mark til mel</h2>
@@ -268,6 +296,7 @@
     </div>
   </section>
 
+
   <!-- WHY -->
   <section class="why">
     <div class="why-inner">
@@ -283,6 +312,34 @@
       </div>
       <div class="why-image">
         <img src="images/logopng.png" alt="Quartz Mølle" />
+      </div>
+    </div>
+  </section>
+
+  <!-- FOTO-GALLERI -->
+  <section class="photo-gallery" aria-label="Billeder fra Quartz Mølle">
+    <div class="photo-gallery-inner">
+      <div class="pg-grid">
+        <figure class="pg-item pg-big">
+          <img src="images/foto_krumme.jpg" alt="Surdejsbrød skåret over med åben, saftig krumme" loading="lazy" decoding="async" width="1200" height="1200" />
+          <figcaption></figcaption>
+        </figure>
+        <figure class="pg-item">
+          <img src="images/foto_ovn.jpg" alt="Nybagte surdejsbrød i ovnen" loading="lazy" decoding="async" width="600" height="600" />
+          <figcaption></figcaption>
+        </figure>
+        <figure class="pg-item">
+          <img src="images/foto_dej.jpg" alt="Hænder der former dej af friskmalet mel" loading="lazy" decoding="async" width="600" height="600" />
+          <figcaption></figcaption>
+        </figure>
+        <figure class="pg-item">
+          <img src="images/foto_moller.jpg" alt="Mølleren med tre poser friskmalet mel" loading="lazy" decoding="async" width="600" height="600" />
+          <figcaption></figcaption>
+        </figure>
+        <figure class="pg-item">
+          <img src="images/foto_saekkerod.jpg" alt="Stabler af Rød hvede klar til levering" loading="lazy" decoding="async" width="600" height="600" />
+          <figcaption></figcaption>
+        </figure>
       </div>
     </div>
   </section>
