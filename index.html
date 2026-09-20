@@ -7,8 +7,8 @@
   <title>Quartz Mølle – Økologisk Mel fra Stenkværn</title>
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Quartz Mølle" />
-  <meta property="og:title" content="Quartz Mølle – Økologisk mel malet på stenkværn" />
-  <meta property="og:description" content="Økologisk mel malet på stenkværn i Danmark – med omtanke for smag og natur." />
+  <meta property="og:title" content="Quartz Mølle – Økologisk mel fra stenkværn" />
+  <meta property="og:description" content="Økologisk mel malet langsomt på kvarts-stenkværn i Herlufmagle. Hvede, rug og spelt af nordisk korn – køb online med levering eller afhent på møllen." />
   <meta property="og:image" content="https://www.quartzmolle.dk/images/og-image.jpg" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
@@ -18,7 +18,7 @@
   <link rel="icon" type="image/png" href="/images/favicon.png">
   <link rel="apple-touch-icon" href="/images/appletouchicon.png">
   <meta name="apple-mobile-web-app-title" content="Quartz Mølle" />
-  <meta name="description" content="Quartz Mølle producerer økologisk mel malet på stenkværn i Danmark." />
+  <meta name="description" content="Økologisk mel malet langsomt på kvarts-stenkværn i Herlufmagle. Hvede, rug og spelt af nordisk korn – køb online med levering eller afhent på møllen." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -198,21 +198,115 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    "name": "Quartz Mølle",
-    "url": "https://www.quartzmolle.dk/",
-    "logo": "https://www.quartzmolle.dk/images/logopng.png",
-    "image": "https://www.quartzmolle.dk/images/og-image.jpg",
-    "email": "hello@quartzmolle.dk",
-    "vatID": "DK42117188",
-    "address": {
-      "@type": "PostalAddress",
-      "streetAddress": "Suså Landevej 101",
-      "postalCode": "4160",
-      "addressLocality": "Herlufmagle",
-      "addressCountry": "DK"
-    },
-    "description": "Økologisk mel malet på stenkværn i Danmark. Webshop med levering og Click & Collect direkte fra møllen."
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.quartzmolle.dk/#organisation",
+        "name": "Quartz Mølle",
+        "legalName": "Quartz Mølle ApS",
+        "alternateName": ["Quartz Moelle", "Quartzmølle"],
+        "url": "https://www.quartzmolle.dk/",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.quartzmolle.dk/images/logopng.png",
+          "caption": "Quartz Mølle"
+        },
+        "image": "https://www.quartzmolle.dk/images/og-image.jpg",
+        "description": "Quartz Mølle maler økologisk mel på stenkværn i Herlufmagle på Sydsjælland. Møllestenene er rige på kvarts, emery og flint, og kornet males ved kun 115 omdrejninger i minuttet, så næringsstoffer og smag bevares.",
+        "slogan": "Mel med mening",
+        "email": "hello@quartzmolle.dk",
+        "vatID": "DK42117188",
+        "taxID": "42117188",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "Suså Landevej 101",
+          "postalCode": "4160",
+          "addressLocality": "Herlufmagle",
+          "addressRegion": "Sjælland",
+          "addressCountry": "DK"
+        },
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "contactType": "customer support",
+          "email": "hello@quartzmolle.dk",
+          "areaServed": ["DK", "SE", "DE", "NO", "NL"],
+          "availableLanguage": ["da", "en"]
+        },
+        "sameAs": [
+          "https://www.facebook.com/quartzmolle",
+          "https://www.instagram.com/quartzmolle/"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.quartzmolle.dk/#website",
+        "name": "Quartz Mølle",
+        "url": "https://www.quartzmolle.dk/",
+        "inLanguage": "da-DK",
+        "publisher": { "@id": "https://www.quartzmolle.dk/#organisation" },
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "https://www.quartzmolle.dk/shop?q={search_term_string}"
+          },
+          "query-input": "required name=search_term_string"
+        }
+      },
+      {
+        "@type": ["Store", "FoodEstablishment"],
+        "@id": "https://www.quartzmolle.dk/#moellen",
+        "name": "Quartz Mølle",
+        "url": "https://www.quartzmolle.dk/",
+        "image": "https://www.quartzmolle.dk/images/og-image.jpg",
+        "email": "hello@quartzmolle.dk",
+        "priceRange": "85–350 DKK",
+        "currenciesAccepted": "DKK",
+        "paymentAccepted": "Kort, MobilePay",
+        "parentOrganization": { "@id": "https://www.quartzmolle.dk/#organisation" },
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "Suså Landevej 101",
+          "postalCode": "4160",
+          "addressLocality": "Herlufmagle",
+          "addressCountry": "DK"
+        },
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": 55.366650,
+          "longitude": 11.762342
+        },
+        "hasOfferCatalog": {
+          "@type": "OfferCatalog",
+          "name": "Økologisk mel fra Quartz Mølle",
+          "url": "https://www.quartzmolle.dk/shop"
+        }
+      },
+      {
+        "@type": "ItemList",
+        "@id": "https://www.quartzmolle.dk/#hovedmenu",
+        "name": "Quartz Mølle – hovedsektioner",
+        "itemListOrder": "https://schema.org/ItemListOrderAscending",
+        "numberOfItems": 4,
+        "itemListElement": [
+          { "@type": "SiteNavigationElement", "position": 1, "name": "Alle produkter", "description": "Hele sortimentet af økologisk mel i 3 kg og 12,5 kg.", "url": "https://www.quartzmolle.dk/shop" },
+          { "@type": "SiteNavigationElement", "position": 2, "name": "Forhandlere", "description": "Butikker og bagerier der fører Quartz Mølle-mel.", "url": "https://www.quartzmolle.dk/forhandlere" },
+          { "@type": "SiteNavigationElement", "position": 3, "name": "Om os", "description": "Møllen, stenene og melet bag Quartz Mølle.", "url": "https://www.quartzmolle.dk/om" },
+          { "@type": "SiteNavigationElement", "position": 4, "name": "Kontakt", "description": "Adresse, e-mail og kort til møllen i Herlufmagle.", "url": "https://www.quartzmolle.dk/#kontakt" }
+        ]
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://www.quartzmolle.dk/#webpage",
+        "url": "https://www.quartzmolle.dk/",
+        "name": "Quartz Mølle – Økologisk mel fra stenkværn",
+        "description": "Økologisk mel malet langsomt på kvarts-stenkværn i Herlufmagle. Hvede, rug og spelt af nordisk korn – køb online med levering eller afhent på møllen.",
+        "isPartOf": { "@id": "https://www.quartzmolle.dk/#website" },
+        "about": { "@id": "https://www.quartzmolle.dk/#organisation" },
+        "hasPart": { "@id": "https://www.quartzmolle.dk/#hovedmenu" },
+        "inLanguage": "da-DK"
+      }
+    ]
   }
   </script>
 </head>

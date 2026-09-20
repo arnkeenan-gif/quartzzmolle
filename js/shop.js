@@ -129,6 +129,14 @@ function applySearch() {
 function initShopSearch() {
   const input = document.getElementById('shopSearch');
   const clearBtn = document.getElementById('shopSearchClear');
+  // ?q=… forudfylder søgefeltet. Det er den adresse, forsidens SearchAction
+  // (sitelinks-søgefeltet i Google) sender folk hen til, så den SKAL virke.
+  if (input) {
+    try {
+      const q = new URLSearchParams(location.search).get('q');
+      if (q) input.value = q.slice(0, 80);
+    } catch (e) { /* ingen søgning, ingen skade */ }
+  }
   if (input) input.addEventListener('input', applySearch);
   if (clearBtn) {
     clearBtn.addEventListener('click', () => {
@@ -152,7 +160,48 @@ function loadShopProducts() {
   applySearch();
 }
 
+// Struktureret liste over sortimentet. Google kan læse butikssiden som en
+// egentlig produktliste i stedet for bare en side med billeder — og listen
+// bygges fra PRODUCTS, så den aldrig kommer ud af trit med butikken.
+function injectShopItemList() {
+  try {
+    if (!Array.isArray(PRODUCTS) || !PRODUCTS.length) return;
+    const data = {
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      name: 'Alle produkter – Quartz Mølle',
+      numberOfItems: PRODUCTS.length,
+      itemListOrder: 'https://schema.org/ItemListOrderAscending',
+      itemListElement: PRODUCTS.map((p, i) => {
+        const priser = (p.weights || []).map(w => w.price).filter(n => typeof n === 'number');
+        const vare = {
+          '@type': 'Product',
+          name: `${p.name} – ${p.type}`,
+          url: 'https://www.quartzmolle.dk/product?id=' + encodeURIComponent(p.id),
+          sku: p.id
+        };
+        const bil = p.previewImage || (p.weights && p.weights[0] && p.weights[0].image);
+        if (bil) vare.image = 'https://www.quartzmolle.dk/' + String(bil).replace(/^\//, '');
+        if (priser.length) {
+          vare.offers = {
+            '@type': 'Offer',
+            price: Math.min.apply(null, priser).toFixed(2),
+            priceCurrency: 'DKK',
+            availability: 'https://schema.org/InStock',
+            url: vare.url
+          };
+        }
+        return { '@type': 'ListItem', position: i + 1, item: vare };
+      })
+    };
+    let el = document.getElementById('qm-shop-itemlist');
+    if (!el) { el = document.createElement('script'); el.type = 'application/ld+json'; el.id = 'qm-shop-itemlist'; document.head.appendChild(el); }
+    el.textContent = JSON.stringify(data);
+  } catch (e) { /* schema is best-effort */ }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   initShopSearch();
   loadShopProducts();
+  injectShopItemList();
 });

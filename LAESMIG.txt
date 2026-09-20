@@ -1,0 +1,21 @@
+Kun soegeresultatet - hjemmesiden er IKKE aendret
+
+Der er ingen nye sider, ingen nye menupunkter og ingen aendringer i
+udseendet. Alt ligger i sidernes <head> og i struktureret data, som kun
+Google laeser. Testen kontrollerer at hver sides indhold og stilarket
+er byte for byte som foer.
+
+FILER (samme mapper som paa GitHub)
+  roden : index.html, shop.html, om.html, forhandlere.html, sitemap.xml
+  js    : product.js, shop.js
+
+BAGEFTER I GOOGLE SEARCH CONSOLE
+  1. Sitemaps -> send https://www.quartzmolle.dk/sitemap.xml igen
+  2. URL-inspektion -> "Anmod om indeksering" paa:
+       https://www.quartzmolle.dk/
+       https://www.quartzmolle.dk/shop
+       https://www.quartzmolle.dk/forhandlere
+       https://www.quartzmolle.dk/om
+
+Beskrivelsen slaar typisk igennem paa 3-14 dage. Sitelinks vaelger
+Google selv - de kan ikke saettes manuelt.
