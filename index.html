@@ -116,6 +116,44 @@
       background-position: 0 -75vh;
       background-position: 0 -75lvh;
     }
+    /* Den tynde streg hvor de to halvdele mødes.
+       Safari runder et komposit-lags kanter UD til hele device-pixels. De to
+       halvdele kommer derfor til at dække den samme pixelrække, og på netop
+       den række lægges mørkningen på to gange: lys slipper igennem med
+       (1-a) i anden potens i stedet for (1-a). Med a cirka 0,34 er rækken
+       omkring en tredjedel mørkere - en knivskarp vandret streg tværs over
+       videoen. Den kan ikke bare flyttes: pin-animationen forskyder begge
+       lag med en brøkdel af en pixel, der ændrer sig hele tiden under
+       scroll. Chrome udjævner kanten i stedet og viser den ikke - derfor
+       ses stregen kun i Safari.
+
+       Løsningen: halvdelene overlapper 12lvh og tones over i hinanden, så
+       der slet ingen kant er at runde. Tonekurverne er ikke bare fuld-til-
+       nul og nul-til-fuld; to halvgennemsigtige lag oven på hinanden
+       slipper mere lys igennem end ét, så ov-b's kurve er løftet netop så
+       meget, at (1-a*m_a)(1-a*m_b) = (1-a) hele vejen igennem overlappet.
+       Zonen bliver dermed hverken lysere eller mørkere end resten.
+       Hver halvdel er 81lvh = 755 px på en 932pt-iPhone og altså stadig
+       under tile-grænsen på 1024/1280 px, som hele opdelingen handler om. */
+    @supports (mask-image: linear-gradient(#000, #000)) or (-webkit-mask-image: linear-gradient(#000, #000)) {
+      #videoStage .video-overlay.ov-a,
+      #videoStage .video-overlay.ov-b {
+        height: 81vh !important;
+        height: 81lvh !important;
+      }
+      #videoStage .video-overlay.ov-a {
+        -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 85.200%, rgba(0,0,0,0.9949) 85.817%, rgba(0,0,0,0.9803) 86.433%, rgba(0,0,0,0.9570) 87.050%, rgba(0,0,0,0.9259) 87.667%, rgba(0,0,0,0.8879) 88.283%, rgba(0,0,0,0.8438) 88.900%, rgba(0,0,0,0.7944) 89.517%, rgba(0,0,0,0.7407) 90.133%, rgba(0,0,0,0.6836) 90.750%, rgba(0,0,0,0.6238) 91.367%, rgba(0,0,0,0.5624) 91.983%, rgba(0,0,0,0.5000) 92.600%, rgba(0,0,0,0.4376) 93.217%, rgba(0,0,0,0.3762) 93.833%, rgba(0,0,0,0.3164) 94.450%, rgba(0,0,0,0.2593) 95.067%, rgba(0,0,0,0.2056) 95.683%, rgba(0,0,0,0.1562) 96.300%, rgba(0,0,0,0.1121) 96.917%, rgba(0,0,0,0.0741) 97.533%, rgba(0,0,0,0.0430) 98.150%, rgba(0,0,0,0.0197) 98.767%, rgba(0,0,0,0.0051) 99.383%, transparent 100.000%);
+        mask-image: linear-gradient(to bottom, #000 0%, #000 85.200%, rgba(0,0,0,0.9949) 85.817%, rgba(0,0,0,0.9803) 86.433%, rgba(0,0,0,0.9570) 87.050%, rgba(0,0,0,0.9259) 87.667%, rgba(0,0,0,0.8879) 88.283%, rgba(0,0,0,0.8438) 88.900%, rgba(0,0,0,0.7944) 89.517%, rgba(0,0,0,0.7407) 90.133%, rgba(0,0,0,0.6836) 90.750%, rgba(0,0,0,0.6238) 91.367%, rgba(0,0,0,0.5624) 91.983%, rgba(0,0,0,0.5000) 92.600%, rgba(0,0,0,0.4376) 93.217%, rgba(0,0,0,0.3762) 93.833%, rgba(0,0,0,0.3164) 94.450%, rgba(0,0,0,0.2593) 95.067%, rgba(0,0,0,0.2056) 95.683%, rgba(0,0,0,0.1562) 96.300%, rgba(0,0,0,0.1121) 96.917%, rgba(0,0,0,0.0741) 97.533%, rgba(0,0,0,0.0430) 98.150%, rgba(0,0,0,0.0197) 98.767%, rgba(0,0,0,0.0051) 99.383%, transparent 100.000%);
+      }
+      #videoStage .video-overlay.ov-b {
+        top: 59vh !important;
+        top: 59lvh !important;
+        background-position: 0 -69vh;
+        background-position: 0 -69lvh;
+        -webkit-mask-image: linear-gradient(to bottom, transparent 0.000%, rgba(0,0,0,0.0076) 0.617%, rgba(0,0,0,0.0293) 1.233%, rgba(0,0,0,0.0633) 1.850%, rgba(0,0,0,0.1075) 2.467%, rgba(0,0,0,0.1598) 3.083%, rgba(0,0,0,0.2181) 3.700%, rgba(0,0,0,0.2804) 4.317%, rgba(0,0,0,0.3452) 4.933%, rgba(0,0,0,0.4108) 5.550%, rgba(0,0,0,0.4759) 6.167%, rgba(0,0,0,0.5396) 6.783%, rgba(0,0,0,0.6010) 7.400%, rgba(0,0,0,0.6593) 8.017%, rgba(0,0,0,0.7141) 8.633%, rgba(0,0,0,0.7649) 9.250%, rgba(0,0,0,0.8114) 9.867%, rgba(0,0,0,0.8534) 10.483%, rgba(0,0,0,0.8905) 11.100%, rgba(0,0,0,0.9226) 11.717%, rgba(0,0,0,0.9496) 12.333%, rgba(0,0,0,0.9711) 12.950%, rgba(0,0,0,0.9868) 13.567%, rgba(0,0,0,0.9966) 14.183%, #000 14.800%, #000 100%);
+        mask-image: linear-gradient(to bottom, transparent 0.000%, rgba(0,0,0,0.0076) 0.617%, rgba(0,0,0,0.0293) 1.233%, rgba(0,0,0,0.0633) 1.850%, rgba(0,0,0,0.1075) 2.467%, rgba(0,0,0,0.1598) 3.083%, rgba(0,0,0,0.2181) 3.700%, rgba(0,0,0,0.2804) 4.317%, rgba(0,0,0,0.3452) 4.933%, rgba(0,0,0,0.4108) 5.550%, rgba(0,0,0,0.4759) 6.167%, rgba(0,0,0,0.5396) 6.783%, rgba(0,0,0,0.6010) 7.400%, rgba(0,0,0,0.6593) 8.017%, rgba(0,0,0,0.7141) 8.633%, rgba(0,0,0,0.7649) 9.250%, rgba(0,0,0,0.8114) 9.867%, rgba(0,0,0,0.8534) 10.483%, rgba(0,0,0,0.8905) 11.100%, rgba(0,0,0,0.9226) 11.717%, rgba(0,0,0,0.9496) 12.333%, rgba(0,0,0,0.9711) 12.950%, rgba(0,0,0,0.9868) 13.567%, rgba(0,0,0,0.9966) 14.183%, #000 14.800%, #000 100%);
+      }
+    }
     /* Modern browsers: the pin runs as a CSS scroll-driven animation on
        the compositor - perfectly in sync with the scroll, no JS lag. The
        stage height is measured by JS and provided as a plain pixel value
