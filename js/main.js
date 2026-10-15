@@ -4,7 +4,7 @@
 // Uden en slutdato bliver den slags stående til langt ind i december, fordi
 // ingen husker at pille den ned igen.
 (function () {
-  var FRA_MD = [9, 20];   // 20. oktober  (getMonth() er 0-indekseret)
+  var FRA_MD = [9, 15];   // 15. oktober  (getMonth() er 0-indekseret)
   var TIL_MD = [10, 2];   // 2. november, til og med
   function iSaeson(d) {
     var m = d.getMonth(), dag = d.getDate();
