@@ -176,6 +176,27 @@
         from { transform: translateY(0); }
         to   { transform: translateY(var(--qm-pin-end, 225vh)); }
       }
+
+      /* Skiftet fra video 1 til video 2 er OGSÅ scroll-drevet. Før var det
+         en 600 ms tidsbaseret fade, som JavaScript udløste, når grænsen
+         passerede midten af skærmen. Scroller man hurtigt, er teksten
+         allerede forbi, mens videoen stadig toner - det ses som et hop.
+         Nu er video 2's opacity en ren funktion af scroll-positionen (fra
+         --qm-fade-a til --qm-fade-b, sat i pixels af scriptet nedenfor),
+         så fadet sidder præcis der, hvor tommelfingeren er, uanset tempo.
+         Klassen .qm-css-fade sættes kun, når CSS-pinningen er bekræftet;
+         ellers falder vi tilbage til JS-fadet i main.js. */
+      html.qm-css-fade #vs2 .video-bg,
+      html.qm-css-fade #vs2 .video-overlay {
+        animation: qm-pin linear both, qm-fade linear both;
+        animation-timeline: scroll(root), scroll(root);
+        animation-range: 0px var(--qm-stage-h, 245vh), var(--qm-fade-a, 20vh) var(--qm-fade-b, 80vh);
+        transition: none;
+      }
+      @keyframes qm-fade {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+      }
     }
 
     /* shorter curtain zone - video 2 doesn't scroll on forever */
@@ -626,9 +647,20 @@
       if (!els.length) return;
 
       var PIN_FACTOR = 0.92;
+      var vs2 = document.getElementById('vs2');
       function setStageVar() {
         document.documentElement.style.setProperty('--qm-stage-h', stage.offsetHeight + 'px');
         document.documentElement.style.setProperty('--qm-pin-end', Math.round(stage.offsetHeight * PIN_FACTOR) + 'px');
+        /* Crossfadens scroll-interval: centreret dér hvor grænsen mellem
+           video 1 og 2 rammer skærmens midte (samme punkt som JS-fadet
+           skiftede ved), spredt over 60 % af en skærmhøjde. */
+        if (vs2) {
+          var top = vs2.getBoundingClientRect().top + (window.scrollY || window.pageYOffset || 0);
+          var mid = top - window.innerHeight / 2;
+          var half = window.innerHeight * 0.30;
+          document.documentElement.style.setProperty('--qm-fade-a', Math.max(0, Math.round(mid - half)) + 'px');
+          document.documentElement.style.setProperty('--qm-fade-b', Math.round(mid + half) + 'px');
+        }
       }
       setStageVar();
       window.addEventListener('resize', setStageVar);
@@ -659,6 +691,10 @@
       function enableJs() {
         if (jsActive) return;
         jsActive = true;
+        /* CSS-pinningen virker ikke her - så stol heller ikke på CSS-fadet.
+           Giv opacity-styringen tilbage til main.js. */
+        document.documentElement.classList.remove('qm-css-fade');
+        try { window.dispatchEvent(new Event('qm:fade-fallback')); } catch (e) {}
         window.addEventListener('scroll', onScrollJs, { passive: true });
         window.addEventListener('resize', onScrollJs);
         applyJs();
@@ -666,6 +702,7 @@
 
       var cssPin = window.CSS && CSS.supports && CSS.supports('animation-timeline: scroll()');
       if (!cssPin) { enableJs(); return; }
+      document.documentElement.classList.add('qm-css-fade');
 
       /* CSS path claimed - verify it actually works once there is real
          scroll to judge by. */

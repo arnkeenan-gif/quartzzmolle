@@ -170,6 +170,15 @@ function initVideoFade() {
       }
     });
 
+    // Kører det scroll-drevne CSS-crossfade (index.html), rører JS ikke
+    // opacity: de to ville ellers trække i hver sin retning. Falder CSS-
+    // pinningen igennem, fjernes klassen igen, og JS tager over.
+    const cssFade = document.documentElement.classList.contains('qm-css-fade');
+    if (cssFade) {
+      document.body.classList.toggle('past-videos', !anyVideoVisible);
+      return;
+    }
+
     if (closest && closest !== activeSection) {
       const idx = sections.indexOf(closest);
       sections.forEach((s, i) => {
@@ -204,6 +213,9 @@ function initVideoFade() {
 
   window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', onScroll);
+  // Når index.html opgiver CSS-fadet, skal JS skrive opacity med det samme -
+  // ikke først ved næste sektionsskift.
+  window.addEventListener('qm:fade-fallback', () => { activeSection = null; update(); });
   update();
 }
 
@@ -428,220 +440,6 @@ window.qmFlyToCart = function (srcEl) {
     setTimeout(function () { if (drop.parentNode) drop.parentNode.removeChild(drop); }, 800);
   } catch (e) {}
 };
-
-// ── Quick add: a small cart button on every product card ──
-// Tapping it opens a size popover that scales out of the button; picking a
-// size adds to the cart immediately (fly-to-cart + badge bounce) without
-// opening the product page. Cards are matched to PRODUCTS via their link id.
-// A11y: aria-haspopup/aria-expanded on the trigger, Escape closes and returns
-// focus, arrow keys move between sizes, focus leaving the popup closes it.
-// Outside taps dismiss via pointerdown — reliable on iOS Safari, where
-// document-level "click" never fires for taps on non-interactive elements.
-(function initQuickAdd() {
-  try {
-    var CART_SVG = '<span class="qa-ic" aria-hidden="true"><svg class="qa-ic-cart" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/><line x1="13.5" y1="7.75" x2="13.5" y2="12.25"/><line x1="11.25" y1="10" x2="15.75" y2="10"/></svg></span>';
-    var CHECK_SVG = '<span class="qa-ic" aria-hidden="true"><svg class="qa-ic-check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>';
-    var openPop = null;
-    var openBtn = null;
-
-    function products() { return (typeof PRODUCTS !== 'undefined' && Array.isArray(PRODUCTS)) ? PRODUCTS : []; }
-    function t(s) { return (window.QuartzI18n && window.QuartzI18n.t) ? window.QuartzI18n.t(s) : s; }
-    function reduceMotion() { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
-
-    function closePop(refocus) {
-      if (!openPop) return;
-      var pop = openPop;
-      var btn = openBtn;
-      openPop = null;
-      openBtn = null;
-      if (btn) btn.setAttribute('aria-expanded', 'false');
-      function remove() { if (pop.parentNode) pop.parentNode.removeChild(pop); }
-      if (reduceMotion()) {
-        remove();
-      } else {
-        pop.classList.remove('in');
-        pop.classList.add('out'); // exits back toward the button (see .qa-pop.out)
-        setTimeout(remove, 160);
-      }
-      if (refocus && btn) btn.focus();
-    }
-
-    // Outside tap: pointerdown closes instantly (and actually fires on iOS).
-    // If the dismissing tap landed on the card that owns the popup, swallow the
-    // click that follows so dismissing doesn't also navigate to the product page.
-    document.addEventListener('pointerdown', function (e) {
-      if (!openPop) return;
-      if (openPop.contains(e.target)) return;
-      if (openBtn && (e.target === openBtn || openBtn.contains(e.target))) return; // its own click toggles
-      var card = openPop.__card;
-      closePop();
-      if (card && card.contains(e.target)) {
-        var cleanup = function () { document.removeEventListener('click', swallow, true); };
-        var swallow = function (ev) { ev.preventDefault(); ev.stopPropagation(); cleanup(); };
-        document.addEventListener('click', swallow, true);
-        setTimeout(cleanup, 500);
-      }
-    }, true);
-
-    // Fallback for browsers without pointer events (keeps the old behaviour).
-    document.addEventListener('click', function () { if (openPop) closePop(); });
-
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && openPop) closePop(true);
-    });
-
-    function confirmAdd(btn, card) {
-      if (btn.__qaTimer) clearTimeout(btn.__qaTimer);
-      btn.classList.remove('qa-added');
-      btn.innerHTML = CHECK_SVG;
-      void btn.offsetWidth; // restart the pulse + check-draw animations
-      btn.classList.add('qa-added');
-
-      var old = card.querySelector('.qa-note');
-      if (old && old.parentNode) old.parentNode.removeChild(old);
-      var note = document.createElement('span');
-      note.className = 'qa-note';
-      note.setAttribute('role', 'status'); // screen readers announce the confirmation
-      note.textContent = t('Tilføjet');
-      card.appendChild(note);
-      requestAnimationFrame(function () { note.classList.add('in'); });
-
-      btn.__qaTimer = setTimeout(function () {
-        btn.__qaTimer = null;
-        btn.classList.remove('qa-added');
-        btn.innerHTML = CART_SVG;
-        note.classList.remove('in');
-        setTimeout(function () { if (note.parentNode) note.parentNode.removeChild(note); }, 220);
-      }, 1500);
-    }
-
-    function showPop(card, p, btn, viaKeyboard) {
-      var already = openPop && openPop.__card === card;
-      closePop();
-      if (already) return; // second tap on the same button just closes
-
-      var pop = document.createElement('div');
-      pop.className = 'qa-pop';
-      pop.__card = card;
-      pop.setAttribute('role', 'group');
-      pop.setAttribute('aria-label', t('Vælg størrelse'));
-      pop.innerHTML =
-        '<div class="qa-pop-title">Vælg størrelse</div>' +
-        p.weights.map(function (w, i) {
-          return '<button type="button" class="qa-opt" data-i="' + i + '">' +
-            '<span>' + w.label + '</span>' +
-            '<span class="qa-opt-price">' + w.price + ' kr.</span>' +
-            '</button>';
-        }).join('');
-
-      pop.addEventListener('click', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        var b = e.target.closest('.qa-opt');
-        if (!b || pop.__picked) return; // one pick per popup — no double adds
-        var w = p.weights[parseInt(b.dataset.i, 10)];
-        if (!w || !window.QuartzCart) return;
-        pop.__picked = true;
-
-        // Add immediately — the confirmation plays while the cart updates.
-        window.QuartzCart.add({
-          productId: p.id,
-          productName: p.name,
-          productType: p.type,
-          weightLabel: w.label,
-          price: w.price,
-          image: w.image,
-          qty: 1,
-        });
-        if (window.qmFlyToCart) window.qmFlyToCart(card.querySelector('.product-card-img'));
-
-        // Let the tapped row show its picked state before the popup leaves.
-        b.classList.add('qa-picked');
-        var hadFocus = pop.contains(document.activeElement);
-        setTimeout(function () {
-          closePop();
-          if (hadFocus) btn.focus();
-          confirmAdd(btn, card);
-        }, reduceMotion() ? 0 : 260);
-      });
-
-      pop.addEventListener('keydown', function (e) {
-        if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
-        e.preventDefault();
-        var opts = Array.prototype.slice.call(pop.querySelectorAll('.qa-opt'));
-        if (!opts.length) return;
-        var idx = opts.indexOf(document.activeElement);
-        var next = e.key === 'ArrowDown' ? idx + 1 : idx - 1;
-        if (next < 0) next = opts.length - 1;
-        if (next >= opts.length) next = 0;
-        opts[next].focus();
-      });
-
-      // Tabbing (or focus otherwise moving) out of the popup closes it.
-      pop.addEventListener('focusout', function (e) {
-        if (openPop === pop && e.relatedTarget && !pop.contains(e.relatedTarget) && e.relatedTarget !== btn) {
-          closePop();
-        }
-      });
-
-      card.appendChild(pop);
-      requestAnimationFrame(function () { pop.classList.add('in'); });
-      openPop = pop;
-      openBtn = btn;
-      btn.setAttribute('aria-expanded', 'true');
-      if (viaKeyboard) {
-        var first = pop.querySelector('.qa-opt');
-        if (first) first.focus();
-      }
-    }
-
-    function enhance(card) {
-      if (!card || card.nodeType !== 1 || card.__qaDone) return;
-      if (!card.classList || !card.classList.contains('product-card')) return;
-      // Ingen quick-add paa forsidens bestsellers — der skal kortet foere
-      // videre til produktsiden, ikke tilbyde et koeb paa stedet.
-      if (card.closest && card.closest('#highlightsGrid')) return;
-      card.__qaDone = true;
-      var m = (card.getAttribute('href') || '').match(/[?&]id=([^&]+)/);
-      if (!m) return;
-      var id = decodeURIComponent(m[1]);
-      var p = null;
-      for (var i = 0; i < products().length; i++) { if (products()[i].id === id) { p = products()[i]; break; } }
-      if (!p || !p.weights || !p.weights.length) return;
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'qa-btn';
-      btn.setAttribute('aria-label', 'Tilføj til kurv');
-      btn.setAttribute('aria-haspopup', 'true');
-      btn.setAttribute('aria-expanded', 'false');
-      btn.innerHTML = CART_SVG;
-      btn.addEventListener('click', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        showPop(card, p, btn, e.detail === 0); // detail 0 = keyboard: move focus into the popup
-      });
-      card.appendChild(btn);
-    }
-
-    function scan(root) {
-      (root.querySelectorAll ? root.querySelectorAll('.product-card') : []).forEach(enhance);
-      if (root.classList && root.classList.contains('product-card')) enhance(root);
-    }
-
-    function run() {
-      scan(document);
-      new MutationObserver(function (muts) {
-        muts.forEach(function (mu) {
-          Array.prototype.forEach.call(mu.addedNodes, function (n) {
-            if (n.nodeType === 1) scan(n);
-          });
-        });
-      }).observe(document.body, { childList: true, subtree: true });
-    }
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
-    else run();
-  } catch (e) { /* never break the page */ }
-})();
 
 // ── FOTO-GALLERI ────────────────────────────────────────────────────────────
 // Skjuler en flise, hvis billedet mangler (fx endnu ikke uploadet), og hele
