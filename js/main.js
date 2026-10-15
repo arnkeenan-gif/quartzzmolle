@@ -1,3 +1,22 @@
+// ── HALLOWEEN-SÆSON ─────────────────────────────────────────────────────────
+// Sætter klassen .hw på <html> inden for et datointerval. ALT det sæsonbestemte
+// i style.css hænger på den klasse, så pynten både tænder OG slukker sig selv.
+// Uden en slutdato bliver den slags stående til langt ind i december, fordi
+// ingen husker at pille den ned igen.
+(function () {
+  var FRA_MD = [9, 20];   // 20. oktober  (getMonth() er 0-indekseret)
+  var TIL_MD = [10, 2];   // 2. november, til og med
+  function iSaeson(d) {
+    var m = d.getMonth(), dag = d.getDate();
+    if (m === FRA_MD[0]) return dag >= FRA_MD[1];
+    if (m === TIL_MD[0]) return dag <= TIL_MD[1];
+    return false;
+  }
+  try {
+    if (iSaeson(new Date())) document.documentElement.classList.add('hw');
+  } catch (e) { /* pynt er aldrig vigtigere end at siden virker */ }
+})();
+
 // ============================================================
 // QUARTZ MØLLE — MAIN JS
 // ============================================================
