@@ -1,12 +1,8 @@
-Halloween-tema til quartzmolle.dk
+Ny forhandler: Noerregade 16 (Hou, 9370 Hals)
 
-Aktivt 20. oktober til og med 2. november. Tænder og slukker sig selv.
-Datoerne staar oeverst i js/main.js (FRA_MD / TIL_MD).
+FIL (samme mappe paa GitHub) - kun 1 fil:
+  js : forhandlere.js
 
-FILER (samme mapper paa GitHub)
-  css      : style.css
-  js       : main.js
-  images   : hwvenstre.png, hwhoejre.png, hwmoenster.png, hwkurv.png
-
-index.html er IKKE aendret. Nyhedsbrevs-pop-uppen bruger det oprindelige
-billede som aftalt.
+Bageriet er tilfoejet nederst i listen med adresse, link til deres
+Instagram og en husnummer-praecis naal paa kortet (Noerregade i 9370
+ligger i Hou).
