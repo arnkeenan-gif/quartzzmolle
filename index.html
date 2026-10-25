@@ -222,20 +222,6 @@
     /* first video visible immediately (no black flash before JS runs) */
     #vid1, #vs1 .video-overlay { opacity: 1; }
 
-    /* Scroll hint: anchored to the bottom of the FIRST screen of the page (not
-       the viewport), so it stays in place and scrolls away with the content —
-       while also fading out smoothly. The video sections are position:static
-       here, so it anchors to #videoStage which starts at the top of the page. */
-    .scroll-hint {
-      position: absolute;
-      top: calc(100vh - 5.5rem);
-      top: calc(100svh - 5.5rem);
-      bottom: auto;
-      transition: opacity .35s ease-out;
-      pointer-events: none;
-      will-change: opacity;
-    }
-    .scroll-hint.gone { opacity: 0; }
 
     /* The section is 100lvh tall but Safari's bars cover part of it, so the
        flex-centred hero lands visually low. Pull it up so logo + title sit
@@ -411,10 +397,6 @@
       <h1 class="hero-title">Quartz Mølle</h1>
       <p class="hero-sub">Økologisk mel – malet på stenkværn i Danmark</p>
       <a href="shop.html" class="btn-primary">Se vores mel</a>
-    </div>
-    <div class="scroll-hint" id="scrollHint" aria-hidden="true">
-      <span>Scroll</span>
-      <div class="scroll-line"></div>
     </div>
   </section>
 
@@ -623,22 +605,6 @@
        CSS feature, and (3) SELF-TESTS the CSS path while you scroll - if
        the browser claims support but the animation isn't really moving the
        videos, it switches to the JS pin automatically. */
-    // Fade the scroll hint away the instant the visitor starts scrolling.
-    (function () {
-      var hint = document.getElementById('scrollHint');
-      if (!hint) return;
-      var ticking = false;
-      function onScroll() {
-        if (ticking) return;
-        ticking = true;
-        requestAnimationFrame(function () {
-          ticking = false;
-          hint.classList.toggle('gone', window.scrollY > 40);
-        });
-      }
-      window.addEventListener('scroll', onScroll, { passive: true });
-      onScroll();
-    })();
 
     (function () {
       var stage = document.getElementById('videoStage');

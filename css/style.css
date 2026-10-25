@@ -263,7 +263,7 @@ body {
   height: 100lvh;
   z-index: 1;
   /* Filmisk grade: lodret gradient der er mørkest i top og bund (så nav,
-     titel og scroll-hint altid kan læses), lysere på midten så marken
+     titel altid kan læses), lysere på midten så marken
      skinner igennem — plus en varm brand-tone og en blød vignette lagt
      ovenpå. Flere baggrunde stables i ét lag, ingen ekstra DOM. */
   background:
@@ -459,36 +459,6 @@ body.past-videos .video-overlay {
 }
 
 .eyebrow-dark { color: var(--brand-blue); }
-
-/* ── SCROLL HINT ── */
-.scroll-hint {
-  position: absolute;
-  bottom: 2.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  color: rgba(255,255,255,0.7);
-  font-size: 0.72rem;
-  font-weight: 500;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.scroll-line {
-  width: 1px;
-  height: 50px;
-  background: linear-gradient(to bottom, rgba(255,255,255,0.7), transparent);
-  animation: scrollPulse 2s ease-in-out infinite;
-}
-
-@keyframes scrollPulse {
-  0%, 100% { opacity: 0.4; transform: scaleY(1); }
-  50%      { opacity: 1; transform: scaleY(1.2); }
-}
 
 /* ── HIGHLIGHTS ── */
 .highlights {
@@ -2188,7 +2158,6 @@ body:has(.mobile-menu.open) .lang-switch-btn .lang-chevron {
   .btn-primary, .btn-blue { transition: background-color .18s ease, color .18s ease; }
   .btn-primary:hover, .btn-blue:hover { transform: none; }
   html { scroll-behavior: auto; }
-  .scroll-line { animation: none !important; }               /* infinite pulse, index */
   .hero-content, .text-block { animation: none !important; } /* container fadeUp keyframes */
   .modal-backdrop.open { animation: none !important; }
   .modal-content { animation-name: fadeIn !important; }      /* opacity only, same 0.35s */
