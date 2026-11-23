@@ -145,8 +145,8 @@ function initVideoFade() {
     }
   });
 
-  // Header fade on scroll is handled globally by initNavFade() (runs on every
-  // page, including the shop), so it isn't duplicated here.
+  // Navigationen scroller væk med siden; "til toppen"-pilen styres af
+  // initTilToppen() (kører på alle sider undtagen produktsiden).
 
   let activeSection = null;
 
@@ -219,43 +219,37 @@ function initVideoFade() {
   update();
 }
 
-// ── HEADER FADE ON SCROLL (every page) ──
-// The header (logo, language switch, cart, burger) fades away when you scroll
-// down and fades back in when you scroll up — smooth opacity only, no sliding.
-// This used to live inside initVideoFade (homepage only); pulled out so the
-// shop and every other page get the same behaviour.
-function initNavFade() {
-  // Not on the single product page — its header stays pinned (solid blue band).
-  // #productInner is the static product-page container (present at load), and the
-  // path check covers it even before/after product.js renders.
+// ── TIL TOPPEN ──────────────────────────────────────────────────────────────
+// Navigationen (logo, kurv, sprog, menu) bliver stående øverst og scroller væk
+// med siden — den følger ikke med. På mobil dukker i stedet en lille hvid pil
+// op i øverste venstre hjørne, når man er scrollet ned; et tryk fører helt op.
+// Ikke på produktsiden: dér bliver navigationen stående fast (blå bjælke),
+// fordi kurv-ikonet er det, der viser, at en vare er lagt i kurven.
+function initTilToppen() {
   if (document.getElementById('productInner') || /\/product(\.html)?$/.test(location.pathname)) return;
-  const navEl = document.getElementById('nav') || document.querySelector('.nav');
-  if (!navEl) return;
-  navEl.style.transition = 'opacity .45s ease';
-  let lastY = window.scrollY || window.pageYOffset || 0;
-  let navHidden = false;
-  const showNav = () => { navEl.style.opacity = '1'; navEl.style.pointerEvents = ''; navHidden = false; };
-  const hideNav = () => { navEl.style.opacity = '0'; navEl.style.pointerEvents = 'none'; navHidden = true; };
-  const updateNav = () => {
-    if (mobileMenu && mobileMenu.classList.contains('open')) { showNav(); return; }
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'to-top';
+  btn.setAttribute('aria-label', 'Til toppen');
+  btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>';
+  document.body.appendChild(btn);
+  const mobil = window.matchMedia('(max-width: 768px)');
+  let vist = false, ticking = false;
+  const update = () => {
+    ticking = false;
     const y = window.scrollY || window.pageYOffset || 0;
-    const delta = y - lastY;
-    if (y <= 40) { showNav(); lastY = y; return; }   // always visible near the top
-    if (Math.abs(delta) < 6) return;                  // ignore tiny jitter
-    if (delta > 0 && !navHidden) hideNav();           // scrolling down → fade out
-    else if (delta < 0 && navHidden) showNav();       // scrolling up   → fade in
-    lastY = y;
+    // Vis pilen, når navigationen (72 px) for længst er scrollet væk — 300 px,
+    // så den også kommer på korte sider som forhandlerkortet.
+    const vis = mobil.matches && y > 300;
+    if (vis !== vist) { vist = vis; btn.classList.toggle('show', vis); }
   };
-  let ticking = false;
-  const onScroll = () => {
-    if (!ticking) {
-      window.requestAnimationFrame(() => { updateNav(); ticking = false; });
-      ticking = true;
-    }
-  };
-  window.addEventListener('scroll', onScroll, { passive: true });
-  window.addEventListener('resize', onScroll);
-  updateNav();
+  window.addEventListener('scroll', () => { if (!ticking) { ticking = true; window.requestAnimationFrame(update); } }, { passive: true });
+  window.addEventListener('resize', update);
+  btn.addEventListener('click', () => {
+    const roligt = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: 0, behavior: roligt ? 'auto' : 'smooth' });
+  });
+  update();
 }
 
 // ── HOMEPAGE HIGHLIGHTS GRID ──
@@ -330,7 +324,7 @@ function initVideoSectionVisibility() {
 // ── INIT ──
 document.addEventListener('DOMContentLoaded', () => {
   initModals();
-  initNavFade();
+  initTilToppen();
   initVideoFade();
   initVideoSectionVisibility();
   renderHighlights();
