@@ -252,6 +252,32 @@ function initTilToppen() {
   update();
 }
 
+// ── FOOTER ──────────────────────────────────────────────────────────────────
+// 1) Helt i bund: klassen qm-bund på <html> gør sidens baggrundsfarve grøn som
+//    bakken i maleriet, så iPhone ikke viser en sort stribe under footeren.
+// 2) PC: gardin-effekten i CSS skal kende footerens højde (højst skærmens højde).
+function initFooter() {
+  const footer = document.querySelector('.footer');
+  if (!footer) return;
+  const root = document.documentElement;
+  let bund = false, ticking = false;
+  const update = () => {
+    ticking = false;
+    const vh = window.innerHeight || root.clientHeight;
+    const b = footer.getBoundingClientRect().bottom <= vh + 60;
+    if (b !== bund) { bund = b; root.classList.toggle('qm-bund', b); }
+  };
+  const maal = () => {
+    const h = Math.min(footer.offsetHeight, root.clientHeight || window.innerHeight);
+    footer.style.setProperty('--qm-gardin', Math.round(h) + 'px');
+  };
+  window.addEventListener('scroll', () => { if (!ticking) { ticking = true; window.requestAnimationFrame(update); } }, { passive: true });
+  window.addEventListener('resize', () => { maal(); update(); });
+  if ('ResizeObserver' in window) new ResizeObserver(() => { maal(); update(); }).observe(footer);
+  maal();
+  update();
+}
+
 // ── HOMEPAGE HIGHLIGHTS GRID ──
 // Uses previewImage for the branded promo look (not the 3kg/12.5kg pack shots).
 function renderHighlights() {
@@ -325,6 +351,7 @@ function initVideoSectionVisibility() {
 document.addEventListener('DOMContentLoaded', () => {
   initModals();
   initTilToppen();
+  initFooter();
   initVideoFade();
   initVideoSectionVisibility();
   renderHighlights();

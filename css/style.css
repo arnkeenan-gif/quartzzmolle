@@ -744,6 +744,65 @@ body.past-videos .video-overlay {
   .footer::after { margin: 1.25rem -1.25rem 0; aspect-ratio: auto; height: 210px; background-position: 95% 100%; }
 }
 
+/* Helt i bund (telefon): iOS farver værktøjslinjen under siden med sidens
+   baggrundsfarve (sort). Når footeren er scrollet helt frem, sætter main.js
+   klassen qm-bund på <html>, så farven dér er bakkens grønne i stedet for sort. */
+html.qm-bund { background-color: #569b44 !important; }
+
+/* PC: logo til venstre og links til højre, adresse og CVR på egen linje under */
+@media (min-width: 769px) {
+  .footer .footer-inner {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 1.75rem 3rem;
+  }
+  .footer .footer-logo { grid-column: 1; grid-row: 1; height: 52px; }
+  .footer .footer-links { grid-column: 2; grid-row: 1; justify-content: flex-end; gap: 0.9rem 2.25rem; }
+  .footer .footer-links a { font-size: 0.95rem; }
+  .footer .footer-inner p {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    padding-top: 1.4rem;
+    border-top: 1px solid rgba(255,255,255,0.18);
+    font-size: 0.82rem;
+  }
+}
+
+/* PC: gardin-effekt. Footeren ligger ligesom under siden: indholdet over den
+   glider op og afdækker den, mens footerens tekst og maleri står stille.
+   Kun PC (mus), ikke telefon/tablet, og ikke hvis man har slået bevægelse fra.
+   main.js sætter --qm-gardin = footerens højde (højst skærmens højde). */
+@supports (animation-timeline: view()) {
+  @media (min-width: 769px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    .footer {
+      overflow: hidden;
+      overflow: clip;
+      view-timeline: --qm-gardin block;
+    }
+    .footer > .footer-inner,
+    .footer::after {
+      animation: qm-gardin linear both;
+      animation-timeline: --qm-gardin;
+      animation-range: entry 0% entry 100%;
+    }
+    /* en blød skygge i overkanten, som om siden ovenover ligger oven på footeren */
+    .footer::before {
+      content: '';
+      position: absolute;
+      left: 0; right: 0; top: 0;
+      height: 26px;
+      background: linear-gradient(to bottom, rgba(12,10,40,0.32), rgba(12,10,40,0));
+      z-index: 1;
+      pointer-events: none;
+    }
+  }
+}
+@keyframes qm-gardin {
+  from { transform: translateY(calc(var(--qm-gardin, 0px) * -1)); }
+  to   { transform: none; }
+}
+
 .footer-inner {
   max-width: 1100px;
   margin: 0 auto;
