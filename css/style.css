@@ -705,13 +705,43 @@ body.past-videos .video-overlay {
   box-shadow: 0 4px 24px rgba(0,0,0,0.1);
 }
 
-/* ── FOOTER (always dark, compact) ── */
+/* ── FOOTER: malet landskab forneden ──
+   Illustrationen (Higgsfield) er malet i samme naive gouache-stil og samme
+   farver som logoet: indigo nattehimmel, månesegl, gyldent hvedebælte,
+   grønne bakker — og logoets mølle, der står bag bakken ligesom i logoet.
+   Footerens baggrund er præcis himlens farve (#3e3c88), og billedets top
+   toner blødt ud, så penselstrøgene glider over i baggrunden uden kant.
+   Billedet ligger som et ::after-lag under indholdet, så alle sider får det
+   uden ændringer i HTML. */
 .footer {
   position: relative;
   z-index: 3;
-  background: var(--dark);
-  padding: 2rem 2rem 3.5rem;
-  border-top: 1px solid rgba(255,255,255,0.08);
+  background: #3e3c88;
+  padding: 3rem 2rem 0;
+}
+.footer::after {
+  content: '';
+  display: block;
+  margin: 1.5rem -2rem 0;           /* fuld bredde, helt ned til bunden */
+  aspect-ratio: 2000 / 753;
+  background: url('../images/footerland.jpg') 85% 100% / cover no-repeat;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 9%);
+          mask-image: linear-gradient(to bottom, transparent 0, #000 9%);
+}
+/* Teksten står på en lysere blå end før, så den gøres lidt kraftigere */
+.footer .footer-inner p,
+.footer .footer-links a,
+.footer .footer-smiley-link { color: rgba(255,255,255,0.85); }
+.footer .footer-inner p a { color: #fff; }
+@media (hover: hover) and (pointer: fine) {
+  .footer .footer-links a:hover { color: #fff; }
+  .footer .footer-smiley-link:hover { color: #f5c400; }
+}
+@media (max-width: 768px) {
+  .footer { padding: 2.5rem 1.25rem 0; }
+  /* På mobil er landskabet bredere end skærmen: fast højde, og udsnittet
+     holdes omkring møllen bag bakken */
+  .footer::after { margin: 1.25rem -1.25rem 0; aspect-ratio: auto; height: 210px; background-position: 95% 100%; }
 }
 
 .footer-inner {
@@ -1357,9 +1387,9 @@ body.past-videos .video-overlay {
 
 /* ── RESPONSIVE ── */
 @media (max-width: 768px) {
-  /* The nav is pinned on every page (same behaviour as the product page):
-     the bar follows along and fades out/in with the scroll direction. */
-  .nav { position: fixed; }
+  /* Navigationen scroller væk med siden (som på pc) — den følger ikke med.
+     Når man er scrollet ned, viser .to-top en lille pil, der fører op igen.
+     Kun produktsiden beholder den fast (se den blå bjælke nedenfor). */
   .nav-links, .nav-cta { display: none; }
   .nav-burger { display: flex; }
   .nav-logo img.eco-mark { display: none; }
@@ -1424,11 +1454,12 @@ body.past-videos .video-overlay {
     font-size: 0.9rem;
   }
 
-  /* On the single product page, give the fixed mobile nav a solid blue
-     background so the logo, cart icon, and burger sit on top of the blue
-     band as one unit instead of floating individually while the blue
-     scrolls under them. */
+  /* On the single product page the mobile nav stays pinned with a solid blue
+     background, so the logo, cart icon, and burger sit on top of the blue
+     band as one unit. It stays pinned because the cart icon's badge pop +
+     fly-to-cart is the only feedback when "Tilføj til kurv" is tapped. */
   body:has(.product-hero-band) .nav {
+    position: fixed;
     background: var(--brand-blue);
   }
 }
@@ -2274,7 +2305,7 @@ body:has(.mobile-menu.open) .lang-switch-btn .lang-chevron {
 .nl-backdrop { position: absolute; inset: 0; background: rgba(20,16,12,.55); }
 /* The whole popup IS the artwork: a portrait (2:3) hand-painted poster of the
    mill-logo world with the headline lettered INTO the painting (Higgsfield).
-   Only the email field + button float on the clean hill at the bottom. */
+   Only the "Læs mere" button floats on the clean hill at the bottom. */
 .nl-card {
   position: relative; overflow: hidden;
   width: min(400px, 92vw); aspect-ratio: 2 / 3; max-height: 88vh;
@@ -2284,22 +2315,37 @@ body:has(.mobile-menu.open) .lang-switch-btn .lang-chevron {
 }
 @keyframes nlPop { from { opacity: 0; transform: translateY(28px) scale(.96); } to { opacity: 1; transform: none; } }
 .nl-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center top; }
-.nl-formwrap { position: absolute; left: 16px; right: 16px; bottom: 13px; z-index: 2; }
-.nl-formwrap .newsletter-form { flex-direction: column; gap: .45rem; max-width: none; }
-.nl-formwrap .newsletter-form input {
-  border: none; background: rgba(255,255,255,.97); box-shadow: 0 8px 26px rgba(0,0,0,.28);
-  padding: .72rem 1rem; font-size: 1rem;
+/* Bunden af plakaten: én "Læs mere"-knap på den grønne bakke, der fører til
+   artiklen om kornet (korn.html). Samme blå og samme skygge som den gamle
+   tilmeld-knap, så den hører til plakaten. */
+.nl-cta { position: absolute; left: 16px; right: 16px; bottom: 16px; z-index: 2; }
+.nl-more {
+  display: flex; align-items: center; justify-content: center; gap: .55rem;
+  width: 100%; min-height: 52px; padding: .8rem 1rem;
+  background: var(--brand-blue); color: #fff; border-radius: 10px;
+  font-family: inherit; font-size: 1.02rem; font-weight: 700; letter-spacing: .01em;
+  text-decoration: none; box-shadow: 0 8px 26px rgba(27,34,82,.45);
+  transition: transform .15s cubic-bezier(.22,1,.36,1), background .2s ease;
 }
-.nl-formwrap .newsletter-form input:focus { outline: 3px solid rgba(255,255,255,.5); }
-.nl-formwrap .newsletter-form button {
-  background: var(--brand-blue); color: #fff; box-shadow: 0 8px 26px rgba(27,34,82,.45);
-  padding: .72rem 1rem; font-size: .95rem;
+.nl-more::after { content: '\2192'; content: '\2192' / ''; font-weight: 700; transition: transform .2s cubic-bezier(.22,1,.36,1); }
+@media (hover: hover) and (pointer: fine) {
+  .nl-more:hover { background: var(--brand-blue-light); transform: translateY(-2px); }
+  .nl-more:hover::after { transform: translateX(3px); }
 }
-.nl-formwrap .newsletter-msg {
-  color: #fff; text-align: center; margin-top: .35rem; min-height: 0;
-  text-shadow: 0 1px 8px rgba(0,0,0,.55); font-weight: 700; font-size: .85rem;
+.nl-more:active { transform: scale(.98); }
+/* Plakaten skal altid vises hel (2:3): på lave skærme (telefon på langs)
+   gøres kortet smallere i stedet for at blive beskåret forneden — ellers
+   forsvinder bakken, og knappen lægger sig oven i den malede overskrift. */
+.nl-card { width: min(400px, 92vw, calc(88vh * 2 / 3)); }
+@media (max-height: 560px) {
+  .nl-cta { left: 10px; right: 10px; bottom: 10px; }
+  .nl-more { min-height: 40px; padding: .55rem .8rem; font-size: .9rem; }
 }
-.nl-formwrap .newsletter-msg.err { color: #ffd9d9; }
+/* Luk-krydset skal blive i øverste højre hjørne. En fælles regel længere nede
+   (større trykflade på små knapper) giver .nl-close position: relative, og så
+   skubbes krydset ud over plakatens venstre kant. */
+.nl-card .nl-close { position: absolute; }
+.nl-card:focus { outline: none; }
 .nl-close {
   position: absolute; top: 12px; right: 12px; z-index: 3; width: 38px; height: 38px;
   border: none; border-radius: 50%; background: rgba(255,255,255,.92); color: var(--text);
@@ -2540,6 +2586,63 @@ button,
   .pg-item img { transition: none; }
   .pg-item:hover img { transform: none; }
 }
+
+/* ── TIL TOPPEN (mobil) ─────────────────────────────────────────────────────
+   Lille hvid pil i øverste venstre hjørne, der dukker op, når man er scrollet
+   ned (navigationen scroller væk med siden). Mørkt "glas" bag pilen, så den kan
+   ses både på videoen og på de cremefarvede sektioner. Sættes ind af
+   initTilToppen() i main.js. */
+.to-top {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 14px);
+  left: 14px;
+  z-index: 95;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+  background: rgba(20,16,12,0.55);
+  -webkit-backdrop-filter: blur(10px) saturate(1.4);
+          backdrop-filter: blur(10px) saturate(1.4);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.85);
+  transition: opacity .25s ease, transform .25s cubic-bezier(.22,1,.36,1), visibility 0s linear .25s;
+}
+.to-top::after { content: ''; position: absolute; inset: -5px; border-radius: 50%; }   /* større trykflade */
+.to-top.show { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
+.to-top:active { transform: scale(0.92); }
+.to-top:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+@media (min-width: 769px) { .to-top { display: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .to-top, .to-top.show, .to-top:active { transform: none; }
+}
+
+/* ── LYST FARVESKEMA ───────────────────────────────────────────────────────
+   Safari 27.3 har fået "Adaptive Dark Mode": når en bruger slår det til,
+   maler Safari sider, der kun findes i lyse farver, om til mørke — cremen
+   bliver grå, og den lyse knap bliver mørk. Siden er designet lys og skal
+   vises sådan.
+   Safaris egentlige "kun lys"-signal (color-scheme: light only) virker ikke
+   i 27.3-betaen endnu. Det eneste, Safari respekterer, er at siden selv
+   melder, at den kan både lys og mørk — så lader den siden være helt i fred.
+   Bivirkningen: hos alle med mørk tilstand skifter browserens STANDARD-
+   farver (dem siden ikke selv har sat) til mørke. Siden læner sig kun op ad
+   dem på <html>, knapper, links og formularfelter, og de låses her til de
+   lyse værdier. :where() giver nul specificitet, så sidens egne regler
+   altid vinder.
+   Når Safari understøtter "only": skift til color-scheme: light only og
+   slet de tre låse-linjer. */
+:root { color-scheme: light dark; }
+:where(html) { color: #000; }
+:where(a, button, input, select, textarea) { color-scheme: light; }
 
 /* ── HALLOWEEN-SÆSON ────────────────────────────────────────────────────
    Alt herunder træder kun i kraft, når <html> har klassen .hw. Den sættes
