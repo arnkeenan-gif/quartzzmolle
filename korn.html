@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <title>Sådan passer vi på vores korn | Quartz Mølle</title>
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="Quartz Mølle" />
+  <meta property="og:title" content="Sådan passer vi på vores korn – Quartz Mølle" />
+  <meta property="og:description" content="Vi køber kun korn direkte fra vores egne økologiske avlere – uden mellemled. Læs, hvordan vi passer på kornet fra mark til mølle." />
+  <meta property="og:image" content="https://www.quartzmolle.dk/images/og-image.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:url" content="https://www.quartzmolle.dk/korn" />
+  <link rel="canonical" href="https://www.quartzmolle.dk/korn" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="description" content="Vi køber kun korn direkte fra vores egne økologiske avlere – uden mellemled. Læs, hvordan vi passer på kornet fra mark til mølle." />
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="icon" type="image/png" href="/images/favicon.png" />
+  <link rel="apple-touch-icon" href="/images/appletouchicon.png" />
+  <meta name="apple-mobile-web-app-title" content="Quartz Mølle" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    html { background: #000; }
+    body { background: var(--dark, #0f0f0f); }
+
+    /* Mobile: nav scrolls with the page (handled by global stylesheet). */
+    /* Push hero down below the nav */
+    .korn-hero { padding-top: calc(var(--nav-h) + 1.75rem) !important; }
+
+    /* Desktop: cream around the content section */
+    @media (min-width: 769px) {
+      .korn-wrap { background: var(--cream, #f5f1e8); }
+    }
+
+    /* White nav text on the blue hero behind */
+    .nav a,
+    .nav .nav-links a,
+    .nav .nav-links a:visited,
+    .nav .nav-logo {
+      color: #fff !important;
+    }
+    .nav .nav-cta {
+      color: #273071 !important;
+      background: #fff !important;
+    }
+    .nav .nav-cta:hover {
+      background: rgba(255,255,255,0.9) !important;
+    }
+    .nav .cart-btn,
+    .nav .cart-btn svg {
+      color: #fff !important;
+      stroke: #fff !important;
+    }
+    .nav .cart-count {
+      color: #fff;
+      background: rgba(255,255,255,0.2);
+    }
+    .nav .cart-count.has-items {
+      background: #fff;
+      color: #273071;
+    }
+    .nav .nav-burger span {
+      background: #fff !important;
+    }
+
+    .korn-hero {
+      background: var(--brand-blue, #273071);
+      color: #fff;
+      padding: calc(var(--nav-h) + 1.75rem) 2rem 2.25rem;
+      text-align: center;
+    }
+    .korn-hero .eyebrow { color: rgba(255,255,255,0.7); margin-bottom: 0.5rem; }
+    .korn-hero h1 {
+      font-family: 'Inter', sans-serif;
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      max-width: 820px;
+      margin: 0 auto;
+      line-height: 1.2;
+    }
+
+    .korn-content {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 2.5rem 2rem 4rem;
+      background: var(--cream, #f5f1e8);
+    }
+    .korn-content p {
+      font-size: 1.05rem;
+      line-height: 1.85;
+      color: var(--text, #2a2a2a);
+      margin-bottom: 1.5rem;
+    }
+    .korn-content p:last-child { margin-bottom: 0; }
+
+    .korn-image {
+      display: block;
+      width: 100%;
+      max-width: 760px;
+      margin: 2.5rem auto 0;
+      border-radius: 14px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+    }
+
+    @media (max-width: 768px) {
+      .korn-hero { padding: calc(var(--nav-h) + 1rem) 1.25rem 1.5rem; }
+      .korn-content { padding: 2rem 1.25rem 3rem; }
+      .korn-content p { font-size: 1rem; line-height: 1.75; }
+      .korn-image { margin: 2rem auto 0; border-radius: 10px; }
+    }
+
+    /* Artiklen: foerste afsnit som indledning, knapper til sidst */
+    .korn-content .korn-lead { font-size: 1.2rem; line-height: 1.7; color: var(--text, #1a1611); font-weight: 500; }
+    .korn-cta { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 2.25rem; }
+    .korn-cta a {
+      display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+      min-height: 48px; padding: .85rem 1.6rem; border-radius: 10px;
+      font-weight: 700; font-size: 1rem; text-decoration: none;
+      transition: transform .15s cubic-bezier(.22,1,.36,1), box-shadow .2s ease, background .2s ease;
+    }
+    .korn-cta .korn-btn-blue { background: var(--brand-blue, #273071); color: #fff; box-shadow: 0 8px 22px rgba(39,48,113,.25); }
+    .korn-cta .korn-btn-line { background: transparent; color: var(--brand-blue, #273071); box-shadow: inset 0 0 0 2px var(--brand-blue, #273071); }
+    @media (hover: hover) and (pointer: fine) {
+      .korn-cta a:hover { transform: translateY(-2px); }
+      .korn-cta .korn-btn-blue:hover { background: var(--brand-blue-light, #3a4599); }
+    }
+    .korn-cta a:focus-visible { outline: 3px solid var(--brand-blue, #273071); outline-offset: 3px; }
+    @media (max-width: 768px) {
+      .korn-content .korn-lead { font-size: 1.08rem; }
+      .korn-cta a { flex: 1 1 100%; }
+    }
+  </style>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Hjem", "item": "https://www.quartzmolle.dk/" },
+          { "@type": "ListItem", "position": 2, "name": "Sådan passer vi på vores korn", "item": "https://www.quartzmolle.dk/korn" }
+        ]
+      },
+      {
+        "@type": "Article",
+        "@id": "https://www.quartzmolle.dk/korn#artikel",
+        "url": "https://www.quartzmolle.dk/korn",
+        "mainEntityOfPage": "https://www.quartzmolle.dk/korn",
+        "headline": "Sådan passer vi på vores korn",
+        "description": "Vi køber kun korn direkte fra vores egne økologiske avlere – uden mellemled. Læs, hvordan vi passer på kornet fra mark til mølle.",
+        "inLanguage": "da-DK",
+        "datePublished": "2026-11-23",
+        "author": { "@type": "Organization", "@id": "https://www.quartzmolle.dk/#organisation", "name": "Quartz Mølle", "url": "https://www.quartzmolle.dk/" },
+        "publisher": { "@type": "Organization", "@id": "https://www.quartzmolle.dk/#organisation", "name": "Quartz Mølle", "url": "https://www.quartzmolle.dk/" },
+        "isPartOf": { "@id": "https://www.quartzmolle.dk/#website" },
+        "image": "https://www.quartzmolle.dk/images/og-image.jpg"
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+
+  <nav class="nav" id="nav">
+    <a href="index.html" class="nav-logo">
+      <img src="images/logopng.png" alt="Quartz Mølle" class="brand-mark" />
+      <img src="images/eu-organic.jpg" alt="EU Økologi" class="eco-mark" />
+      <img src="images/statskontrolleret.png" alt="Statskontrolleret Økologisk" class="eco-mark" />
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Hjem</a>
+      <a href="shop.html">Shop</a>
+      <a href="forhandlere.html">Forhandlere</a>
+      <a href="om.html">Om os</a>
+      <a href="index.html#kontakt">Kontakt</a>
+    </div>
+    <a href="shop.html" class="nav-cta">Shop Nu</a>
+    <button class="nav-burger" id="burger" aria-label="Menu" aria-expanded="false" aria-controls="mobileMenu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="index.html">Hjem</a>
+    <a href="shop.html">Shop</a>
+    <a href="forhandlere.html">Forhandlere</a>
+    <a href="om.html">Om os</a>
+    <a href="index.html#kontakt">Kontakt</a>
+    <a href="shop.html" class="mobile-cta">Shop Nu</a>
+  </div>
+
+  <div class="korn-wrap">
+  <section class="korn-hero">
+    <div class="eyebrow">Fra mark til mølle</div>
+    <h1>Sådan passer vi på vores korn</h1>
+  </section>
+
+  <article class="korn-content">
+    <p class="korn-lead">Flere af jer har spurgt, hvor vores korn kommer fra, og hvordan det bliver opbevaret. Det er et godt spørgsmål, og I skal have et klart svar.</p>
+
+    <p>Vi køber kun korn direkte fra vores egne avlere. Vi bruger ingen mellemled, og ingen af vores avlere opbevarer korn hos de store kornhandlere.</p>
+
+    <p>Godt mel begynder ikke i møllen. Det begynder flere år før, kornet lander hos os. Sædskifte, valg af kornsorter og aftaler mellem landmand og møller tager tid, og det kræver et tæt forhold mellem natur, landmand, møller og bager.</p>
+
+    <p>Vi kender vores avlere personligt og har meget stor tillid til dem. Vi har valgt dem, fordi de er dygtige økologiske landmænd, som tror på det, de laver. De har selv rigtig gode faciliteter, både til arbejdet i marken og til at opbevare og håndtere kornet.</p>
+
+    <p>Vi besøger alle vores avlere. Så ved vi, at vi vil det samme, og at samarbejdet går begge veje.</p>
+
+    <p>Det er vores passion for det, vi laver, og landmændenes passion for det korn, vi køber, der gør mel fra Quartz Mølle til noget særligt. Vi antager ikke noget. Vi ved, hvad vi laver, og vores landmænd ved, hvad de laver. Sammen sørger vi for, at vi bliver ved med at levere det bedste og mest smagfulde mel, vi kan, så du kan smage det hele i dit morgenbrød.</p>
+
+    <p>Har du spørgsmål til vores korn, vores avlere eller vores mel, så skriv til os. Vi svarer gerne.</p>
+
+    <div class="korn-cta">
+      <a href="mailto:hello@quartzmolle.dk" class="korn-btn-blue">Skriv til os</a>
+      <a href="shop.html" class="korn-btn-line">Se vores mel</a>
+    </div>
+  </article>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <img src="images/logopng.png" alt="Quartz Mølle" class="footer-logo" />
+      <p>© 2026 Quartz Mølle · CVR 42117188 · Suså Landevej 101, 4160 Herlufmagle · <a href="mailto:hello@quartzmolle.dk">hello@quartzmolle.dk</a></p>
+      <div class="footer-links">
+        <a href="shop.html">Shop</a>
+        <a href="forhandlere.html">Forhandlere</a>
+        <a href="om.html">Om os</a>
+        <a href="korn.html">Vores korn</a>
+        <a href="index.html#kontakt">Kontakt</a>
+        <a href="https://www.findsmiley.dk/1149461" class="footer-smiley-link" target="_blank" rel="noopener" title="Smileyrapport – se vores kontrolrapport fra Fødevarestyrelsen" aria-label="Smileyrapport – se vores kontrolrapport fra Fødevarestyrelsen">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M8.6 14.3c.85 1.1 2 1.7 3.4 1.7s2.55-.6 3.4-1.7"></path>
+            <path d="M9 9.6h.01M15 9.6h.01"></path>
+          </svg>
+          <span class="footer-smiley-word">Smiley­rapport</span>
+        </a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Har man læst artiklen, skal "Vores korn"-popup'en ikke springe op på forsiden bagefter
+    try { localStorage.setItem('qm_korn_seen', '1'); } catch (e) {}
+  </script>
+  <script src="js/cart.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/i18n.js"></script>
+</body>
+</html>

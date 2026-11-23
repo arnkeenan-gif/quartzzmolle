@@ -510,29 +510,25 @@
     </div>
   </section>
 
-  <!-- NEWSLETTER: bogmærke-fane i siden + popup med logo-grafik.
-       Fanen fødes skjult og vises kun for IKKE-tilmeldte — ellers glimter den
-       ved hver genindlæsning for folk, der allerede er tilmeldt. -->
-  <button class="nl-tab hidden" id="nlTab" type="button" aria-haspopup="dialog">10% RABAT</button>
+  <!-- VORES KORN: bogmærke-fane i siden + popup med en malet plakat (Higgsfield),
+       der fører videre til artiklen om, hvor kornet kommer fra (korn.html).
+       Plakaten har teksten malet ind; på engelsk skiftes den ud i scriptet nedenfor. -->
+  <button class="nl-tab hidden" id="nlTab" type="button" aria-haspopup="dialog">VORES KORN</button>
   <script>
-    try { if (localStorage.getItem('qm_nl_sub') !== '1') document.getElementById('nlTab').classList.remove('hidden'); }
+    // Fanen fødes skjult og vises kun, indtil popup'en har været vist én gang
+    // (ellers ville den glimte frem ved hver indlæsning for dem, der har set den).
+    try { if (!localStorage.getItem('qm_korn_seen')) document.getElementById('nlTab').classList.remove('hidden'); }
     catch (e) { document.getElementById('nlTab').classList.remove('hidden'); }
   </script>
-  <div class="nl-modal" id="nlModal" role="dialog" aria-modal="true" aria-label="Nyhedsbrev">
+  <div class="nl-modal" id="nlModal" role="dialog" aria-modal="true" aria-label="Vores korn">
     <div class="nl-backdrop" data-nl-close></div>
-    <div class="nl-card">
-      <img class="nl-bg" src="images/newsletter-art.jpg" alt="Få 10% på din næste ordre — tilmeld dig nyhedsbrevet" loading="lazy" />
+    <div class="nl-card" tabindex="-1">
+      <img class="nl-bg" src="images/kornart.jpg" alt="Vi kender vores korn – fra mark til mølle" loading="lazy" />
       <button class="nl-close" data-nl-close aria-label="Luk">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
-      <div class="nl-formwrap">
-        <form id="nlForm" class="newsletter-form" novalidate>
-          <input type="text" id="nlWebsite" name="website" tabindex="-1" autocomplete="off" aria-hidden="true"
-                 style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none" />
-          <input type="email" id="nlEmail" placeholder="Din e-mailadresse" autocomplete="email" required />
-          <button type="submit" id="nlBtn">Tilmeld</button>
-        </form>
-        <div id="nlMsg" class="newsletter-msg" aria-live="polite"></div>
+      <div class="nl-cta">
+        <a href="korn.html" class="nl-more" id="nlMore">Læs mere</a>
       </div>
     </div>
   </div>
@@ -545,6 +541,7 @@
         <a href="shop.html">Shop</a>
         <a href="forhandlere.html">Forhandlere</a>
         <a href="om.html">Om os</a>
+        <a href="korn.html">Vores korn</a>
         <a href="#kontakt">Kontakt</a>
         <a href="https://www.findsmiley.dk/1149461" class="footer-smiley-link" target="_blank" rel="noopener" title="Smileyrapport – se vores kontrolrapport fra Fødevarestyrelsen" aria-label="Smileyrapport – se vores kontrolrapport fra Fødevarestyrelsen">
           <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -705,145 +702,81 @@
   </script>
 
   <script>
-    // Nyhedsbrev: bogmærke-fane + popup. Gemmer e-mailen og udløser velkomstmail
-    // med 10%-koden. Fanen skjules når man er tilmeldt; popup'en viser sig selv
-    // én enkelt gang pr. besøgende (efter 5 sek.), ellers kun via fanen.
+    // "Vores korn"-popup: fanen åbner den, og den vises af sig selv én gang pr.
+    // besøgende (ny nøgle, så også dem, der så nyhedsbrevs-popup'en, ser den).
     (function () {
-      var form = document.getElementById('nlForm');
-      if (!form) return;
-      var input = document.getElementById('nlEmail');
-      var btn = document.getElementById('nlBtn');
-      var msg = document.getElementById('nlMsg');
       var modal = document.getElementById('nlModal');
       var tab = document.getElementById('nlTab');
+      if (!modal || !tab) return;
+      var card = modal.querySelector('.nl-card');
+      var more = document.getElementById('nlMore');
 
-      // Engelsk besøgende? Så engelsk plakat, tekster og velkomstmail.
-      var nlEn = false; try { nlEn = localStorage.getItem('qm_lang') === 'en'; } catch (e) {}
-      var NLT = nlEn ? {
-        tab: '10% OFF', ph: 'Your email address', btn: 'Sign up', busy: 'Signing up…',
-        invalid: 'Please enter a valid email address.',
-        already: 'You are already subscribed — check your inbox for the code.',
-        thanks: 'Thanks! Check your inbox — your 10% discount code is on its way.',
-        again: 'Thanks! Check your inbox — your 10% discount code is on its way.',
-        fail: 'Something went wrong. Please try again.', net: 'Network error — please try again.'
-      } : {
-        tab: '10% RABAT', ph: 'Din e-mailadresse', btn: 'Tilmeld', busy: 'Tilmelder…',
-        invalid: 'Skriv en gyldig e-mailadresse.',
-        already: 'Du er allerede tilmeldt — tjek din indbakke for koden.',
-        thanks: 'Tak! Tjek din indbakke — din 10%-rabatkode er på vej.',
-        again: 'Tak! Tjek din indbakke — din 10%-rabatkode er på vej.',
-        fail: 'Noget gik galt. Prøv igen.', net: 'Netværksfejl — prøv igen.'
-      };
-      if (nlEn) {
+      // Engelsk besøgende? Så engelsk plakat og tekster. Sprogskift genindlæser
+      // siden, så det er nok at se efter ved indlæsning.
+      var en = false; try { en = localStorage.getItem('qm_lang') === 'en'; } catch (e) {}
+      if (en) {
         var bg = modal.querySelector('.nl-bg');
-        if (bg) { bg.src = 'images/newsletter-art-en.jpg'; bg.alt = 'Get 10% off your next order — join the newsletter'; }
-        tab.textContent = NLT.tab; input.placeholder = NLT.ph; btn.textContent = NLT.btn;
+        if (bg) { bg.src = 'images/kornarten.jpg'; bg.alt = 'We know our grain – from field to mill'; }
+        tab.textContent = 'OUR GRAIN';
+        modal.setAttribute('aria-label', 'Our grain');
+        if (more) more.textContent = 'Read more';
       }
 
-      function subscribed() { try { return localStorage.getItem('qm_nl_sub') === '1'; } catch (e) { return false; } }
-      function openNl() { modal.classList.add('open'); document.body.style.overflow = 'hidden'; setTimeout(function () { try { input.focus(); } catch (e) {} }, 250); }
-      function closeNl() { modal.classList.remove('open'); document.body.style.overflow = ''; }
+      var closeBtn = modal.querySelector('.nl-close');
+      var autoTimer = null;
+      var lastFocus = null;
+      function markSeen() { try { localStorage.setItem('qm_korn_seen', '1'); } catch (e) {} }
+      function openNl() {
+        // Har popup'en været vist — fra fanen eller af sig selv — skal den
+        // ikke springe op af sig selv igen.
+        markSeen();
+        if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
+        lastFocus = document.activeElement;
+        modal.classList.add('open'); document.body.style.overflow = 'hidden';
+        // Fokus ind i dialogen (selve kortet), så tastaturbrugere starter dér
+        setTimeout(function () { try { card.focus(); } catch (e) {} }, 50);
+      }
+      function closeNl() {
+        if (!modal.classList.contains('open')) return;
+        modal.classList.remove('open'); document.body.style.overflow = '';
+        // Popup'en vises kun én gang: når den er lukket, forsvinder fanen også.
+        // Artiklen kan stadig findes via "Vores korn" i footeren.
+        tab.classList.add('hidden');
+        // preventScroll: står det element, der havde fokus, længere oppe på
+        // siden, må lukningen ikke kaste den besøgende tilbage til toppen.
+        // (Var det fanen, er den nu skjult — så får siden fokus i stedet.)
+        try { if (lastFocus && lastFocus !== tab && lastFocus.focus) lastFocus.focus({ preventScroll: true }); } catch (e) {}
+      }
 
-      if (subscribed()) tab.classList.add('hidden');
       tab.addEventListener('click', openNl);
       modal.querySelectorAll('[data-nl-close]').forEach(function (el) { el.addEventListener('click', closeNl); });
       document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeNl(); });
 
-      // Auto-vis én gang pr. besøgende — aldrig hvis man er (eller lige er
-      // blevet) tilmeldt på denne enhed.
-      try {
-        if (!subscribed() && !localStorage.getItem('qm_nl_seen')) {
-          setTimeout(function () {
-            localStorage.setItem('qm_nl_seen', '1');
-            if (!subscribed() && !modal.classList.contains('open')) openNl();
-          }, 5000);
-        }
-      } catch (e) {}
-
-      form.addEventListener('submit', async function (e) {
-        e.preventDefault();
-        var email = (input.value || '').trim();
-        msg.className = 'newsletter-msg';
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
-          msg.classList.add('err'); msg.textContent = NLT.invalid; return;
-        }
-        btn.disabled = true; var t = btn.textContent; btn.textContent = NLT.busy;
-        try {
-          // Usynlig bot-verifikation: hent en engangs-udfordring og løs en
-          // lille regneopgave i baggrunden (~1/2 sekund). Kunden mærker intet
-          // — men en bot uden beviset bliver afvist af serveren.
-          async function nlSolve() {
-            var cr = await fetch('/api/log-visit', {
-              method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ action: 'nlchallenge' }),
-            });
-            var cd = await cr.json().catch(function () { return {}; });
-            if (!cd.ok || !cd.ch) return null;
-            var issued = Date.now();
-            var enc = new TextEncoder();
-            var target = cd.bits || 15;
-            function zeros(u8) {
-              var bits = 0;
-              for (var i = 0; i < u8.length; i++) {
-                var b = u8[i];
-                if (b === 0) { bits += 8; continue; }
-                for (var m = 128; m > 0; m >>= 1) { if (b & m) return bits; bits++; }
-                return bits;
-              }
-              return bits;
-            }
-            for (var nonce = 0; nonce < 4000000; nonce++) {
-              var buf = await crypto.subtle.digest('SHA-256', enc.encode(cd.ch + ':' + nonce));
-              if (zeros(new Uint8Array(buf)) >= target) {
-                // Serveren kræver at udfordringen er mindst 2 sek. gammel
-                // (mennesketempo). Hurtige telefoner løser den på under 1 sek.
-                // — så vi venter usynligt det sidste stykke før afsendelse.
-                var wait = 2400 - (Date.now() - issued);
-                if (wait > 0) await new Promise(function (res2) { setTimeout(res2, wait); });
-                return { ch: cd.ch, nonce: String(nonce) };
-              }
-              if ((nonce & 511) === 0) await new Promise(function (res2) { setTimeout(res2, 0); });
-            }
-            return null;
-          }
-          async function nlSubmit(pow) {
-            return fetch('/api/log-visit', {
-              method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ action: 'newsletter', email: email, lang: nlEn ? 'en' : 'da',
-                website: (document.getElementById('nlWebsite') || {}).value || '',
-                ch: pow ? pow.ch : '', nonce: pow ? pow.nonce : '' }),
-            });
-          }
-          var pow = await nlSolve();
-          var r = await nlSubmit(pow);
-          var d = await r.json().catch(function () { return {}; });
-          // Udløbet/ugyldigt bevis (fx efter lang tid i formularen): prøv én
-          // gang til med en frisk udfordring, helt automatisk.
-          if (!r.ok && d && d.retry) {
-            pow = await nlSolve();
-            r = await nlSubmit(pow);
-            d = await r.json().catch(function () { return {}; });
-          }
-          if (r.ok && d.ok) {
-            msg.textContent = d.already ? NLT.already : (d.again ? NLT.again : NLT.thanks);
-            input.value = '';
-            // Marker KUN som tilmeldt/skjul fanen, når serveren faktisk gemte
-            // tilmeldingen (d.stored) eller kunden allerede er tilmeldt
-            // (d.already). Et throttlet svar giver hverken — så beholder brugeren
-            // sin mulighed for at prøve igen senere.
-            if (d.stored || d.already) {
-              try { localStorage.setItem('qm_nl_sub', '1'); localStorage.setItem('qm_nl_seen', '1'); } catch (err) {}
-              tab.classList.add('hidden');
-            }
-            setTimeout(closeNl, 2600);
-          } else {
-            msg.classList.add('err'); msg.textContent = d.error || NLT.fail;
-          }
-        } catch (err) {
-          msg.classList.add('err'); msg.textContent = NLT.net;
-        }
-        btn.disabled = false; btn.textContent = t;
+      // Tastaturfokus bliver i dialogen, mens den er åben (aria-modal):
+      // Tab går rundt mellem luk-krydset og "Læs mere".
+      modal.addEventListener('keydown', function (e) {
+        if (e.key !== 'Tab' || !modal.classList.contains('open')) return;
+        var f = [closeBtn, more].filter(Boolean), cur = document.activeElement;
+        if (e.shiftKey && (cur === f[0] || cur === card)) { e.preventDefault(); f[f.length - 1].focus(); }
+        else if (!e.shiftKey && cur === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
       });
+      document.addEventListener('focusin', function (e) {
+        if (modal.classList.contains('open') && !modal.contains(e.target)) { try { card.focus(); } catch (err) {} }
+      });
+
+      // Vis af sig selv én gang pr. besøgende efter 5 sek. Er kurven eller
+      // mobilmenuen åben netop dér, venter den, til de er lukket igen.
+      function andetAabent() {
+        var cart = document.getElementById('cart-drawer'), menu = document.getElementById('mobileMenu');
+        return !!((cart && cart.classList.contains('open')) || (menu && menu.classList.contains('open')));
+      }
+      function autoVis() {
+        autoTimer = null;
+        if (modal.classList.contains('open')) return;
+        if (andetAabent()) { autoTimer = setTimeout(autoVis, 2000); return; }
+        openNl();
+      }
+      try { if (!localStorage.getItem('qm_korn_seen')) autoTimer = setTimeout(autoVis, 5000); } catch (e) {}
     })();
   </script>
 

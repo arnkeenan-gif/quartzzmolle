@@ -9,6 +9,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+/* Safari 27.3 "Adaptive Dark Mode" maler lyse sider mørke. Siden melder,
+   at den kan begge dele, så Safari lader den være; browserens standard-
+   farver låses til lys (samme rettelse som i css/style.css). */
+:root{color-scheme:light dark}
+:where(html){color:#000}
+:where(a,button,input,select,textarea){color-scheme:light}
   :root{
     --blue:#273071; --blue-dark:#1b2252; --blue-light:#3a4599;
     --blue-soft:rgba(39,48,113,.08);

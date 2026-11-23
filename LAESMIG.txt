@@ -1,8 +1,45 @@
-Ny forhandler: Noerregade 16 (Hou, 9370 Hals)
+Samlet opdatering: Vores korn, ny footer, "til toppen"-pil og Safari-farver
 
-FIL (samme mappe paa GitHub) - kun 1 fil:
-  js : forhandlere.js
+Denne zip ERSTATTER korn.zip og farver.zip - den indeholder alt fra dem.
 
-Bageriet er tilfoejet nederst i listen med adresse, link til deres
-Instagram og en husnummer-praecis naal paa kortet (Noerregade i 9370
-ligger i Hou).
+FILER (samme mapper paa GitHub) - alle 17 skal op:
+  roden  : index.html      <- ny popup "Vores korn" i stedet for nyhedsbrevet
+           korn.html       <- NY side: artiklen "Saadan passer vi paa vores korn"
+           sitemap.xml     <- /korn tilfoejet, saa Google finder siden
+           shop.html, product.html, om.html, forhandlere.html
+                           <- "Vores korn" i footeren
+           locker.html, admin.html, packing.html, fufill.html
+                           <- Safari-farverettelsen
+  css    : style.css       <- popup-knappen, ny footer, pilen og farverettelsen
+  js     : main.js         <- navigationen scroller vaek + "til toppen"-pilen
+           i18n.js         <- artiklen og pilen paa engelsk
+  images : kornart.jpg, kornarten.jpg   <- popup-plakaten (dansk / engelsk)
+           footerland.jpg               <- det malede landskab i footeren
+
+Hver fil er bygget paa den version, der koerer live nu.
+
+POPUP
+Fanen hedder VORES KORN (OUR GRAIN paa engelsk). Popup'en viser en ny
+plakat i samme stil: "Fra mark til moelle - Vi kender vores korn".
+E-mailfeltet er erstattet af en "Laes mere"-knap til den nye side.
+Popup'en og fanen vises kun én gang: popup'en kommer af sig selv efter
+5 sekunder (eller hvis man trykker paa fanen foer), og naar den er lukket,
+forsvinder fanen og kommer ikke igen. Artiklen kan altid findes via
+"Vores korn" i footeren paa alle sider.
+OBS: nyhedsbrev-tilmeldingen fandtes kun i den gamle popup, saa der er
+ingen tilmelding til nyhedsbrevet paa siden efter denne opdatering.
+
+FOOTER
+Malet landskab i samme stil og farver som logoet: indigo nattehimmel,
+maane, hvedebaelte og logoets moelle, der staar bag bakken ligesom i
+logoet.
+Gaelder alle sider.
+
+NAVIGATION PAA MOBIL
+Logo, kurv, sprog og menu bliver staaende oeverst og scroller vaek med
+siden. Naar man er scrollet ned, kommer en lille hvid pil i oeverste
+venstre hjoerne - et tryk foerer helt op. Produktsiden beholder sin faste
+blaa navigation, fordi kurv-ikonet dér viser, at varen er lagt i kurven.
+
+Valgfrit: images/newsletter-art.jpg og newsletter-art-en.jpg bruges ikke
+laengere og kan slettes. Det goer ingen skade at lade dem ligge.
