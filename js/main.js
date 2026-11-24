@@ -274,6 +274,29 @@ function initFooter() {
     const b = max <= 1 ? footer.getBoundingClientRect().bottom <= vh + 60
                        : tilBund < Math.min(vh * 1.5, y);
     if (b !== bund) { bund = b; root.classList.toggle('qm-bund', b); }
+    if (b) topFarve();
+  };
+  // Usynlig bjælke i toppen (se .qm-top-tint i style.css): Safari farver
+  // feltet bag uret med dens farve i stedet for den grønne sidefarve.
+  let tint = document.querySelector('.qm-top-tint');
+  if (!tint) {
+    tint = document.createElement('div');
+    tint.className = 'qm-top-tint';
+    tint.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(tint);
+  }
+  let sidsteFarve = '';
+  const topFarve = () => {
+    // farven på det indhold der ligger lige under uret (første ikke-gennemsigtige baggrund)
+    let el = document.elementFromPoint(window.innerWidth / 2, 60);
+    let farve = '';
+    while (el && el !== root) {
+      const c = getComputedStyle(el).backgroundColor;
+      if (c && c !== 'transparent' && !/^rgba\(.*,\s*0\)$/.test(c)) { farve = c; break; }
+      el = el.parentElement;
+    }
+    farve = farve || '#faf7f2';
+    if (farve !== sidsteFarve) { sidsteFarve = farve; tint.style.backgroundColor = farve; }
   };
   const maal = () => {
     const h = Math.min(footer.offsetHeight, root.clientHeight || window.innerHeight);
