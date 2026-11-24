@@ -744,10 +744,13 @@ body.past-videos .video-overlay {
   .footer::after { margin: 1.25rem -1.25rem 0; aspect-ratio: auto; height: 210px; background-position: 95% 100%; }
 }
 
-/* Helt i bund (telefon): iOS farver værktøjslinjen under siden med sidens
-   baggrundsfarve (sort). Når footeren er scrollet helt frem, sætter main.js
-   klassen qm-bund på <html>, så farven dér er bakkens grønne i stedet for sort. */
-html.qm-bund { background-color: #569b44 !important; }
+/* Helt i bund (telefon): iOS farver feltet under siden (bag adresselinjen)
+   med sidens baggrundsfarve (sort). main.js sætter klassen qm-bund på <html>
+   allerede halvanden skærm før bunden, så feltet ER grønt når man når ned —
+   før skiftede det først helt nede og tonede synligt sort → mørkegrøn → grøn.
+   Farven er gennemsnittet af maleriets nederste kant på en telefon, og
+   skiftet sker uden overgang (forsiden har ellers en 0,35 s fade på <html>). */
+html.qm-bund { background-color: #6ca93f !important; transition: none !important; }
 
 /* PC: logo til venstre og links til højre, adresse og CVR på egen linje under */
 @media (min-width: 769px) {
@@ -769,13 +772,16 @@ html.qm-bund { background-color: #569b44 !important; }
   }
 }
 
-/* Gardin-effekt (PC og telefon). Footeren ligger ligesom under siden:
+/* Gardin-effekt (kun PC med mus). Footeren ligger ligesom under siden:
    indholdet over den glider op og afdækker den, mens footerens tekst og
    maleri står stille. Ikke hvis man har slået bevægelse fra, og browsere
    uden scroll-animationer viser bare den almindelige footer.
+   IKKE på telefon: Safaris adresselinje ændrer skærmens højde mens man
+   scroller, så det "stillestående" maleri hoppede, og der kom en lilla
+   stribe under bakken bag adresselinjen. Derfor kræves en mus (hover).
    main.js sætter --qm-gardin = footerens højde (højst skærmens højde). */
 @supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
+  @media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
     .footer {
       overflow: hidden;
       overflow: clip;
