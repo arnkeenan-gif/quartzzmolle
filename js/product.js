@@ -182,8 +182,7 @@ function fragtDetaljer(kg) {
       { '@type': 'DefinedRegion', addressCountry: 'DK' },
       { '@type': 'DefinedRegion', addressCountry: 'SE' },
       { '@type': 'DefinedRegion', addressCountry: 'DE' },
-      { '@type': 'DefinedRegion', addressCountry: 'NL' },
-      { '@type': 'DefinedRegion', addressCountry: 'NO' }
+      { '@type': 'DefinedRegion', addressCountry: 'NL' }
     ],
     deliveryTime: {
       '@type': 'ShippingDeliveryTime',
