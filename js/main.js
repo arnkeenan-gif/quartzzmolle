@@ -255,7 +255,7 @@ function initTilToppen() {
 // ── FOOTER ──────────────────────────────────────────────────────────────────
 // 1) Helt i bund: klassen qm-bund på <html> gør sidens baggrundsfarve grøn som
 //    bakken i maleriet, så iPhone ikke viser en sort stribe under footeren.
-// 2) PC: gardin-effekten i CSS skal kende footerens højde (højst skærmens højde).
+// 2) Gardin-effekten i CSS skal kende footerens højde (højst skærmens højde).
 function initFooter() {
   const footer = document.querySelector('.footer');
   if (!footer) return;
