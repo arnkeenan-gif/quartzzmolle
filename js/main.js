@@ -263,8 +263,16 @@ function initFooter() {
   let bund = false, ticking = false;
   const update = () => {
     ticking = false;
+    // Grøn bund allerede halvanden skærm før bunden (og kun på sidens nederste
+    // halvdel, så toppen på korte sider forbliver sort). Så er farven skiftet
+    // længe før man ser den, også når man scroller hurtigt ned.
     const vh = window.innerHeight || root.clientHeight;
-    const b = footer.getBoundingClientRect().bottom <= vh + 60;
+    const y = window.scrollY || root.scrollTop || 0;
+    const max = root.scrollHeight - vh;
+    const tilBund = Math.max(0, max - y);
+    // Kan siden slet ikke scrolles (fx en høj skærm), ses footeren hele tiden.
+    const b = max <= 1 ? footer.getBoundingClientRect().bottom <= vh + 60
+                       : tilBund < Math.min(vh * 1.5, y);
     if (b !== bund) { bund = b; root.classList.toggle('qm-bund', b); }
   };
   const maal = () => {
