@@ -769,12 +769,13 @@ html.qm-bund { background-color: #569b44 !important; }
   }
 }
 
-/* PC: gardin-effekt. Footeren ligger ligesom under siden: indholdet over den
-   glider op og afdækker den, mens footerens tekst og maleri står stille.
-   Kun PC (mus), ikke telefon/tablet, og ikke hvis man har slået bevægelse fra.
+/* Gardin-effekt (PC og telefon). Footeren ligger ligesom under siden:
+   indholdet over den glider op og afdækker den, mens footerens tekst og
+   maleri står stille. Ikke hvis man har slået bevægelse fra, og browsere
+   uden scroll-animationer viser bare den almindelige footer.
    main.js sætter --qm-gardin = footerens højde (højst skærmens højde). */
 @supports (animation-timeline: view()) {
-  @media (min-width: 769px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  @media (prefers-reduced-motion: no-preference) {
     .footer {
       overflow: hidden;
       overflow: clip;
