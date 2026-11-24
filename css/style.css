@@ -766,6 +766,30 @@ body.past-videos .video-overlay {
    skiftet sker uden overgang (forsiden har ellers en 0,35 s fade på <html>). */
 html.qm-bund { background-color: #6ca93f !important; transition: none !important; }
 
+/* …men samme farve gav et grønt skær øverst bag uret, for iOS 26 farver
+   toppen med den samme sidefarve. Et element der er fastgjort til toppen
+   (fuld bredde, over 10 px højt) får Safari til at bruge DETS farve øverst i
+   stedet. Så længe qm-bund er på (kun telefon), sætter main.js derfor denne
+   usynlige bjælke ind med farven på indholdet øverst på skærmen (typisk
+   cremefarvet). Bjælken er maskeret helt usynlig og kan ikke trykkes på;
+   virker det ikke på en given iPhone, ser alt ud præcis som før. */
+.qm-top-tint {
+  display: none;
+  position: fixed;
+  top: -6px;
+  left: 0;
+  right: 0;
+  height: 12px;
+  background-color: #faf7f2;
+  pointer-events: none;
+  z-index: 50;
+  -webkit-mask-image: linear-gradient(transparent, transparent);
+          mask-image: linear-gradient(transparent, transparent);
+}
+@media (max-width: 768px) {
+  html.qm-bund .qm-top-tint { display: block; }
+}
+
 /* PC: logo til venstre og links til højre, adresse og CVR på egen linje under */
 @media (min-width: 769px) {
   .footer .footer-inner {
