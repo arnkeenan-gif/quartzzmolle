@@ -738,10 +738,24 @@ body.past-videos .video-overlay {
   .footer .footer-smiley-link:hover { color: #f5c400; }
 }
 @media (max-width: 768px) {
-  .footer { padding: 2.5rem 1.25rem 0; }
-  /* På mobil er landskabet bredere end skærmen: fast højde, og udsnittet
-     holdes omkring møllen bag bakken */
-  .footer::after { margin: 1.25rem -1.25rem 0; aspect-ratio: auto; height: 210px; background-position: 95% 100%; }
+  /* Telefon: samme maleri og samme udsnit som før (landskabet 210 px højt,
+     omkring møllen), men himlen fortsætter op bag logo, tekst og links i
+     stedet for den flade blå. footermobil.jpg = footerland.jpg uændret
+     forneden + mere af maleriets egen himmel ovenpå (syet af maleriets egne
+     penselstrøg). Billedet er 2000 bredt, så 557,8 px bredde = 210 px landskab. */
+  .footer { padding: 2.5rem 1.25rem calc(210px + 1.25rem); }
+  .footer::after {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    height: auto;
+    aspect-ratio: auto;
+    background: url('../images/footermobil.jpg') 95% 100% / max(100%, 557.8px) auto no-repeat;
+    -webkit-mask-image: none;
+            mask-image: none;
+    pointer-events: none;
+  }
+  .footer > .footer-inner { position: relative; z-index: 1; }
 }
 
 /* Helt i bund (telefon): iOS farver feltet under siden (bag adresselinjen)
