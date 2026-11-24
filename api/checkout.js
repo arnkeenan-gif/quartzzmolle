@@ -6,6 +6,7 @@
 // prices are NEVER trusted — a manipulated price/weight is rejected.
 
 import { CATALOG, buildPriceMap, weightKgFromLabel, labelImage } from './_catalog.js';
+import { ensureKampagne } from './_kampagne.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -65,7 +66,19 @@ export default async function handler(req, res) {
       });
     }
 
+    // Kampagnevaren (NYHED-rabatten) bruger faste Stripe-produkter, så kuponen
+    // kun kan ramme den. Fejler opsætningen, er kampagne null og linjen bygges
+    // som alle andre (ad hoc) — betalingen går altid igennem.
+    const kampagne = await ensureKampagne(stripe, origin);
+
     const line_items = validated.map(it => {
+      const fastProdukt = kampagne && kampagne[`${it.id}|${it.label}`];
+      if (fastProdukt) {
+        return {
+          price_data: { currency: 'dkk', product: fastProdukt, unit_amount: Math.round(it.price * 100) },
+          quantity: it.qty,
+        };
+      }
       // Build name: "Rød hvede – Type 70" so it shows in Stripe AND Shipmondo
       const typeStr = it.productType ? ` – ${it.productType}` : '';
       const product_data = {
@@ -177,13 +190,14 @@ export default async function handler(req, res) {
       success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/shop`,
       shipping_address_collection: {
-        // Only these countries can complete checkout in Stripe.
-        allowed_countries: ['DK', 'DE', 'SE', 'NL', 'NO'],
+        // Only these countries can complete checkout in Stripe. EU only —
+        // Norway was removed because it is outside the EU (customs/VAT).
+        allowed_countries: ['DK', 'DE', 'SE', 'NL'],
       },
       phone_number_collection: { enabled: true },
       shipping_options: shippingOptions,
       // Show the "Add promotion code" field in Stripe (used by the newsletter's
-      // VELKOMMEN10 welcome code, and any future campaign codes).
+      // VELKOMMEN10 welcome code and the NYHED campaign code — see _kampagne.js).
       allow_promotion_codes: true,
       locale: 'da',
       metadata: { items_summary: itemsSummary, client_ip: clientIp },
