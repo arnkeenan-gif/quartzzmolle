@@ -742,7 +742,9 @@ body.past-videos .video-overlay {
      omkring møllen), men himlen fortsætter op bag logo, tekst og links i
      stedet for den flade blå. footermobil.jpg = footerland.jpg uændret
      forneden + mere af maleriets egen himmel ovenpå (syet af maleriets egne
-     penselstrøg). Billedet er 2000 bredt, så 557,8 px bredde = 210 px landskab. */
+     penselstrøg). Billedet er 2000 bredt, så 557,8 px bredde = 210 px landskab.
+     Himlen er høj nok (2353 px = 656 px på telefon) til også at dække
+     nyhedsbrevsfeltet i footeren. */
   .footer { padding: 2.5rem 1.25rem calc(210px + 1.25rem); }
   .footer::after {
     position: absolute;
@@ -2811,3 +2813,218 @@ button,
   .hw .product-hero-band::before,
   .hw .product-hero-band::after { height: 108px; width: 49%; }
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   JUL 2026 + NYHEDSBREV I FOOTEREN
+   Alt nyt ligger samlet her til sidst, så resten af stilarket er urørt:
+   1) nyhedsbrevsfeltet i footeren   2) juleferie-oplysningen i kurven
+   3) julestriben øverst + "Læs mere"-vinduet   4) juletemaet (.jul)   5) julesne
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1) NYHEDSBREV I FOOTEREN ── (js/main.js: initNyhedsbrev) */
+.footer-nl { width: 100%; max-width: 420px; margin: 0 auto; text-align: center; }
+.footer-nl-tekst { display: block; margin: 0 0 .6rem; color: rgba(255,255,255,.88); font-size: .88rem; line-height: 1.4; }
+.footer-nl-tekst strong {
+  display: block; margin: 0 0 .2rem; color: #fff;
+  font-size: .78rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+}
+.footer-nl-felt { display: flex; gap: .5rem; }
+.footer-nl-felt input[type="email"] {
+  flex: 1 1 auto; min-width: 0; font-family: inherit; font-size: 16px; /* 16px: iPhone zoomer ellers ind */
+  padding: .7rem .9rem; border: 1px solid rgba(255,255,255,.35); border-radius: 10px;
+  background: #fff; color: #1a1611;
+}
+.footer-nl-felt input[type="email"]:focus { outline: 3px solid rgba(246,194,26,.65); outline-offset: 1px; }
+.footer-nl-felt button {
+  flex: 0 0 auto; font-family: inherit; font-size: .95rem; font-weight: 700;
+  padding: .7rem 1.15rem; border: none; border-radius: 10px;
+  background: #f6c21a; color: #23214f; cursor: pointer;   /* månens og hvedens gule */
+}
+.footer-nl-felt button:disabled { opacity: .65; cursor: wait; }
+.footer-nl-hp { position: absolute !important; left: -9999px !important; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.footer-nl-msg { margin: .55rem 0 0; font-size: .86rem; font-weight: 600; line-height: 1.4; color: #fff; }
+.footer-nl-msg:empty { display: none; }
+.footer-nl-msg.err { color: #ffd9d9; }
+.footer-nl.er-tilmeldt .footer-nl-felt { display: none; }
+
+/* PC: feltet får sin egen linje mellem menuen og adresse-linjen */
+@media (min-width: 769px) {
+  .footer .footer-inner .footer-nl {
+    grid-column: 1 / -1; grid-row: 2; max-width: none; margin: 0;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+    gap: .6rem 2rem; text-align: left;
+  }
+  .footer .footer-inner .footer-nl-tekst { margin: 0; display: flex; align-items: baseline; flex-wrap: wrap; gap: .25rem .9rem; }
+  .footer .footer-inner .footer-nl-tekst strong { display: inline; margin: 0; }
+  .footer .footer-inner .footer-nl-felt { flex: 0 1 400px; }
+  .footer .footer-inner .footer-nl-msg { flex-basis: 100%; margin: 0; text-align: right; }
+  .footer .footer-inner.har-nl > p { grid-row: 3; }
+}
+
+/* ── 2) JULEFERIE: oplysning i kurven ── (js/cart.js: visJuleferieNote)
+   Vises øverst i kurvens vareliste fra 19/12 til 4/1: ordren sendes først fra
+   4. januar. Kun en tekst — den ligger i den rullende liste, så kurvens bund
+   og "Til kassen" står præcis som altid. */
+.cart-jul-note {
+  background: var(--warm-white, #f5f0e8);
+  border-left: 3px solid #8f1d1d;
+  border-radius: 8px;
+  color: #2b2823;
+  font-size: 0.88rem;
+  font-weight: 500;
+  line-height: 1.55;
+  padding: 0.75rem 0.95rem;
+  margin: 0 0 0.85rem;
+}
+
+/* ── 3) JULESTRIBEN ØVERST + "LÆS MERE" ── (js/main.js: initJulestribe)
+   Vises på hovedsiderne (ikke på produktsiderne og ikke på bekræftelsessiden).
+   Striben ligger øverst på siden (ikke fastgjort — den scroller væk med
+   siden). Menuen rykkes ned under den, og sidernes top får tilsvarende mere
+   luft, fordi --nav-h tælles op med stribens højde (--qm-stribe-h sættes af
+   main.js). Når striben lukkes eller udløber, fjernes klassen igen. */
+.qm-stribe {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 98;
+  box-sizing: border-box; min-height: 40px;
+  display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: .1rem .8rem;
+  padding: .5rem 2.9rem;
+  background: #8f1d1d; color: #fff;
+  font-size: .86rem; line-height: 1.35; text-align: center;
+}
+.qm-stribe-tekst { margin: 0; color: #fff; }
+.qm-stribe-kort { display: none; }
+.qm-stribe-mere {
+  font-family: inherit; font-size: inherit; font-weight: 600; color: #fff;
+  background: none; border: none; padding: .15rem 0; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.qm-stribe-luk {
+  position: absolute; right: .3rem; top: 50%; transform: translateY(-50%);
+  width: 36px; height: 36px; padding: 0; border: none; background: none;
+  color: #fff; font-size: 1.4rem; line-height: 1; cursor: pointer; opacity: .85;
+}
+.qm-stribe-mere:focus-visible, .qm-stribe-luk:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+html.qm-har-stribe { --nav-h: calc(72px + var(--qm-stribe-h, 40px)); }
+html.qm-har-stribe .nav { top: var(--qm-stribe-h, 40px); height: 72px; }
+/* Forsiden: logo og titel i video-toppen rykker lige så langt ned som menuen,
+   så menuen ikke lander oven på logoet på lave skærme (bærbare, små telefoner).
+   Kun en visuel forskydning — sidens højder og video-scriptet er urørt. */
+html.qm-har-stribe #heroContent { top: var(--qm-stribe-h, 40px); }
+/* Åben mobilmenu: menu-arket dækker striben, så menu-linjen (logo, kurv, sprog,
+   burger) står fast helt øverst på skærmen, mens menuen er åben — ellers ligger
+   den oven på "Hjem", så det første menupunkt ikke kan trykkes. Fast (fixed),
+   så krydset til at lukke menuen altid kan ses, også hvis man havde scrollet lidt. */
+html.qm-har-stribe body:has(.mobile-menu.open) .nav { position: fixed; top: 0; }
+@media (max-width: 768px) {
+  .qm-stribe { font-size: .8rem; padding: .45rem 2.6rem; }
+  .qm-stribe-lang { display: none; }
+  .qm-stribe-kort { display: inline; }
+}
+
+.qm-jul-modal { position: fixed; inset: 0; z-index: 230; display: none; align-items: center; justify-content: center; padding: 18px; }
+.qm-jul-modal.open { display: flex; }
+.qm-jul-bag { position: absolute; inset: 0; background: rgba(20,16,12,.55); }
+.qm-jul-kort {
+  position: relative; box-sizing: border-box; width: min(560px, 100%); max-height: min(88vh, 740px);
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  background: #faf7f2; color: #2b2823; border-radius: 20px; border-top: 6px solid #8f1d1d;
+  padding: 1.9rem 1.6rem 1.4rem; box-shadow: 0 30px 80px rgba(0,0,0,.4);
+  text-align: left;
+}
+.qm-jul-kort:focus { outline: none; }
+.qm-jul-kort h2 { font-family: 'Inter', sans-serif; font-size: 1.5rem; font-weight: 700; letter-spacing: -.01em; color: #273071; margin: 0 2.6rem .8rem 0; }
+.qm-jul-kort p { font-size: .95rem; line-height: 1.65; color: #2b2823; margin: 0 0 1rem; }
+.qm-jul-datoer { display: grid; gap: .55rem; margin: 0 0 1rem; }
+.qm-jul-datoer div { background: #fff; border-left: 4px solid #8f1d1d; border-radius: 10px; padding: .7rem .9rem; }
+.qm-jul-datoer dt { font-size: .82rem; line-height: 1.4; color: #5a554c; margin: 0 0 .15rem; }
+.qm-jul-datoer dd { margin: 0; font-size: 1.05rem; font-weight: 700; color: #1a1611; }
+.qm-jul-kort p.qm-jul-hilsen { font-weight: 600; color: #8f1d1d; }
+.qm-jul-kryds {
+  position: absolute; top: .65rem; right: .65rem; width: 40px; height: 40px; padding: 0;
+  border: none; border-radius: 50%; background: #efe9de; color: #1a1611;
+  font-size: 1.45rem; line-height: 1; cursor: pointer;
+}
+.qm-jul-ok {
+  display: block; width: 100%; margin: .25rem 0 0; padding: .85rem 1rem;
+  border: none; border-radius: 12px; background: #273071; color: #fff;
+  font-family: inherit; font-size: 1rem; font-weight: 700; cursor: pointer;
+}
+
+/* ── 4) JULETEMA (.jul) ── samme opbygning som Halloween-pynten ovenfor:
+   js/main.js sætter klassen .jul på <html> fra 1. december til og med
+   31. december, så pynten tænder og SLUKKER sig selv. Flade papirklip i de
+   to nederste hjørner af det blå bånd på shop- og produktsiderne. */
+.jul .shop-hero,
+.jul .product-hero-band { position: relative; overflow: hidden; }
+.jul .shop-hero > *,
+.jul .product-hero-band > * { position: relative; z-index: 1; }
+.jul .shop-hero::before,
+.jul .shop-hero::after,
+.jul .product-hero-band::before,
+.jul .product-hero-band::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+.jul .shop-hero::before,
+.jul .product-hero-band::before {
+  left: 0;
+  background-image: url('../images/julvenstre.png');
+  background-position: left bottom;
+}
+.jul .shop-hero::after,
+.jul .product-hero-band::after {
+  right: 0;
+  background-image: url('../images/julhoejre.png');
+  background-position: right bottom;
+}
+/* Højden er "båndet minus menuen (og julestriben)", så pynten aldrig kan
+   vokse op bag logoet eller Shop Nu-knappen, uanset hvor højt båndet er. */
+.jul .shop-hero::before { width: 24%; height: calc(100% - var(--nav-h) - 8px); }
+.jul .shop-hero::after  { width: 22%; height: calc(100% - var(--nav-h) - 8px); }
+.jul .product-hero-band::before { width: 17%; height: calc(100% - var(--nav-h) - 6px); }
+.jul .product-hero-band::after  { width: 15%; height: calc(100% - var(--nav-h) - 6px); }
+@media (max-width: 760px) {
+  .jul .shop-hero { padding-bottom: calc(1.5rem + 124px); }
+  .jul .product-hero-band { padding-bottom: calc(1.25rem + 100px); }
+  .jul .shop-hero::before,
+  .jul .shop-hero::after { height: 132px; width: 49%; }
+  .jul .product-hero-band::before,
+  .jul .product-hero-band::after { height: 108px; width: 49%; }
+}
+
+/* ── 5) JULESNE ── (js/main.js: initJulesne) snefnug der falder i det blå bånd
+   på shop- og produktsiderne, BAG teksten (teksten har z-index 1, sneen 0).
+   Kun transform-animationer, så det kører let — også på telefon. */
+.jul .shop-hero > .jul-sne,
+.jul .product-hero-band > .jul-sne {
+  position: absolute; inset: 0; z-index: 0;
+  overflow: hidden; pointer-events: none;
+}
+.jul-fnug {
+  position: absolute; top: -24px;
+  width: var(--str, 4px); height: var(--str, 4px);
+  animation: jul-fald var(--tid, 12s) linear var(--start, 0s) infinite;
+  will-change: transform;
+}
+.jul-fnug i {
+  display: block; width: 100%; height: 100%;
+  /* et rigtigt snefnug: seks arme med små grene (hvid streg, ingen fyld) */
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2v20M3.34 7l17.32 10M3.34 17L20.66 7M12 5.6L9.9 3.5M12 5.6l2.1-2.1M12 18.4l-2.1 2.1M12 18.4l2.1 2.1M6.46 8.8L3.6 8.03M6.46 8.8l.77-2.86M17.54 15.2l2.86.77M17.54 15.2l-.77 2.86M6.46 15.2l-2.86.77M6.46 15.2l.77 2.86M17.54 8.8l2.86-.77M17.54 8.8l-.77-2.86'/%3E%3C/svg%3E") center / contain no-repeat;
+  animation: jul-svaj var(--svajtid, 4s) ease-in-out infinite alternate;
+}
+/* små fnug: samme seks arme, men enklere og med kraftigere streg */
+.jul-fnug-enkel i {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='M12 2.5v19M3.77 7.25l16.46 9.5M3.77 16.75l16.46-9.5M12 6.2L9.8 4M12 6.2L14.2 4M12 17.8L9.8 20M12 17.8l2.2 2.2'/%3E%3C/svg%3E");
+}
+@keyframes jul-fald { to { transform: translate3d(0, var(--fald, 420px), 0); } }
+@keyframes jul-svaj {
+  from { transform: translateX(calc(var(--svaj, 12px) * -1)) rotate(calc(var(--drej, 20deg) * -1)); }
+  to   { transform: translateX(var(--svaj, 12px)) rotate(var(--drej, 20deg)); }
+}
+@media (prefers-reduced-motion: reduce) { .jul-sne { display: none; } }

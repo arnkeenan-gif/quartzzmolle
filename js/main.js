@@ -12,8 +12,15 @@
     if (m === TIL_MD[0]) return dag <= TIL_MD[1];
     return false;
   }
+  // JUL: 1. december til og med 31. december → klassen .jul (julepynt og sne
+  // på shop- og produktsiderne, se "JUL" sidst i style.css). Slukker selv 1. januar.
+  function iJul(d) {
+    return d.getMonth() === 11;   // getMonth() er 0-indekseret: 11 = december
+  }
   try {
-    if (iSaeson(new Date())) document.documentElement.classList.add('hw');
+    var nu = new Date();
+    if (iSaeson(nu)) document.documentElement.classList.add('hw');
+    if (iJul(nu)) document.documentElement.classList.add('jul');
   } catch (e) { /* pynt er aldrig vigtigere end at siden virker */ }
 })();
 
@@ -309,6 +316,377 @@ function initFooter() {
   update();
 }
 
+// ── NYHEDSBREV I FOOTEREN ────────────────────────────────────────────────────
+// Et e-mailfelt i footeren på alle sider. Bruger den samme tilmelding som den
+// gamle popup: /api/log-visit med usynlig bot-verifikation (en lille regne-
+// opgave i baggrunden) og velkomstmail med 10%-koden. Er man allerede tilmeldt
+// på denne enhed, vises feltet ikke.
+function initNyhedsbrev() {
+  const inner = document.querySelector('.footer .footer-inner');
+  if (!inner || document.getElementById('footerNl')) return;
+  try { if (localStorage.getItem('qm_nl_sub') === '1') return; } catch (e) {}
+  let en = false;
+  try { en = localStorage.getItem('qm_lang') === 'en'; } catch (e) {}
+  const T = en ? {
+    label: 'Newsletter', sub: 'Sign up and get 10% off your next order',
+    ph: 'Your email address', btn: 'Sign up', busy: 'Signing up…',
+    invalid: 'Please enter a valid email address.',
+    already: 'You are already subscribed — check your inbox for the code.',
+    thanks: 'Thanks! Check your inbox — your 10% discount code is on its way.',
+    senere: 'We could not sign you up right now — please try again later.',
+    fail: 'Something went wrong. Please try again.', net: 'Network error — please try again.'
+  } : {
+    label: 'Nyhedsbrev', sub: 'Tilmeld dig og få 10% på din næste ordre',
+    ph: 'Din e-mailadresse', btn: 'Tilmeld', busy: 'Tilmelder…',
+    invalid: 'Skriv en gyldig e-mailadresse.',
+    already: 'Du er allerede tilmeldt — tjek din indbakke for koden.',
+    thanks: 'Tak! Tjek din indbakke — din 10%-rabatkode er på vej.',
+    senere: 'Vi kunne ikke tilmelde dig lige nu — prøv igen senere.',
+    fail: 'Noget gik galt. Prøv igen.', net: 'Netværksfejl — prøv igen.'
+  };
+
+  const form = document.createElement('form');
+  form.id = 'footerNl';
+  form.className = 'footer-nl';
+  form.noValidate = true;
+  form.innerHTML =
+    '<label class="footer-nl-tekst" for="footerNlEmail"><strong></strong><span></span></label>' +
+    '<div class="footer-nl-felt">' +
+      '<input type="email" id="footerNlEmail" name="email" autocomplete="email" inputmode="email" required />' +
+      // Honningkrukke: usynligt felt. Udfyldt = bot (serveren svarer pænt og gør intet).
+      '<input type="text" id="footerNlWebsite" name="website" class="footer-nl-hp" tabindex="-1" autocomplete="off" aria-hidden="true" />' +
+      '<button type="submit"></button>' +
+    '</div>' +
+    '<div class="footer-nl-msg" role="status" aria-live="polite"></div>';
+  const input = form.querySelector('#footerNlEmail');
+  const hp = form.querySelector('#footerNlWebsite');
+  const btn = form.querySelector('button');
+  const msg = form.querySelector('.footer-nl-msg');
+  form.querySelector('.footer-nl-tekst strong').textContent = T.label;
+  form.querySelector('.footer-nl-tekst span').textContent = T.sub;
+  input.placeholder = T.ph;
+  input.setAttribute('aria-label', T.ph);
+  btn.textContent = T.btn;
+  inner.appendChild(form);
+  // Filerne lægges op én ad gangen: kender style.css ikke feltet endnu, vises
+  // det ikke (ellers ville det stå ustylet i footeren et øjeblik).
+  if (getComputedStyle(hp).position !== 'absolute') { form.remove(); return; }
+  inner.classList.add('har-nl');
+
+  // Hent en engangs-udfordring og løs den (~1/2 sekund, usynligt for kunden).
+  async function loes() {
+    const cr = await fetch('/api/log-visit', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'nlchallenge' }),
+    });
+    const cd = await cr.json().catch(() => ({}));
+    if (!cd.ok || !cd.ch) return null;
+    const udstedt = Date.now();
+    const enc = new TextEncoder();
+    const maal = cd.bits || 15;
+    const nulBits = (u8) => {
+      let bits = 0;
+      for (let i = 0; i < u8.length; i++) {
+        const b = u8[i];
+        if (b === 0) { bits += 8; continue; }
+        for (let m = 128; m > 0; m >>= 1) { if (b & m) return bits; bits++; }
+        return bits;
+      }
+      return bits;
+    };
+    for (let nonce = 0; nonce < 4000000; nonce++) {
+      const buf = await crypto.subtle.digest('SHA-256', enc.encode(cd.ch + ':' + nonce));
+      if (nulBits(new Uint8Array(buf)) >= maal) {
+        // Serveren kræver, at udfordringen er mindst 2 sek. gammel (mennesketempo).
+        const vent = 2400 - (Date.now() - udstedt);
+        if (vent > 0) await new Promise((r) => setTimeout(r, vent));
+        return { ch: cd.ch, nonce: String(nonce) };
+      }
+      if ((nonce & 511) === 0) await new Promise((r) => setTimeout(r, 0));
+    }
+    return null;
+  }
+  function send(email, pow) {
+    return fetch('/api/log-visit', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'newsletter', email: email, lang: en ? 'en' : 'da',
+        website: hp.value || '', ch: pow ? pow.ch : '', nonce: pow ? pow.nonce : '',
+      }),
+    });
+  }
+
+  // PC med gardin-footer: går man ind i feltet med Tab-tasten, mens footeren
+  // stadig er dækket af siden ovenover, rulles der lige præcis så langt ned, at
+  // gardinet er helt åbent og feltet kan ses. Kun når gardin-effekten faktisk
+  // kører — ellers sørger browseren selv for at vise feltet, og siden må ikke hoppe.
+  form.addEventListener('focusin', () => {
+    const footer = form.closest('.footer');
+    if (!footer || getComputedStyle(inner).animationName !== 'qm-gardin') return;
+    const r = footer.getBoundingClientRect();
+    if (r.bottom > window.innerHeight + 1 && r.top > 1) {
+      const root = document.documentElement;
+      window.scrollTo({ top: Math.min(window.scrollY + r.top, root.scrollHeight - window.innerHeight), behavior: 'instant' });
+    }
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (btn.disabled) return;
+    const email = (input.value || '').trim();
+    msg.className = 'footer-nl-msg';
+    msg.textContent = '';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+      msg.classList.add('err'); msg.textContent = T.invalid; return;
+    }
+    btn.disabled = true; btn.textContent = T.busy;
+    try {
+      let pow = await loes();
+      let r = await send(email, pow);
+      let d = await r.json().catch(() => ({}));
+      // Udløbet bevis (fx efter lang tid i feltet): prøv én gang til, automatisk.
+      if (!r.ok && d && d.retry) {
+        pow = await loes();
+        r = await send(email, pow);
+        d = await r.json().catch(() => ({}));
+      }
+      if (r.ok && d.ok && (d.stored || d.already)) {
+        // Serveren gemte tilmeldingen (eller kunden var allerede tilmeldt).
+        // Så vises feltet ikke igen på denne enhed.
+        msg.textContent = d.already ? T.already : T.thanks;
+        input.value = '';
+        try { localStorage.setItem('qm_nl_sub', '1'); } catch (err) {}
+        form.classList.add('er-tilmeldt');
+      } else if (r.ok && d.ok) {
+        // Serveren svarede pænt, men gemte ikke noget (for mange tilmeldinger
+        // fra samme sted i dag). Lov ikke en kode, der ikke kommer.
+        msg.classList.add('err'); msg.textContent = T.senere;
+      } else {
+        msg.classList.add('err'); msg.textContent = (!en && d.error) || T.fail;
+      }
+    } catch (err) {
+      msg.classList.add('err'); msg.textContent = T.net;
+    }
+    btn.disabled = false; btn.textContent = T.btn;
+  });
+}
+
+// ── JULELEVERINGER 2026: stribe øverst + "Læs mere" ──────────────────────────
+// En tynd stribe øverst på hovedsiderne med nyheden om juleleveringer. "Læs mere"
+// åbner hele teksten. Man kan bestille hele julen — striben skifter bare tekst,
+// når fristen for levering inden jul er gået (lørdag 19/12 kl. 00.00): herefter
+// står der, at bestillinger sendes fra 4. januar. Mandag 4/1-2027 forsvinder
+// striben helt. De to tidspunkter er de samme som i js/cart.js.
+function initJulestribe() {
+  const FERIE_FRA = Date.UTC(2026, 11, 18, 23, 0, 0); // = 19/12-2026 kl. 00.00 dansk tid
+  const FERIE_TIL = Date.UTC(2027, 0, 3, 23, 0, 0);   // =  4/1-2027  kl. 00.00 dansk tid
+  const nav = document.querySelector('.nav');
+  const nu = Date.now();
+  if (!nav || nu >= FERIE_TIL || document.getElementById('qm-stribe')) return;
+  // Ikke på bekræftelsessiden efter et køb, og ikke på produktsiderne — kun på
+  // hovedsiderne (forside, shop, forhandlere, om os, vores korn).
+  if (document.querySelector('.success-page, .product-hero-band')) return;
+  const fase = nu >= FERIE_FRA ? 'ferie' : 'frist';
+  // Har kunden lukket striben, vises den først igen, når teksten skifter.
+  try { if (localStorage.getItem('qm_jul_stribe') === fase) return; } catch (e) {}
+  let en = false;
+  try { en = localStorage.getItem('qm_lang') === 'en'; } catch (e) {}
+  const root = document.documentElement;
+
+  const T = en ? {
+    navn: 'Christmas deliveries', mere: 'Read more', luk: 'Close',
+    frist: ['Christmas deliveries:', 'order by Friday 18 Dec for delivery before Christmas', 'order by Fri 18 Dec'],
+    ferie: ['Christmas deliveries:', 'orders placed now will be sent from Monday 4 January', 'orders sent from 4 Jan'],
+    titel: 'Christmas deliveries',
+    intro: 'Christmas is approaching fast and we’re running on full power at the mill to ensure that we can keep you baking during this busy season! As part of our planning, we would like to share the delivery days with you. From previous experience, any deliveries scheduled between Christmas and New Year do not happen due to substitute drivers, sickness, holidays etc. So to reduce the risk of flour stranded in some terminal or getting lost we have decided on the following dates.',
+    datoer: [
+      ['Last orders for delivery before Christmas', 'Friday 18/12'],
+      ['Last sending from the mill', 'Monday 21/12'],
+    ],
+    ingen: 'There will not be any orders sent from the mill from 22/12 until 04/01/2027.',
+    tilbage: 'We will return to normal on Monday 04/01/2027.',
+    hilsen: 'Happy Christmas and New Year!',
+  } : {
+    navn: 'Juleleveringer', mere: 'Læs mere', luk: 'Luk',
+    frist: ['Juleleveringer:', 'bestil senest fredag d. 18/12 for levering inden jul', 'bestil senest fre. 18/12'],
+    ferie: ['Juleleveringer:', 'bestillinger afgivet nu sendes fra mandag d. 4. januar', 'ordrer sendes fra 4/1'],
+    titel: 'Juleleveringer',
+    intro: 'Julen nærmer sig med hastige skridt, og vi kører for fuld kraft på møllen, så I kan blive ved med at bage i den travle tid! Som en del af vores planlægning vil vi gerne dele leveringsdagene med jer. Vi ved af erfaring, at leveringer mellem jul og nytår ofte ikke bliver til noget på grund af afløserchauffører, sygdom, ferie osv. For at mindske risikoen for, at melet strander på en terminal eller bliver væk undervejs, har vi valgt følgende datoer.',
+    datoer: [
+      ['Sidste frist for bestilling, hvis I vil have levering inden jul', 'Fredag d. 18/12'],
+      ['Sidste afsendelse fra møllen', 'Mandag d. 21/12'],
+    ],
+    ingen: 'Vi sender ingen ordrer fra møllen fra d. 22/12 og frem til d. 4/1/2027.',
+    tilbage: 'Mandag d. 4/1/2027 er vi tilbage som normalt.',
+    hilsen: 'Glædelig jul og godt nytår!',
+  };
+
+  const el = (tag, cls, tekst) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (tekst != null) n.textContent = tekst;
+    return n;
+  };
+
+  // ── Striben ──
+  const stribe = el('div', 'qm-stribe');
+  stribe.id = 'qm-stribe';
+  stribe.setAttribute('role', 'region');
+  stribe.setAttribute('aria-label', T.navn);
+  const tekst = el('p', 'qm-stribe-tekst');
+  tekst.appendChild(el('strong', '', T[fase][0]));
+  tekst.appendChild(document.createTextNode(' '));
+  tekst.appendChild(el('span', 'qm-stribe-lang', T[fase][1]));
+  tekst.appendChild(el('span', 'qm-stribe-kort', T[fase][2]));
+  const mere = el('button', 'qm-stribe-mere', T.mere);
+  mere.type = 'button';
+  const kryds = el('button', 'qm-stribe-luk', '×');
+  kryds.type = 'button';
+  kryds.setAttribute('aria-label', T.luk);
+  stribe.appendChild(tekst);
+  stribe.appendChild(mere);
+  stribe.appendChild(kryds);
+  document.body.insertBefore(stribe, document.body.firstChild);
+  // Filerne lægges op én ad gangen: kender style.css ikke striben endnu, vises
+  // den ikke (ellers ville den stå ustylet oven i menuen et øjeblik).
+  if (getComputedStyle(stribe).position !== 'absolute') { stribe.remove(); return; }
+  root.classList.add('qm-har-stribe');
+
+  // Stribens højde styrer, hvor langt menuen og sidernes top rykkes ned.
+  const maal = () => root.style.setProperty('--qm-stribe-h', stribe.offsetHeight + 'px');
+  maal();
+  window.addEventListener('resize', maal);
+  if ('ResizeObserver' in window) new ResizeObserver(maal).observe(stribe);
+
+  kryds.addEventListener('click', () => {
+    try { localStorage.setItem('qm_jul_stribe', fase); } catch (e) {}
+    window.removeEventListener('resize', maal);
+    stribe.remove();
+    root.classList.remove('qm-har-stribe');
+    root.style.removeProperty('--qm-stribe-h');
+  });
+
+  // ── "Læs mere": hele teksten i et vindue ──
+  let modal = null, sidstFokus = null;
+  // Forsidens "Vores korn"-popup åbner af sig selv efter 5 sek. for nye
+  // besøgende. Sker det, mens jule-vinduet er åbent, holdes den tilbage og
+  // vises først, når jule-vinduet lukkes — ellers lå den skjult bagved og
+  // tog tastaturfokus.
+  const korn = document.getElementById('nlModal');
+  let kornVenter = false;
+  if (korn && 'MutationObserver' in window) {
+    new MutationObserver(() => {
+      if (modal && modal.classList.contains('open') && korn.classList.contains('open')) {
+        korn.classList.remove('open');
+        kornVenter = true;
+        document.body.style.overflow = 'hidden';
+      }
+    }).observe(korn, { attributes: true, attributeFilter: ['class'] });
+  }
+  const lukModal = () => {
+    if (!modal || !modal.classList.contains('open')) return;
+    modal.classList.remove('open');
+    document.body.style.overflow = '';
+    if (kornVenter && korn) {
+      kornVenter = false;
+      korn.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      return;
+    }
+    try { if (sidstFokus && sidstFokus.focus) sidstFokus.focus({ preventScroll: true }); } catch (e) {}
+  };
+  const bygModal = () => {
+    modal = el('div', 'qm-jul-modal');
+    modal.id = 'qm-jul-modal';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'qm-jul-titel');
+    const bag = el('div', 'qm-jul-bag');
+    const kort = el('div', 'qm-jul-kort');
+    kort.tabIndex = -1;
+    const x = el('button', 'qm-jul-kryds', '×');
+    x.type = 'button';
+    x.setAttribute('aria-label', T.luk);
+    const h = el('h2', '', T.titel);
+    h.id = 'qm-jul-titel';
+    const dl = el('dl', 'qm-jul-datoer');
+    T.datoer.forEach((d) => {
+      const r = el('div');
+      r.appendChild(el('dt', '', d[0]));
+      r.appendChild(el('dd', '', d[1]));
+      dl.appendChild(r);
+    });
+    const p2 = el('p');
+    p2.appendChild(el('strong', '', T.ingen));
+    p2.appendChild(document.createTextNode(' ' + T.tilbage));
+    const ok = el('button', 'qm-jul-ok', T.luk);
+    ok.type = 'button';
+    [x, h, el('p', '', T.intro), dl, p2, el('p', 'qm-jul-hilsen', T.hilsen), ok].forEach((n) => kort.appendChild(n));
+    modal.appendChild(bag);
+    modal.appendChild(kort);
+    document.body.appendChild(modal);
+    [bag, x, ok].forEach((n) => n.addEventListener('click', lukModal));
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') lukModal(); });
+    // Tastaturfokus bliver i vinduet, mens det er åbent.
+    modal.addEventListener('keydown', (e) => {
+      if (e.key !== 'Tab') return;
+      const a = document.activeElement;
+      if (e.shiftKey && (a === x || a === kort)) { e.preventDefault(); ok.focus(); }
+      else if (!e.shiftKey && a === ok) { e.preventDefault(); x.focus(); }
+    });
+  };
+  mere.addEventListener('click', () => {
+    if (!modal) bygModal();
+    sidstFokus = document.activeElement;
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    const kort = modal.querySelector('.qm-jul-kort');
+    kort.scrollTop = 0;
+    setTimeout(() => { try { kort.focus({ preventScroll: true }); } catch (e) {} }, 50);
+  });
+}
+
+// ── JULESNE: snefnug der falder i det blå bånd ──────────────────────────────
+// Kun på shop- og produktsiderne, og kun når juletemaet er tændt (klassen .jul
+// på <html>, 1/12–31/12). Fnuggene ligger BAG teksten og kan ikke trykkes på.
+// Har man bedt om mindre bevægelse på sin enhed, vises der ingen sne.
+function initJulesne() {
+  if (!document.documentElement.classList.contains('jul')) return;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const baand = document.querySelector('.shop-hero, .product-hero-band');
+  if (!baand || baand.querySelector('.jul-sne')) return;
+  const lag = document.createElement('div');
+  lag.className = 'jul-sne';
+  lag.setAttribute('aria-hidden', 'true');
+  const tilf = (a, b) => a + Math.random() * (b - a);
+  const antal = window.innerWidth < 760 ? 14 : 26;
+  for (let i = 0; i < antal; i++) {
+    // Alle fnug er rigtige snefnug (seks arme) — ingen prikker. De små får en
+    // enklere, kraftigere tegning, så de stadig ligner snefnug i lille størrelse.
+    const str = i % 4 === 0 ? tilf(16, 22) : tilf(9, 15);
+    const fnug = document.createElement('span');
+    fnug.className = 'jul-fnug' + (str < 13 ? ' jul-fnug-enkel' : '');
+    fnug.appendChild(document.createElement('i'));
+    fnug.style.left = tilf(0, 100).toFixed(2) + '%';
+    fnug.style.opacity = tilf(0.5, 0.95).toFixed(2);
+    fnug.style.setProperty('--str', str.toFixed(1) + 'px');
+    fnug.style.setProperty('--tid', tilf(9, 19).toFixed(1) + 's');        // faldtid
+    fnug.style.setProperty('--start', (-tilf(0, 19)).toFixed(1) + 's');   // så sneen er i gang med det samme
+    fnug.style.setProperty('--svaj', tilf(6, 22).toFixed(0) + 'px');
+    fnug.style.setProperty('--svajtid', tilf(2.5, 5.5).toFixed(1) + 's');
+    fnug.style.setProperty('--drej', tilf(-40, 40).toFixed(0) + 'deg');   // fnuggene vipper lidt, mens de falder
+    lag.appendChild(fnug);
+  }
+  baand.appendChild(lag);
+  // Filerne lægges op én ad gangen: kender style.css ikke sneen endnu, vises den ikke.
+  if (getComputedStyle(lag).position !== 'absolute') { lag.remove(); return; }
+  // Faldhøjden følger båndets højde.
+  const maal = () => lag.style.setProperty('--fald', (baand.offsetHeight + 48) + 'px');
+  maal();
+  window.addEventListener('resize', maal);
+  if ('ResizeObserver' in window) new ResizeObserver(maal).observe(baand);
+}
+
 // ── HOMEPAGE HIGHLIGHTS GRID ──
 // Uses previewImage for the branded promo look (not the 3kg/12.5kg pack shots).
 function renderHighlights() {
@@ -383,6 +761,9 @@ document.addEventListener('DOMContentLoaded', () => {
   initModals();
   initTilToppen();
   initFooter();
+  initNyhedsbrev();
+  initJulestribe();
+  initJulesne();
   initVideoFade();
   initVideoSectionVisibility();
   renderHighlights();

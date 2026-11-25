@@ -67,6 +67,38 @@ function clearCart() {
 }
 
 // ── UI ──
+// ── JULEFERIE 2026: en oplysning i kurven ────────────────────────────────────
+// Man kan bestille hele julen, men møllen sender ingen ordrer fra 22/12 til 4/1
+// (sidste frist for levering inden jul er fredag 18/12). Fra lørdag 19/12-2026
+// kl. 00.00 til mandag 4/1-2027 kl. 00.00 dansk tid står der derfor øverst i
+// kurvens vareliste, at ordren først sendes fra 4. januar. Det er KUN en tekst
+// — bestilling og betaling virker præcis som altid. Den ligger i den rullende
+// vareliste og ikke i kurvens bund, så "Til kassen" står præcis hvor den plejer
+// (også på en telefon, der holdes på tværs). Tiderne er faste UTC-tidspunkter
+// (dansk vintertid = UTC+1); de samme to står i js/main.js (julestriben).
+const QM_JULEFERIE_FRA = Date.UTC(2026, 11, 18, 23, 0, 0); // = 19/12-2026 kl. 00.00 dansk tid
+const QM_JULEFERIE_TIL = Date.UTC(2027, 0, 3, 23, 0, 0);   // =  4/1-2027  kl. 00.00 dansk tid
+
+function visJuleferieNote() {
+  const list = document.getElementById('cart-items');
+  if (!list) return;
+  const gammel = document.getElementById('cart-jul-note');
+  if (gammel) gammel.remove();
+  const nu = Date.now();
+  // Kun i juleferien, og kun når der er varer i kurven.
+  if (nu < QM_JULEFERIE_FRA || nu >= QM_JULEFERIE_TIL || !list.querySelector('.cart-item')) return;
+  let en = false;
+  try { en = localStorage.getItem('qm_lang') === 'en'; } catch (e) {}
+  const note = document.createElement('p');
+  note.id = 'cart-jul-note';
+  note.className = 'cart-jul-note';
+  note.setAttribute('role', 'status');
+  note.textContent = en
+    ? 'Christmas break: orders placed now will be sent from the mill from Monday 4 January.'
+    : 'Juleferie: bestillinger afgivet nu sendes fra møllen fra mandag d. 4. januar.';
+  list.insertBefore(note, list.firstChild);
+}
+
 function injectCartUI() {
   // Add cart icon to every .nav (next to burger on mobile, before .nav-cta on desktop)
   document.querySelectorAll('.nav').forEach(nav => {
@@ -271,6 +303,8 @@ function updateCartUI() {
       note.innerHTML = '';
     }
   }
+
+  visJuleferieNote();
 }
 
 let _lastFocus = null;
