@@ -523,7 +523,7 @@
   <div class="nl-modal" id="nlModal" role="dialog" aria-modal="true" aria-label="Vores korn">
     <div class="nl-backdrop" data-nl-close></div>
     <div class="nl-card" tabindex="-1">
-      <img class="nl-bg" src="images/kornart.jpg" alt="Vi kender vores korn – fra mark til mølle" loading="lazy" />
+      <img class="nl-bg" src="images/kornart.jpg" alt="Vi har rent mel i posen – fra mark til mølle" loading="lazy" />
       <button class="nl-close" data-nl-close aria-label="Luk">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
@@ -716,7 +716,7 @@
       var en = false; try { en = localStorage.getItem('qm_lang') === 'en'; } catch (e) {}
       if (en) {
         var bg = modal.querySelector('.nl-bg');
-        if (bg) { bg.src = 'images/kornarten.jpg'; bg.alt = 'We know our grain – from field to mill'; }
+        if (bg) { bg.src = 'images/kornarten.jpg'; bg.alt = 'We have nothing to hide – from field to mill'; }
         tab.textContent = 'OUR GRAIN';
         modal.setAttribute('aria-label', 'Our grain');
         if (more) more.textContent = 'Read more';
