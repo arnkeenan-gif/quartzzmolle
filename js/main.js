@@ -476,7 +476,8 @@ function initNyhedsbrev() {
 // åbner hele teksten. Man kan bestille hele julen — striben skifter bare tekst,
 // når fristen for levering inden jul er gået (lørdag 19/12 kl. 00.00): herefter
 // står der, at bestillinger sendes fra 4. januar. Mandag 4/1-2027 forsvinder
-// striben helt. De to tidspunkter er de samme som i js/cart.js.
+// striben helt. De to tidspunkter er de samme som i js/cart.js. Krydset
+// skjuler kun striben for det aktuelle besøg (ikke for altid).
 function initJulestribe() {
   const FERIE_FRA = Date.UTC(2026, 11, 18, 23, 0, 0); // = 19/12-2026 kl. 00.00 dansk tid
   const FERIE_TIL = Date.UTC(2027, 0, 3, 23, 0, 0);   // =  4/1-2027  kl. 00.00 dansk tid
@@ -487,8 +488,13 @@ function initJulestribe() {
   // hovedsiderne (forside, shop, forhandlere, om os, vores korn).
   if (document.querySelector('.success-page, .product-hero-band')) return;
   const fase = nu >= FERIE_FRA ? 'ferie' : 'frist';
-  // Har kunden lukket striben, vises den først igen, når teksten skifter.
-  try { if (localStorage.getItem('qm_jul_stribe') === fase) return; } catch (e) {}
+  // Lukker kunden striben, er den kun væk for DETTE besøg: den huskes i fanens
+  // egen hukommelse (sessionStorage) sammen med dagens dato. En ny fane, et nyt
+  // besøg eller en ny dag viser striben igen — og den vises også igen, når
+  // teksten skifter 19/12.
+  const idag = (() => { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); })();
+  const lukketNoegle = fase + '|' + idag;
+  try { if (sessionStorage.getItem('qm_jul_stribe') === lukketNoegle) return; } catch (e) {}
   let en = false;
   try { en = localStorage.getItem('qm_lang') === 'en'; } catch (e) {}
   const root = document.documentElement;
@@ -559,7 +565,7 @@ function initJulestribe() {
   if ('ResizeObserver' in window) new ResizeObserver(maal).observe(stribe);
 
   kryds.addEventListener('click', () => {
-    try { localStorage.setItem('qm_jul_stribe', fase); } catch (e) {}
+    try { sessionStorage.setItem('qm_jul_stribe', lukketNoegle); } catch (e) {}
     window.removeEventListener('resize', maal);
     stribe.remove();
     root.classList.remove('qm-har-stribe');

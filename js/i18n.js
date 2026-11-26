@@ -294,16 +294,15 @@
     "Tak for din ordre": "Thank you for your order",
 
     // korn.html — artiklen om kornet (linket fra popup'en paa forsiden)
-    "Sådan passer vi på vores korn | Quartz Mølle": "How we look after our grain | Quartz Mølle",
+    "Vi har rent mel i posen | Quartz Mølle": "We have nothing to hide | Quartz Mølle",
     "Fra mark til mølle": "From field to mill",
-    "Sådan passer vi på vores korn": "How we look after our grain",
-    "Flere af jer har spurgt, hvor vores korn kommer fra, og hvordan det bliver opbevaret. Det er et godt spørgsmål, og I skal have et klart svar.": "Several of you have asked where our grain comes from and how it is stored. It's a good question, and you deserve a clear answer.",
-    "Vi køber kun korn direkte fra vores egne avlere. Vi bruger ingen mellemled, og ingen af vores avlere opbevarer korn hos de store kornhandlere.": "We only buy grain directly from our own growers. We use no middlemen, and none of our growers store grain with the big grain merchants.",
-    "Godt mel begynder ikke i møllen. Det begynder flere år før, kornet lander hos os. Sædskifte, valg af kornsorter og aftaler mellem landmand og møller tager tid, og det kræver et tæt forhold mellem natur, landmand, møller og bager.": "Good flour doesn't begin at the mill. It begins several years before the grain reaches us. Crop rotation, the choice of grain varieties and agreements between farmer and miller take time, and it calls for a close relationship between nature, farmer, miller and baker.",
-    "Vi kender vores avlere personligt og har meget stor tillid til dem. Vi har valgt dem, fordi de er dygtige økologiske landmænd, som tror på det, de laver. De har selv rigtig gode faciliteter, både til arbejdet i marken og til at opbevare og håndtere kornet.": "We know our growers personally and have a great deal of trust in them. We chose them because they are skilled organic farmers who believe in what they do. They have very good facilities of their own, both for the work in the field and for storing and handling the grain.",
-    "Vi besøger alle vores avlere. Så ved vi, at vi vil det samme, og at samarbejdet går begge veje.": "We visit all of our growers. That way we know we want the same things, and that the partnership works both ways.",
-    "Det er vores passion for det, vi laver, og landmændenes passion for det korn, vi køber, der gør mel fra Quartz Mølle til noget særligt. Vi antager ikke noget. Vi ved, hvad vi laver, og vores landmænd ved, hvad de laver. Sammen sørger vi for, at vi bliver ved med at levere det bedste og mest smagfulde mel, vi kan, så du kan smage det hele i dit morgenbrød.": "It's our passion for what we do, and the farmers' passion for the grain we buy, that makes flour from Quartz Mølle something special. We don't assume anything. We know what we're doing, and our farmers know what they're doing. Together we make sure we keep delivering the best and most flavourful flour we can, so you can taste it all in your breakfast bread.",
-    "Har du spørgsmål til vores korn, vores avlere eller vores mel, så skriv til os. Vi svarer gerne.": "If you have questions about our grain, our growers or our flour, write to us. We're happy to answer.",
+    "Vi har rent mel i posen": "We have nothing to hide",
+    "Flere af jer har spurgt, hvor vores korn kommer fra og hvordan det bliver opbevaret.": "Several of you have asked where our grain comes from and how it is stored.",
+    "Vi køber udelukkende korn direkte fra økologiske kornavlere og springer alle mellemled over.": "We buy our grain exclusively and directly from organic grain growers, cutting out every middleman.",
+    "Vi kender alle vores avlere personligt og har stor tillid til dem.": "We know all of our growers personally and trust them deeply.",
+    "Vi har udvalgt dem, fordi de er dygtige økologiske landmænd, der brænder for deres håndværk – og fordi de selv har gode faciliteter til både at dyrke, håndtere og opbevare kornet sikkert.": "We chose them because they are skilled organic farmers who are passionate about their craft – and because they have good facilities of their own to grow, handle and store the grain safely.",
+    "Det er vores – og landmændenes – fælles passion, der gør melet fra Quartz Mølle til noget helt særligt.": "It is our shared passion – ours and the farmers' – that makes the flour from Quartz Mølle something truly special.",
+    "Har du spørgsmål til vores korn, vores avlere eller vores mel? Skriv endelig til os.": "Do you have questions about our grain, our growers or our flour? Please do write to us.",
     "Skriv til os": "Write to us",
 
     // "til toppen"-pilen (main.js)
